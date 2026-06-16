@@ -101,6 +101,7 @@ export default function TryOnStudio() {
   const [credits, setCredits] = useState(0);
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showCredits, setShowCredits] = useState(true);
   const [loginError, setLoginError] = useState<string | null>(null);
 
   const styleRefInput = useRef<HTMLInputElement>(null);
@@ -493,36 +494,56 @@ export default function TryOnStudio() {
       </div>
 
       <div className="flex flex-col gap-8">
-        {/* Top Row: Credits Info & Purchase */}
-        <div className="flex justify-end w-full">
-          <div className="flex flex-col justify-between p-4 rounded-xl border bg-secondary/20 backdrop-blur-sm relative overflow-hidden min-h-[140px] w-full max-w-sm">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-bold text-muted-foreground flex items-center gap-1">
-                <Coins size={14} className="text-amber-500 animate-pulse" /> Créditos Fit Lab
-              </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase tracking-wider">
-                Servidor Seguro
-              </span>
-            </div>
-            <div className="flex items-baseline gap-1 my-0.5">
-              <span className="text-3xl font-extrabold text-foreground tracking-tight">{credits}</span>
-              <span className="text-xs text-muted-foreground font-medium">fotos disponibles</span>
-            </div>
-            <Button
-              onClick={handleBuyCredits}
-              disabled={isCheckoutLoading}
-              className="w-full mt-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold py-2 rounded-xl transition duration-300 shadow-md flex items-center justify-center gap-1.5 text-xs"
+        {/* Top Row: Credits Info & Purchase (Elongated & Collapsable) */}
+        {showCredits ? (
+          <div className="w-full flex flex-col md:flex-row items-center justify-between gap-4 p-4 rounded-xl border border-primary/20 bg-primary/5 backdrop-blur-sm relative overflow-hidden">
+            <button 
+              onClick={() => setShowCredits(false)} 
+              className="absolute top-2.5 right-2.5 text-muted-foreground hover:text-foreground cursor-pointer z-10"
+              title="Ocultar créditos"
             >
-              {isCheckoutLoading ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <>
-                  <Coins size={14} /> Comprar 100 Créditos ($10.000)
-                </>
-              )}
-            </Button>
+              <X size={16} />
+            </button>
+            
+            <div className="flex items-center gap-4">
+              <div className="p-2.5 rounded-lg bg-primary/10 text-primary">
+                <Coins size={24} className="animate-pulse" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-foreground">Créditos de Fit Lab</h3>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-xl font-extrabold text-primary">{credits}</span>
+                  <span className="text-xs text-muted-foreground">fotos disponibles para generar lookbooks</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="w-full md:w-auto pr-6 md:pr-0">
+              <Button
+                onClick={handleBuyCredits}
+                disabled={isCheckoutLoading}
+                className="w-full md:w-auto bg-primary text-primary-foreground hover:bg-primary/90 font-bold py-2 px-6 rounded-xl transition duration-300 shadow-md flex items-center justify-center gap-2 text-xs"
+              >
+                {isCheckoutLoading ? (
+                  <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <Coins size={14} /> Comprar 100 Créditos ($10.000)
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex justify-end mt-[-10px] mb-[10px]">
+            <button 
+              onClick={() => setShowCredits(true)} 
+              className="text-xs text-primary hover:underline flex items-center gap-1 font-medium cursor-pointer"
+            >
+              <Coins size={12} /> Mostrar panel de créditos
+            </button>
+          </div>
+        )}
 
         {/* Middle Row: Global Prompt (Default for new instances) */}
         <div className="flex flex-col gap-2">
@@ -538,7 +559,7 @@ export default function TryOnStudio() {
                   setPrompt(newPrompt);
                   saveSettings();
                 }}
-                className="text-xs font-semibold px-2 py-1 bg-secondary rounded text-secondary-foreground hover:bg-secondary/80"
+                className="text-xs font-semibold px-2 py-1 bg-primary/10 rounded text-primary hover:bg-primary/20 border border-primary/10 transition"
               >
                 {promptLang === 'es' ? 'ES 🇪🇸' : 'EN 🇺🇸'}
               </button>
@@ -629,7 +650,7 @@ export default function TryOnStudio() {
                         input.onchange = (ev) => handleFiles((ev.target as HTMLInputElement).files, 'anchors', instIdx);
                         input.click();
                       }}
-                      className="absolute bottom-2 right-2 bg-secondary text-secondary-foreground hover:bg-secondary/80 p-2 rounded-full shadow-md z-10 transition hover:scale-105"
+                      className="absolute bottom-2 right-2 bg-primary text-primary-foreground hover:bg-primary/90 p-2 rounded-full shadow-md z-10 transition hover:scale-105"
                       title="Tomar foto con la cámara"
                     >
                       <Camera size={14} />
@@ -719,7 +740,7 @@ export default function TryOnStudio() {
                         input.onchange = (ev) => handleFiles((ev.target as HTMLInputElement).files, 'models', instIdx);
                         input.click();
                       }}
-                      className="absolute bottom-2 right-2 bg-secondary text-secondary-foreground hover:bg-secondary/80 p-2 rounded-full shadow-md z-10 transition hover:scale-105"
+                      className="absolute bottom-2 right-2 bg-primary text-primary-foreground hover:bg-primary/90 p-2 rounded-full shadow-md z-10 transition hover:scale-105"
                       title="Tomar foto con la cámara"
                     >
                       <Camera size={14} />
