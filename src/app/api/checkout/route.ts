@@ -17,7 +17,7 @@ export async function POST(request: Request) {
 
     const origin = request.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'https://virtual-try-on-ashen.vercel.app';
 
-    const amount = 1000; // $1.000 ARS de prueba
+    const amount = 100; // $100 ARS de prueba
     const creditsToAssign = 100; // 100 imágenes
 
     // Generar la preferencia de Mercado Pago

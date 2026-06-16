@@ -31,12 +31,12 @@ export async function POST(request: Request) {
         const userId = paymentData.external_reference; // Recuperar el ID del usuario
         const transactionAmount = paymentData.transaction_amount;
 
-        // Regla de pruebas: $1.000 ARS = 100 créditos (1 crédito por cada $10 ARS)
+        // Regla de pruebas: $100 ARS = 100 créditos (1 crédito por cada $1 ARS)
         let creditsToAdd = 0;
-        if (transactionAmount >= 1000) {
+        if (transactionAmount >= 100) {
           creditsToAdd = 100;
         } else {
-          creditsToAdd = Math.floor(transactionAmount / 10);
+          creditsToAdd = Math.floor(transactionAmount);
         }
 
         if (userId && creditsToAdd > 0) {
