@@ -68,9 +68,9 @@ import { createClient } from '@/lib/supabase/client';
 import { User } from '@supabase/supabase-js';
 
 export default function TryOnStudio() {
-  const [apiKey, setApiKey] = useState('');
-  const [models, setModels] = useState<{name: string, displayName: string}[]>([]);
-  const [selectedModel, setSelectedModel] = useState('');
+  const apiKey = '';
+  const selectedModel = 'gemini-1.5-pro';
+  const models: {name: string, displayName: string}[] = [];
   const [promptLang, setPromptLang] = useState<'es' | 'en'>('es');
   const [prompt, setPrompt] = useState(DEFAULT_PROMPT_ES);
   
@@ -108,29 +108,7 @@ export default function TryOnStudio() {
   const supabase = useMemo(() => createClient(), []);
   const [userId, setUserId] = useState<string | null>(null);
 
-  const fetchServerModels = async (preselect?: string | null) => {
-    try {
-      const res = await fetch('/api/models');
-      if (res.ok) {
-        const data = await res.json();
-        setModels(data);
-        if (preselect && data.find((m: { name: string, displayName: string }) => m.name === preselect)) {
-          setSelectedModel(preselect);
-        } else if (data.length > 0) {
-          const ideal = data.find((m: { name: string }) => m.name.toLowerCase().includes('nano-banana-pro')) || 
-                        data.find((m: { name: string }) => m.name.toLowerCase().includes('banana')) || 
-                        data.find((m: { name: string }) => m.name.includes('gemini-1.5-pro')) || 
-                        data.find((m: { name: string }) => m.name.includes('gemini-1.5-flash')) || 
-                        data.find((m: { name: string }) => m.name.includes('gemini-1.5')) || 
-                        data.find((m: { name: string }) => m.name.includes('gemini-2.0')) ||
-                        data[0];
-          setSelectedModel(ideal.name);
-        }
-      }
-    } catch (err) {
-      console.error("Error loading server models", err);
-    }
-  };
+  const fetchServerModels = async () => {};
 
   const handleBuyCredits = async () => {
     if (!userId) {
@@ -282,21 +260,12 @@ export default function TryOnStudio() {
     // 1. Verificar sesión inicial de Supabase
     supabase.auth.getUser().then(({ data: { user } }) => {
       // Cargar configuraciones de localstorage para preferencias
-      const savedKey = localStorage.getItem('vto_apiKey') || '';
       const savedPrompt = localStorage.getItem('vto_prompt') || DEFAULT_PROMPT_ES;
-      const savedModel = localStorage.getItem('vto_selectedModel') || '';
       
-      if (savedKey) {
-        setApiKey(savedKey);
-        fetchModels(savedKey, savedModel);
-      } else {
-        fetchServerModels(savedModel);
-      }
       if (savedPrompt) {
         setPrompt(savedPrompt);
         setInstances(prev => prev.map(inst => ({ ...inst, prompt: savedPrompt })));
       }
-      if (savedModel) setSelectedModel(savedModel);
 
       if (user) {
         syncUserSession(user);
@@ -316,39 +285,11 @@ export default function TryOnStudio() {
   }, []);
 
   const saveSettings = async () => {
-    localStorage.setItem('vto_apiKey', apiKey);
     localStorage.setItem('vto_prompt', prompt);
-    localStorage.setItem('vto_selectedModel', selectedModel);
   };
 
-  const fetchModels = async (key: string, preselect?: string | null) => {
-    const res = await getAvailableModels(key);
-    if (res.success && res.models) {
-      setModels(res.models);
-      if (preselect && res.models.find(m => m.name === preselect)) {
-        setSelectedModel(preselect);
-      } else if (res.models.length > 0) {
-        const ideal = res.models.find(m => m.name.toLowerCase().includes('nano-banana-pro')) || 
-                      res.models.find(m => m.name.toLowerCase().includes('banana')) || 
-                      res.models.find(m => m.name.includes('gemini-1.5-pro')) || 
-                      res.models.find(m => m.name.includes('gemini-1.5-flash')) || 
-                      res.models.find(m => m.name.includes('gemini-1.5')) || 
-                      res.models.find(m => m.name.includes('gemini-2.0')) || 
-                      res.models[0];
-        setSelectedModel(ideal.name);
-      }
-    }
-  };
-
-  const handleKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const key = e.target.value;
-    setApiKey(key);
-    if (key.length > 30) {
-      fetchModels(key);
-    } else if (key.length === 0) {
-      fetchServerModels();
-    }
-  };
+  const fetchModels = async () => {};
+  const handleKeyChange = () => {};
 
   const getBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -442,14 +383,13 @@ export default function TryOnStudio() {
   const startProcessing = async () => {
     const totalImages = instances.reduce((acc, inst) => acc + inst.modelImages.length, 0);
 
-    if (!apiKey && !userId) {
+    if (!userId) {
       setShowAuthModal(true);
       return;
     }
-    if (!apiKey && credits < totalImages) {
-      return alert(`No tienes créditos suficientes para procesar el lote. Requiere ${totalImages} créditos, pero solo posees ${credits}. Por favor compra créditos o introduce tu API Key.`);
+    if (credits < totalImages) {
+      return alert(`No tienes créditos suficientes para procesar el lote. Requiere ${totalImages} créditos, pero solo posees ${credits}. Por favor compra créditos.`);
     }
-    if (!selectedModel) return alert('Selecciona un modelo');
     if (instances.some(inst => inst.anchorImages.length === 0 || inst.modelImages.length === 0)) {
       return alert('Faltan imágenes (ancla o modelo) en alguna instancia');
     }
@@ -553,61 +493,9 @@ export default function TryOnStudio() {
       </div>
 
       <div className="flex flex-col gap-8">
-        {/* Top Row: Settings */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Left Column: API Key and IA Model selector stacked */}
-          <div className="md:col-span-2 flex flex-col gap-4 justify-between">
-            <div className="relative">
-              <div className="flex items-center gap-2 mb-1">
-                <Label htmlFor="apiKey" className="mb-0 font-semibold text-sm">API Key Gemini (Tuya - Opcional)</Label>
-                <button onClick={() => setShowApiHelp(!showApiHelp)} className="text-muted-foreground hover:text-foreground">
-                  <Info size={14} />
-                </button>
-              </div>
-              <Input 
-                id="apiKey" 
-                type="password" 
-                placeholder="Usar mi propia clave (Gratis) o dejar vacío..." 
-                value={apiKey} 
-                onChange={handleKeyChange} 
-                className="mt-1"
-              />
-              {showApiHelp && (
-                <div className="absolute top-full left-0 mt-2 z-10 w-full bg-popover text-popover-foreground border shadow-lg rounded-lg p-4 text-sm">
-                  <div className="flex justify-between items-center mb-2">
-                    <h4 className="font-bold">Cómo obtener tu API Key</h4>
-                    <button onClick={() => setShowApiHelp(false)} className="text-muted-foreground hover:text-foreground">✕</button>
-                  </div>
-                  <ol className="list-decimal pl-4 space-y-1 text-muted-foreground">
-                    <li>Entra a <a href="https://aistudio.google.com/" target="_blank" className="text-foreground underline">Google AI Studio</a> y entra con tu Gmail.</li>
-                    <li>En el menú lateral, haz clic en <strong>🔑 Get API key</strong>.</li>
-                    <li>Pulsa el botón azul <strong>Create API key</strong>.</li>
-                    <li>Elige &quot;Create API key in new project&quot;.</li>
-                    <li>Copia el código que aparece (empieza por <i>AIza...</i>) y pégalo aquí.</li>
-                  </ol>
-                </div>
-              )}
-            </div>
-
-            <div>
-              <Label htmlFor="modelSelect" className="font-semibold text-sm">Modelo IA</Label>
-              <select 
-                id="modelSelect"
-                value={selectedModel}
-                onChange={e => setSelectedModel(e.target.value)}
-                disabled={models.length === 0}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background mt-1"
-              >
-                {models.length === 0 ? <option>Cargando modelos...</option> : null}
-                {models.map(m => (
-                  <option key={m.name} value={m.name}>{m.displayName}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Right Column: Credits card */}
-          <div className="flex flex-col justify-between p-4 rounded-xl border bg-secondary/20 backdrop-blur-sm relative overflow-hidden min-h-[160px]">
+        {/* Top Row: Credits Info & Purchase */}
+        <div className="flex justify-end w-full">
+          <div className="flex flex-col justify-between p-4 rounded-xl border bg-secondary/20 backdrop-blur-sm relative overflow-hidden min-h-[140px] w-full max-w-sm">
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-xs font-bold text-muted-foreground flex items-center gap-1">
                 <Coins size={14} className="text-amber-500 animate-pulse" /> Créditos Fit Lab
@@ -683,9 +571,9 @@ export default function TryOnStudio() {
         </div>
 
         {/* Instances Drop zones */}
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col">
           {instances.map((inst, instIdx) => (
-            <div key={inst.id} className="p-6 rounded-xl border bg-muted/10">
+            <div key={inst.id} className="py-8 border-b border-border first:pt-0 last:border-b-0">
               <div className="flex justify-between items-center mb-4">
                 <Input 
                   value={inst.title} 
