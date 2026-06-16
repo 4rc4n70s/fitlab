@@ -544,7 +544,7 @@ export default function TryOnStudio() {
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto flex flex-col gap-8 p-6 glass-panel rounded-2xl bg-card border shadow-xl">
+    <div className="w-full max-w-6xl mx-auto flex flex-col gap-8 py-6 px-4">
       <div className="text-center">
         <h1 className="text-4xl font-extrabold text-foreground mb-2">
           Fit Lab
