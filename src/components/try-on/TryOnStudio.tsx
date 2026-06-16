@@ -7,10 +7,23 @@ import { Label } from '@/components/ui/label';
 import { getAvailableModels, processTryOn, analyzeStylePromptFromImage } from '@/services/gemini';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import { Trash2, UploadCloud, Download, Image as ImageIcon, Sparkles, Info, X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RefreshCw, Eye, Coins, Camera } from 'lucide-react';
+import { Trash2, UploadCloud, Download, Image as ImageIcon, Sparkles, Info, X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RefreshCw, Eye, Coins, Camera, Settings } from 'lucide-react';
 
-const DEFAULT_PROMPT_ES = "Fotografía editorial de moda profesional de un/una modelo vistiendo [DESCRIPCIÓN DE LA PRENDA]. El conjunto presenta una silueta [FIT/CORTE, EJ: BALLOON O SLIM] con textura de [TIPO DE TELA]. El/la modelo está en una postura de [DESCRIPCIÓN DE LA POSE]. Manteniendo la iluminación exacta, paleta de colores y atmósfera de la imagen de referencia. Estilo de catálogo de alta gama, enfoque nítido en los detalles de la tela, caída realista de la tela, resolución 8k --ar 4:5";
-const DEFAULT_PROMPT_EN = "Professional fashion editorial photography of a model wearing [GARMENT DESCRIPTION]. The outfit features a [FIT, E.G.: BALLOON OR SLIM] silhouette with [FABRIC TYPE] texture. The model is in a [POSE DESCRIPTION]. Maintaining the exact lighting, color palette, and atmosphere of the reference image. High-end catalog style, sharp focus on fabric details, realistic fabric draping, 8k resolution --ar 4:5";
+interface VtoVariables {
+  prenda: string;
+  fit: string;
+  tela: string;
+  pose: string;
+  resolution: string;
+  keyWords: string;
+}
+
+const PRENDA_OPTIONS = ['Pantalon', 'Short', 'Remera', 'Top', 'Vestido', 'Campera', 'Buzo', 'Pollera', 'Camisa', 'Crop Top', 'Blazer', 'Enterito'];
+const FIT_OPTIONS = ['Slim', 'Oversize', 'Regular', 'Baggy', 'Loose', 'Skinny', 'Straight', 'Cropped', 'Tailored'];
+const TELA_OPTIONS = ['Algodon', 'Denim / Jean', 'Lino', 'Seda', 'Satin', 'Ribo / Morley', 'Lanilla', 'Cuero sintetico', 'Gabardina', 'Lycra', 'Encaje', 'Tul', 'Lurex'];
+const POSE_OPTIONS = ['Mirando a camara', 'De perfil', 'Caminando', 'Sentada', 'De espaldas mostrando detalle', 'Manos en los bolsillos', 'Ajustandose la prenda', 'Pose editorial / Alta costura', 'En movimiento / Saltando', 'Relajada / Descontracturada'];
+const RESOLUTION_OPTIONS = ['4:5', '1:1', '9:16', '16:9', '2:3'];
+const KEY_WORDS_OPTIONS = ['flama', 'canchero', 'fanbuloso', 'hot', 'diosa', 'iconico', 'mood', 'chill', 'total look', 'una bomba', 'clave', 'outfitazo', 'de locos', 'aesthetic'];
 
 const DEFAULT_CLOTHES = [
   '/clothes/pexels-cottonbro-7716960.jpg',
@@ -52,7 +65,7 @@ interface Instance {
   title: string;
   anchorImages: LocalImage[];
   modelImages: LocalImage[];
-  prompt: string;
+  variables?: Partial<VtoVariables>;
 }
 
 interface ResultItem {
@@ -67,17 +80,220 @@ interface ResultItem {
 import { createClient } from '@/lib/supabase/client';
 import { User } from '@supabase/supabase-js';
 
+interface VariableSelectorProps {
+  label: string;
+  options: string[];
+  value: string;
+  onChange: (newValue: string) => void;
+}
+
+function VariableSelector({ label, options, value, onChange }: VariableSelectorProps) {
+  const isCustom = value && !options.includes(value);
+  const customValue = isCustom ? value : '';
+
+  return (
+    <div className="flex flex-col gap-2 pb-4 border-b border-border last:pb-0 last:border-0 animate-in fade-in duration-200">
+      <div className="flex items-center justify-between">
+        <Label className="font-semibold text-xs text-foreground/80">{label}</Label>
+        {value && (
+          <button
+            type="button"
+            onClick={() => onChange('')}
+            className="text-[11px] text-destructive hover:text-red-500 flex items-center gap-1 font-medium transition"
+            title="Limpiar selección"
+          >
+            <X size={12} /> Limpiar (X)
+          </button>
+        )}
+      </div>
+      
+      <div className="flex flex-wrap gap-1 mt-0.5">
+        {options.map((opt) => {
+          const isSelected = value === opt;
+          return (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => onChange(isSelected ? '' : opt)}
+              className={`text-xs px-2.5 py-1 rounded-md border transition duration-150 font-medium ${
+                isSelected
+                  ? 'bg-primary border-primary text-primary-foreground shadow-sm'
+                  : 'bg-secondary/40 border-secondary-foreground/10 text-muted-foreground hover:bg-secondary/80 hover:text-foreground'
+              }`}
+            >
+              {opt}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="flex items-center gap-2 mt-0.5">
+        <span className="text-[11px] text-muted-foreground whitespace-nowrap">Otro:</span>
+        <Input
+          type="text"
+          placeholder="Escribe otra opción..."
+          value={customValue}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-7 text-xs px-2.5 py-0.5"
+        />
+      </div>
+    </div>
+  );
+}
+
+interface InstanceVariableSelectorProps {
+  label: string;
+  options: string[];
+  globalValue: string;
+  overrideValue: string | undefined;
+  onChange: (newValue: string | undefined) => void;
+}
+
+function InstanceVariableSelector({ label, options, globalValue, overrideValue, onChange }: InstanceVariableSelectorProps) {
+  const value = overrideValue !== undefined ? overrideValue : '';
+  const isOverridden = overrideValue !== undefined;
+  const activeValue = isOverridden ? overrideValue : globalValue;
+  
+  const isCustom = activeValue && !options.includes(activeValue);
+  const customValue = isCustom ? activeValue : '';
+
+  return (
+    <div className="flex flex-col gap-2 pb-4 border-b border-border/40 last:pb-0 last:border-0 animate-in fade-in duration-200">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Label className="font-semibold text-xs text-foreground/80">{label}</Label>
+          {isOverridden ? (
+            <span className="text-[9px] bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.2 rounded font-bold">
+              Personalizado
+            </span>
+          ) : (
+            <span className="text-[9px] bg-muted text-muted-foreground border border-muted-foreground/10 px-1.5 py-0.2 rounded font-medium">
+              Heredado: {globalValue || 'Vacío'}
+            </span>
+          )}
+        </div>
+        
+        {isOverridden && (
+          <button
+            type="button"
+            onClick={() => onChange(undefined)}
+            className="text-[11px] text-destructive hover:text-red-500 flex items-center gap-0.5 font-medium transition"
+            title="Usar valor global"
+          >
+            <RefreshCw size={10} /> Restablecer
+          </button>
+        )}
+      </div>
+      
+      <div className="flex flex-wrap gap-1 mt-0.5">
+        {options.map((opt) => {
+          const isSelected = activeValue === opt;
+          return (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => {
+                if (isSelected && isOverridden) {
+                  onChange(undefined);
+                } else {
+                  onChange(opt);
+                }
+              }}
+              className={`text-xs px-2 py-0.5 rounded-md border transition duration-150 font-medium ${
+                isSelected
+                  ? 'bg-primary border-primary text-primary-foreground shadow-sm'
+                  : 'bg-secondary/40 border-secondary-foreground/10 text-muted-foreground hover:bg-secondary/80 hover:text-foreground'
+              }`}
+            >
+              {opt}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="flex items-center gap-2 mt-0.5">
+        <span className="text-[11px] text-muted-foreground whitespace-nowrap">Otro:</span>
+        <Input
+          type="text"
+          placeholder={isOverridden ? "Escribe otra opción..." : `Usar global: ${customValue || 'Ninguno'}`}
+          value={isOverridden ? overrideValue : ''}
+          onChange={(e) => onChange(e.target.value || undefined)}
+          className="h-7 text-xs px-2 py-0.5"
+        />
+      </div>
+    </div>
+  );
+}
+
+function compilePrompt(globalVars: VtoVariables, instanceOverrides?: Partial<VtoVariables>): string {
+  const prenda = instanceOverrides?.prenda !== undefined ? instanceOverrides.prenda : globalVars.prenda;
+  const fit = instanceOverrides?.fit !== undefined ? instanceOverrides.fit : globalVars.fit;
+  const tela = instanceOverrides?.tela !== undefined ? instanceOverrides.tela : globalVars.tela;
+  const pose = instanceOverrides?.pose !== undefined ? instanceOverrides.pose : globalVars.pose;
+  const resolution = instanceOverrides?.resolution !== undefined ? instanceOverrides.resolution : globalVars.resolution;
+
+  let parts = ["Fotografía editorial de moda profesional de un/una modelo"];
+  
+  if (prenda) {
+    parts.push(`vistiendo ${prenda}`);
+  }
+  
+  parts[parts.length - 1] += ".";
+  
+  let secondSentence = [];
+  if (fit) {
+    secondSentence.push(`presenta una silueta ${fit}`);
+  }
+  if (tela) {
+    secondSentence.push(`con textura de ${tela}`);
+  }
+  
+  if (secondSentence.length > 0) {
+    parts.push("El conjunto " + secondSentence.join(" ") + ".");
+  }
+  
+  if (pose) {
+    parts.push(`El/la modelo está en una postura de ${pose}.`);
+  }
+  
+  parts.push("Manteniendo la iluminación exacta, paleta de colores y atmósfera de la imagen de referencia. Estilo de catálogo de alta gama, enfoque nítido en los detalles de la tela, caída realista de la tela, resolución 8k");
+  
+  const res = resolution || '4:5';
+  
+  return parts.join(" ") + ` --ar ${res}`;
+}
+
 export default function TryOnStudio() {
   const apiKey = '';
   const selectedModel = 'gemini-1.5-pro';
   const models: {name: string, displayName: string}[] = [];
-  const [promptLang, setPromptLang] = useState<'es' | 'en'>('es');
-  const [prompt, setPrompt] = useState(DEFAULT_PROMPT_ES);
+  const [globalVars, setGlobalVars] = useState<VtoVariables>({
+    prenda: '',
+    fit: '',
+    tela: '',
+    pose: '',
+    resolution: '4:5',
+    keyWords: ''
+  });
+  const [showGlobalVars, setShowGlobalVars] = useState(true);
+  const [openInstances, setOpenInstances] = useState<Record<string, boolean>>({});
+
+  const toggleInstanceAccordion = (id: string) => {
+    setOpenInstances(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const updateGlobalVars = (updater: (prev: VtoVariables) => VtoVariables) => {
+    setGlobalVars(prev => {
+      const next = updater(prev);
+      localStorage.setItem('vto_global_variables', JSON.stringify(next));
+      return next;
+    });
+  };
   
   const [showClothesGallery, setShowClothesGallery] = useState(false);
   const [showModelsGallery, setShowModelsGallery] = useState(false);
   
-  const [instances, setInstances] = useState<Instance[]>([{ id: `inst-${Date.now()}`, title: 'Instancia 1', anchorImages: [], modelImages: [], prompt: DEFAULT_PROMPT_ES }]);
+  const [instances, setInstances] = useState<Instance[]>([{ id: `inst-${Date.now()}`, title: 'Instancia 1', anchorImages: [], modelImages: [], variables: {} }]);
   
   const [results, setResults] = useState<ResultItem[]>([]);
   
@@ -261,11 +477,21 @@ export default function TryOnStudio() {
     // 1. Verificar sesión inicial de Supabase
     supabase.auth.getUser().then(({ data: { user } }) => {
       // Cargar configuraciones de localstorage para preferencias
-      const savedPrompt = localStorage.getItem('vto_prompt') || DEFAULT_PROMPT_ES;
-      
-      if (savedPrompt) {
-        setPrompt(savedPrompt);
-        setInstances(prev => prev.map(inst => ({ ...inst, prompt: savedPrompt })));
+      const savedVarsJson = localStorage.getItem('vto_global_variables');
+      if (savedVarsJson) {
+        try {
+          const parsed = JSON.parse(savedVarsJson);
+          setGlobalVars({
+            prenda: parsed.prenda || '',
+            fit: parsed.fit || '',
+            tela: parsed.tela || '',
+            pose: parsed.pose || '',
+            resolution: parsed.resolution || '4:5',
+            keyWords: parsed.keyWords || ''
+          });
+        } catch (e) {
+          console.error('Error al cargar variables de localStorage:', e);
+        }
       }
 
       if (user) {
@@ -286,7 +512,7 @@ export default function TryOnStudio() {
   }, []);
 
   const saveSettings = async () => {
-    localStorage.setItem('vto_prompt', prompt);
+    localStorage.setItem('vto_global_variables', JSON.stringify(globalVars));
   };
 
   const fetchModels = async () => {};
@@ -342,44 +568,7 @@ export default function TryOnStudio() {
     }
   };
 
-  const processStyleRef = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
 
-    if (!apiKey && !userId) {
-      setShowAuthModal(true);
-      return;
-    }
-    
-    setStatusText('Analizando estilo...');
-    setIsProcessing(true);
-    try {
-      const base64 = await getBase64(file);
-      let res;
-      if (apiKey) {
-        res = await analyzeStylePromptFromImage(apiKey, base64, file.type);
-      } else {
-        const apiRes = await fetch('/api/analyze-style', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ base64, mimeType: file.type })
-        });
-        res = await apiRes.json();
-      }
-
-      if (res.success && res.promptText) {
-        setInstances(prev => prev.map(inst => inst.prompt === prompt ? { ...inst, prompt: res.promptText! } : inst));
-        setPrompt(res.promptText);
-        saveSettings();
-      } else {
-        alert("Error analizando estilo: " + (res.error || "Intenta nuevamente."));
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Error al conectar para analizar estilo.");
-    }
-    setIsProcessing(false);
-  };
 
   const startProcessing = async () => {
     const totalImages = instances.reduce((acc, inst) => acc + inst.modelImages.length, 0);
@@ -419,7 +608,7 @@ export default function TryOnStudio() {
           const payload = {
             apiKey,
             modelName: selectedModel,
-            prompt: inst.prompt || prompt,
+            prompt: compilePrompt(globalVars, inst.variables),
             anchors: anchorsParts,
             modelPhoto: modelPart
           };
@@ -428,7 +617,7 @@ export default function TryOnStudio() {
           // Modo Créditos con API Key del Servidor
           const payload = {
             modelName: selectedModel,
-            prompt: inst.prompt || prompt,
+            prompt: compilePrompt(globalVars, inst.variables),
             anchors: anchorsParts,
             modelPhoto: modelPart
           };
@@ -545,37 +734,69 @@ export default function TryOnStudio() {
           </div>
         )}
 
-        {/* Middle Row: Global Prompt (Default for new instances) */}
-        <div className="flex flex-col gap-2">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-4">
-              <Label>AI Prompt</Label>
+        {/* Variables Globales Accordion */}
+        <div className="border border-border rounded-xl bg-card overflow-hidden shadow-sm transition-all duration-200 mb-6">
+          <button
+            type="button"
+            onClick={() => setShowGlobalVars(!showGlobalVars)}
+            className="w-full flex items-center justify-between p-4 bg-muted/20 hover:bg-muted/40 transition font-semibold text-base text-foreground border-b border-border"
+          >
+            <div className="flex items-center gap-2">
+              <Sparkles className="text-primary h-5 w-5 animate-pulse" />
+              <span>Variables Globales</span>
             </div>
-            <div className="flex gap-4">
-              <button onClick={() => styleRefInput.current?.click()} className="text-xs text-foreground hover:underline flex items-center gap-1">
-                <Sparkles size={12}/> Estilo desde Foto
-              </button>
-              <input type="file" accept="image/*" hidden ref={styleRefInput} onChange={processStyleRef} />
-              <button onClick={() => {
-                const newPrompt = promptLang === 'es' ? DEFAULT_PROMPT_ES : DEFAULT_PROMPT_EN;
-                setInstances(prev => prev.map(inst => inst.prompt === prompt ? { ...inst, prompt: newPrompt } : inst));
-                setPrompt(newPrompt); 
-                saveSettings();
-              }} className="text-xs text-muted-foreground hover:underline">
-                Restablecer
-              </button>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground font-normal">
+                {showGlobalVars ? 'Ocultar' : 'Mostrar'}
+              </span>
+              <ChevronRight
+                className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${
+                  showGlobalVars ? 'rotate-90' : ''
+                }`}
+              />
             </div>
-          </div>
-          <textarea 
-            className="flex-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm min-h-[180px]"
-            value={prompt}
-            onChange={e => {
-              const newPrompt = e.target.value;
-              setInstances(prev => prev.map(inst => inst.prompt === prompt ? { ...inst, prompt: newPrompt } : inst));
-              setPrompt(newPrompt);
-            }}
-            onBlur={saveSettings}
-          />
+          </button>
+
+          {showGlobalVars && (
+            <div className="p-4 flex flex-col gap-5 bg-card">
+              <VariableSelector
+                label="Descripción de la Prenda"
+                options={PRENDA_OPTIONS}
+                value={globalVars.prenda}
+                onChange={(val) => updateGlobalVars(prev => ({ ...prev, prenda: val }))}
+              />
+              <VariableSelector
+                label="Fit/Corte"
+                options={FIT_OPTIONS}
+                value={globalVars.fit}
+                onChange={(val) => updateGlobalVars(prev => ({ ...prev, fit: val }))}
+              />
+              <VariableSelector
+                label="Tipo de Tela"
+                options={TELA_OPTIONS}
+                value={globalVars.tela}
+                onChange={(val) => updateGlobalVars(prev => ({ ...prev, tela: val }))}
+              />
+              <VariableSelector
+                label="Descripción de la Pose"
+                options={POSE_OPTIONS}
+                value={globalVars.pose}
+                onChange={(val) => updateGlobalVars(prev => ({ ...prev, pose: val }))}
+              />
+              <VariableSelector
+                label="Resolución"
+                options={RESOLUTION_OPTIONS}
+                value={globalVars.resolution}
+                onChange={(val) => updateGlobalVars(prev => ({ ...prev, resolution: val }))}
+              />
+              <VariableSelector
+                label="Key Words (Palabras Clave)"
+                options={KEY_WORDS_OPTIONS}
+                value={globalVars.keyWords}
+                onChange={(val) => updateGlobalVars(prev => ({ ...prev, keyWords: val }))}
+              />
+            </div>
+          )}
         </div>
 
         {/* Instances Drop zones */}
@@ -595,14 +816,104 @@ export default function TryOnStudio() {
                   </Button>
                 )}
               </div>
-              <div className="mb-4">
-                <Label>Prompt Personalizado (Opcional)</Label>
-                <textarea 
-                  className="w-full mt-2 rounded-md border border-input bg-background p-3 text-sm min-h-[100px]"
-                  value={inst.prompt}
-                  onChange={e => setInstances(prev => { const copy = [...prev]; copy[instIdx].prompt = e.target.value; return copy; })}
-                  placeholder="Si lo dejas vacío se usará el prompt global..."
-                />
+              {/* Variables de Instancia Accordion */}
+              <div className="mb-6 border border-border/85 rounded-lg overflow-hidden bg-muted/5">
+                <button
+                  type="button"
+                  onClick={() => toggleInstanceAccordion(inst.id)}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-muted/10 hover:bg-muted/20 transition text-sm font-semibold text-foreground border-b border-border/60"
+                >
+                  <div className="flex items-center gap-2">
+                    <Settings className="h-4 w-4 text-muted-foreground" />
+                    <span>Variables de Instancia</span>
+                    {inst.variables && Object.keys(inst.variables).some(k => inst.variables?.[k as keyof VtoVariables] !== undefined) && (
+                      <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold animate-pulse">
+                        Personalizado
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs text-muted-foreground font-normal">
+                      {openInstances[inst.id] ? 'Cerrar' : 'Configurar'}
+                    </span>
+                    <ChevronRight
+                      className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${
+                        openInstances[inst.id] ? 'rotate-90' : ''
+                      }`}
+                    />
+                  </div>
+                </button>
+
+                {openInstances[inst.id] && (
+                  <div className="p-4 flex flex-col gap-5 bg-background/50">
+                    <InstanceVariableSelector
+                      label="Descripción de la Prenda"
+                      options={PRENDA_OPTIONS}
+                      globalValue={globalVars.prenda}
+                      overrideValue={inst.variables?.prenda}
+                      onChange={(val) => setInstances(prev => {
+                        const copy = [...prev];
+                        copy[instIdx].variables = { ...copy[instIdx].variables, prenda: val };
+                        return copy;
+                      })}
+                    />
+                    <InstanceVariableSelector
+                      label="Fit/Corte"
+                      options={FIT_OPTIONS}
+                      globalValue={globalVars.fit}
+                      overrideValue={inst.variables?.fit}
+                      onChange={(val) => setInstances(prev => {
+                        const copy = [...prev];
+                        copy[instIdx].variables = { ...copy[instIdx].variables, fit: val };
+                        return copy;
+                      })}
+                    />
+                    <InstanceVariableSelector
+                      label="Tipo de Tela"
+                      options={TELA_OPTIONS}
+                      globalValue={globalVars.tela}
+                      overrideValue={inst.variables?.tela}
+                      onChange={(val) => setInstances(prev => {
+                        const copy = [...prev];
+                        copy[instIdx].variables = { ...copy[instIdx].variables, tela: val };
+                        return copy;
+                      })}
+                    />
+                    <InstanceVariableSelector
+                      label="Descripción de la Pose"
+                      options={POSE_OPTIONS}
+                      globalValue={globalVars.pose}
+                      overrideValue={inst.variables?.pose}
+                      onChange={(val) => setInstances(prev => {
+                        const copy = [...prev];
+                        copy[instIdx].variables = { ...copy[instIdx].variables, pose: val };
+                        return copy;
+                      })}
+                    />
+                    <InstanceVariableSelector
+                      label="Resolución"
+                      options={RESOLUTION_OPTIONS}
+                      globalValue={globalVars.resolution}
+                      overrideValue={inst.variables?.resolution}
+                      onChange={(val) => setInstances(prev => {
+                        const copy = [...prev];
+                        copy[instIdx].variables = { ...copy[instIdx].variables, resolution: val };
+                        return copy;
+                      })}
+                    />
+                    <InstanceVariableSelector
+                      label="Key Words (Palabras Clave)"
+                      options={KEY_WORDS_OPTIONS}
+                      globalValue={globalVars.keyWords}
+                      overrideValue={inst.variables?.keyWords}
+                      onChange={(val) => setInstances(prev => {
+                        const copy = [...prev];
+                        copy[instIdx].variables = { ...copy[instIdx].variables, keyWords: val };
+                        return copy;
+                      })}
+                    />
+                  </div>
+                )}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-2">
                 {/* Anchors */}
@@ -773,7 +1084,7 @@ export default function TryOnStudio() {
           ))}
         </div>
         
-        <Button onClick={() => setInstances(prev => [...prev, { id: `inst-${Date.now()}`, title: `Instancia ${prev.length + 1}`, anchorImages: [], modelImages: [], prompt }])} variant="outline" className="w-full border-dashed py-8 mt-2">
+        <Button onClick={() => setInstances(prev => [...prev, { id: `inst-${Date.now()}`, title: `Instancia ${prev.length + 1}`, anchorImages: [], modelImages: [], variables: {} }])} variant="outline" className="w-full border-dashed py-8 mt-2">
           + Agregar Instancia
         </Button>
       </div>
@@ -905,11 +1216,6 @@ export default function TryOnStudio() {
                      <Button variant={reprocessSource === 'original' ? 'default' : 'outline'} onClick={() => setReprocessSource('original')} className="flex-1">Original</Button>
                      <Button variant={reprocessSource === 'generated' ? 'default' : 'outline'} onClick={() => setReprocessSource('generated')} className="flex-1">Generada</Button>
                    </div>
-                 </div>
-
-                 <div>
-                   <Label>Modificar Prompt</Label>
-                   <textarea className="w-full mt-2 rounded-md border border-input bg-background p-3 text-sm min-h-[120px]" value={prompt} onChange={e => setPrompt(e.target.value)} />
                  </div>
 
                  <div className="flex gap-4 mt-2">
