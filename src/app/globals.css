@@ -1,0 +1,93 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer base {
+  :root {
+    --background: #f8f9fa;
+    --foreground: #264653;
+    
+    --card: #ffffff;
+    --card-foreground: #264653;
+    
+    --popover: #ffffff;
+    --popover-foreground: #264653;
+    
+    --primary: #2a9d8f;            /* Verde Tetsu (Teal) */
+    --primary-foreground: #ffffff;
+    
+    --secondary: #f4a261;          /* Naranja Tetsu (Soft Terracotta) */
+    --secondary-foreground: #264653;
+    
+    --muted: #f4a261/10;
+    --muted-foreground: #264653/70;
+    
+    --accent: #e9c46a;             /* Ocre Tetsu (Gold Accent) */
+    --accent-foreground: #264653;
+    
+    --destructive: #e76f51;        /* Coral Tetsu (Alerta/Borrado) */
+    --destructive-foreground: #ffffff;
+    
+    --border: #e2e8f0;
+    --input: #e2e8f0;
+    --ring: #2a9d8f;
+    --radius: 0.625rem;
+  }
+
+  .dark {
+    --background: #121212;
+    --foreground: #f1f5f9;
+    
+    --card: #1c1c1c;
+    --card-foreground: #f1f5f9;
+    
+    --popover: #1c1c1c;
+    --popover-foreground: #f1f5f9;
+    
+    --primary: #2a9d8f;
+    --primary-foreground: #121212;
+    
+    --secondary: #f4a261;
+    --secondary-foreground: #121212;
+    
+    --muted: #262626;
+    --muted-foreground: #94a3b8;
+    
+    --accent: #e9c46a;
+    --accent-foreground: #121212;
+    
+    --destructive: #e76f51;
+    --border: #262626;
+    --input: #262626;
+    --ring: #2a9d8f;
+  }
+
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Ocultar barras de scroll globalmente */
+::-webkit-scrollbar {
+  display: none;
+}
+* {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* Disable scroll anchoring to avoid jumps on dynamic DOM edits */
+.viewer-container,
+#reader-rendering-area,
+#reader-rendering-area * {
+  overflow-anchor: none !important;
+}
