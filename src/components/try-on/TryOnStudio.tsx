@@ -550,19 +550,6 @@ export default function TryOnStudio() {
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
               <Label>AI Prompt</Label>
-              <button 
-                onClick={() => {
-                  const newLang = promptLang === 'es' ? 'en' : 'es';
-                  const newPrompt = newLang === 'es' ? DEFAULT_PROMPT_ES : DEFAULT_PROMPT_EN;
-                  setPromptLang(newLang);
-                  setInstances(prev => prev.map(inst => inst.prompt === prompt ? { ...inst, prompt: newPrompt } : inst));
-                  setPrompt(newPrompt);
-                  saveSettings();
-                }}
-                className="text-xs font-semibold px-2 py-1 bg-primary/10 rounded text-primary hover:bg-primary/20 border border-primary/10 transition"
-              >
-                {promptLang === 'es' ? 'ES 🇪🇸' : 'EN 🇺🇸'}
-              </button>
             </div>
             <div className="flex gap-4">
               <button onClick={() => styleRefInput.current?.click()} className="text-xs text-foreground hover:underline flex items-center gap-1">
