@@ -19,24 +19,24 @@
     --popover: #ffffff;
     --popover-foreground: #264653;
     
-    --primary: #2a9d8f;            /* Verde Tetsu (Teal) */
+    --primary: #4f46e5;            /* Indigo Tetsu / FitLab Primary */
     --primary-foreground: #ffffff;
     
-    --secondary: #f4a261;          /* Naranja Tetsu (Soft Terracotta) */
+    --secondary: #f4a261;          /* Naranja Tetsu */
     --secondary-foreground: #264653;
     
     --muted: #f4a261/10;
     --muted-foreground: #264653/70;
     
-    --accent: #e9c46a;             /* Ocre Tetsu (Gold Accent) */
+    --accent: #e9c46a;             /* Ocre Tetsu */
     --accent-foreground: #264653;
     
-    --destructive: #e76f51;        /* Coral Tetsu (Alerta/Borrado) */
+    --destructive: #e76f51;        /* Coral Tetsu */
     --destructive-foreground: #ffffff;
     
     --border: #e2e8f0;
     --input: #e2e8f0;
-    --ring: #2a9d8f;
+    --ring: #4f46e5;
     --radius: 0.625rem;
   }
 
@@ -50,7 +50,7 @@
     --popover: #1c1c1c;
     --popover-foreground: #f1f5f9;
     
-    --primary: #2a9d8f;
+    --primary: #818cf8;            /* Indigo Claro en Modo Oscuro */
     --primary-foreground: #121212;
     
     --secondary: #f4a261;
