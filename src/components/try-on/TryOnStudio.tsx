@@ -277,6 +277,7 @@ export default function TryOnStudio() {
   });
   const [showGlobalVars, setShowGlobalVars] = useState(true);
   const [openInstances, setOpenInstances] = useState<Record<string, boolean>>({});
+  const [isUnlimited, setIsUnlimited] = useState(false);
 
   const toggleInstanceAccordion = (id: string) => {
     setOpenInstances(prev => ({ ...prev, [id]: !prev[id] }));
@@ -401,11 +402,13 @@ export default function TryOnStudio() {
     const syncUserSession = async (user: User | null) => {
       if (!user) {
         setUserId(null);
+        setIsUnlimited(false);
         setCredits(0);
         return;
       }
 
       setUserId(user.id);
+      setIsUnlimited(user.email === 'zanardi.ag@gmail.com');
       
       // Obtener o crear perfil
       let { data: profile } = await supabase
@@ -577,7 +580,7 @@ export default function TryOnStudio() {
       setShowAuthModal(true);
       return;
     }
-    if (credits < totalImages) {
+    if (credits < totalImages && !isUnlimited) {
       return alert(`No tienes créditos suficientes para procesar el lote. Requiere ${totalImages} créditos, pero solo posees ${credits}. Por favor compra créditos.`);
     }
     if (instances.some(inst => inst.anchorImages.length === 0 || inst.modelImages.length === 0)) {
@@ -701,7 +704,7 @@ export default function TryOnStudio() {
               <div>
                 <h3 className="text-sm font-bold text-foreground">Créditos de Fit Lab</h3>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-xl font-extrabold text-primary">{credits}</span>
+                  <span className="text-xl font-extrabold text-primary">{isUnlimited ? '∞ (Ilimitados)' : credits}</span>
                   <span className="text-xs text-muted-foreground">fotos disponibles para generar lookbooks</span>
                 </div>
               </div>

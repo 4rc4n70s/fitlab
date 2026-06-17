@@ -16,19 +16,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'La variable de entorno GEMINI_API_KEY no está configurada en el servidor de Vercel. Por favor, configúrala en Vercel.' }, { status: 500 });
     }
 
-    // 1. Obtener perfil para verificar saldo
-    const { data: profile, error: profileErr } = await supabase
-      .from('profiles')
-      .select('credits')
-      .eq('id', user.id)
-      .single();
+    const isUnlimited = user.email === 'zanardi.ag@gmail.com';
 
-    if (profileErr || !profile) {
-      return NextResponse.json({ error: 'No se pudo obtener el saldo de créditos' }, { status: 500 });
-    }
+    if (!isUnlimited) {
+      // 1. Obtener perfil para verificar saldo
+      const { data: profile, error: profileErr } = await supabase
+        .from('profiles')
+        .select('credits')
+        .eq('id', user.id)
+        .single();
 
-    if (profile.credits < 1) {
-      return NextResponse.json({ error: 'Créditos insuficientes. Por favor compra créditos o introduce tu API Key.' }, { status: 403 });
+      if (profileErr || !profile) {
+        return NextResponse.json({ error: 'No se pudo obtener el saldo de créditos' }, { status: 500 });
+      }
+
+      if (profile.credits < 1) {
+        return NextResponse.json({ error: 'Créditos insuficientes. Por favor compra créditos o introduce tu API Key.' }, { status: 403 });
+      }
     }
 
     // 2. Leer payload del cuerpo del request
@@ -50,13 +54,15 @@ export async function POST(request: Request) {
 
     if (geminiRes.success && geminiRes.base64 && geminiRes.mimeType) {
       // 4. Si la generación fue exitosa, descontamos 1 crédito de forma segura en Supabase
-      const { data: successDec, error: decErr } = await supabase.rpc('decrement_user_credits', {
-        user_id: user.id,
-        amount_to_subtract: 1
-      });
+      if (!isUnlimited) {
+        const { data: successDec, error: decErr } = await supabase.rpc('decrement_user_credits', {
+          user_id: user.id,
+          amount_to_subtract: 1
+        });
 
-      if (decErr || successDec === false) {
-        return NextResponse.json({ error: 'Error al descontar los créditos o saldo insuficiente.' }, { status: 500 });
+        if (decErr || successDec === false) {
+          return NextResponse.json({ error: 'Error al descontar los créditos o saldo insuficiente.' }, { status: 500 });
+        }
       }
 
       return NextResponse.json({
