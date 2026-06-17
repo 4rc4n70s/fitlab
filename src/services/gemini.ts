@@ -41,7 +41,13 @@ export async function getAvailableModels(apiKey: string): Promise<{ success: boo
         .map((m: any) => {
           const rawName = m.name.split('/').pop() || '';
           let displayName = m.displayName || rawName;
-          if (rawName.includes('gemini-1.5-pro')) {
+          if (rawName.includes('gemini-3-pro-image')) {
+            displayName = 'Nano Banana Pro (Gemini 3 Pro)';
+          } else if (rawName.includes('gemini-2.5-flash-image')) {
+            displayName = 'Nano Banana (Gemini 2.5 Flash)';
+          } else if (rawName.includes('gemini-3.1-flash-image')) {
+            displayName = 'Nano Banana 2 (Gemini 3.1 Flash)';
+          } else if (rawName.includes('gemini-1.5-pro')) {
             displayName = 'Nano Banana Pro (Gemini 1.5 Pro)';
           } else if (rawName.includes('gemini-1.5-flash')) {
             displayName = 'Nano Bana (Gemini 1.5 Flash)';

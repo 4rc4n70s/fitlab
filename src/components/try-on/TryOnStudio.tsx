@@ -347,7 +347,7 @@ function compilePrompt(globalVars: VtoVariables, instanceOverrides?: Partial<Vto
 
 export default function TryOnStudio() {
   const apiKey = '';
-  const selectedModel = 'gemini-1.5-pro';
+  const selectedModel = 'gemini-3-pro-image';
   const models: {name: string, displayName: string}[] = [];
   const [globalVars, setGlobalVars] = useState<VtoVariables>({
     prenda: '',
