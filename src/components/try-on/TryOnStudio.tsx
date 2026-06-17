@@ -85,10 +85,39 @@ interface VariableSelectorProps {
   options: string[];
   value: string;
   onChange: (newValue: string) => void;
+  multiSelect?: boolean;
 }
 
-function VariableSelector({ label, options, value, onChange }: VariableSelectorProps) {
-  const isCustom = value && !options.includes(value);
+function VariableSelector({ label, options, value, onChange, multiSelect = false }: VariableSelectorProps) {
+  const selectedList = useMemo(() => {
+    if (!multiSelect) return [];
+    return value ? value.split(',').map(s => s.trim()).filter(Boolean) : [];
+  }, [value, multiSelect]);
+
+  const isSelected = (opt: string) => {
+    if (multiSelect) {
+      return selectedList.includes(opt);
+    }
+    return value === opt;
+  };
+
+  const handleSelect = (opt: string) => {
+    if (multiSelect) {
+      const newList = [...selectedList];
+      const index = newList.indexOf(opt);
+      if (index > -1) {
+        newList.splice(index, 1);
+      } else {
+        newList.push(opt);
+      }
+      onChange(newList.join(', '));
+    } else {
+      const isCurrentlySelected = value === opt;
+      onChange(isCurrentlySelected ? '' : opt);
+    }
+  };
+
+  const isCustom = !multiSelect && value && !options.includes(value);
   const customValue = isCustom ? value : '';
 
   return (
@@ -109,14 +138,14 @@ function VariableSelector({ label, options, value, onChange }: VariableSelectorP
       
       <div className="flex flex-wrap gap-1 mt-0.5">
         {options.map((opt) => {
-          const isSelected = value === opt;
+          const active = isSelected(opt);
           return (
             <button
               key={opt}
               type="button"
-              onClick={() => onChange(isSelected ? '' : opt)}
+              onClick={() => handleSelect(opt)}
               className={`text-xs px-2.5 py-1 rounded-md border transition duration-150 font-medium ${
-                isSelected
+                active
                   ? 'bg-primary border-primary text-primary-foreground shadow-sm'
                   : 'bg-secondary/40 border-secondary-foreground/10 text-muted-foreground hover:bg-secondary/80 hover:text-foreground'
               }`}
@@ -127,16 +156,29 @@ function VariableSelector({ label, options, value, onChange }: VariableSelectorP
         })}
       </div>
 
-      <div className="flex items-center gap-2 mt-0.5">
-        <span className="text-[11px] text-muted-foreground whitespace-nowrap">Otro:</span>
-        <Input
-          type="text"
-          placeholder="Escribe otra opción..."
-          value={customValue}
-          onChange={(e) => onChange(e.target.value)}
-          className="h-7 text-xs px-2.5 py-0.5"
-        />
-      </div>
+      {!multiSelect ? (
+        <div className="flex items-center gap-2 mt-0.5">
+          <span className="text-[11px] text-muted-foreground whitespace-nowrap">Otro:</span>
+          <Input
+            type="text"
+            placeholder="Escribe otra opción..."
+            value={customValue}
+            onChange={(e) => onChange(e.target.value)}
+            className="h-7 text-xs px-2.5 py-0.5"
+          />
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 mt-0.5">
+          <span className="text-[11px] text-muted-foreground whitespace-nowrap">Personalizadas / Otras:</span>
+          <Input
+            type="text"
+            placeholder="Escribe palabras separadas por comas..."
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="h-7 text-xs px-2.5 py-0.5"
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -147,14 +189,47 @@ interface InstanceVariableSelectorProps {
   globalValue: string;
   overrideValue: string | undefined;
   onChange: (newValue: string | undefined) => void;
+  multiSelect?: boolean;
 }
 
-function InstanceVariableSelector({ label, options, globalValue, overrideValue, onChange }: InstanceVariableSelectorProps) {
+function InstanceVariableSelector({ label, options, globalValue, overrideValue, onChange, multiSelect = false }: InstanceVariableSelectorProps) {
   const value = overrideValue !== undefined ? overrideValue : '';
   const isOverridden = overrideValue !== undefined;
   const activeValue = isOverridden ? overrideValue : globalValue;
   
-  const isCustom = activeValue && !options.includes(activeValue);
+  const selectedList = useMemo(() => {
+    if (!multiSelect) return [];
+    return activeValue ? activeValue.split(',').map(s => s.trim()).filter(Boolean) : [];
+  }, [activeValue, multiSelect]);
+
+  const isSelected = (opt: string) => {
+    if (multiSelect) {
+      return selectedList.includes(opt);
+    }
+    return activeValue === opt;
+  };
+
+  const handleSelect = (opt: string) => {
+    if (multiSelect) {
+      const newList = [...selectedList];
+      const index = newList.indexOf(opt);
+      if (index > -1) {
+        newList.splice(index, 1);
+      } else {
+        newList.push(opt);
+      }
+      onChange(newList.join(', '));
+    } else {
+      const isCurrentlySelected = activeValue === opt;
+      if (isCurrentlySelected && isOverridden) {
+        onChange(undefined);
+      } else {
+        onChange(opt);
+      }
+    }
+  };
+
+  const isCustom = !multiSelect && activeValue && !options.includes(activeValue);
   const customValue = isCustom ? activeValue : '';
 
   return (
@@ -187,20 +262,14 @@ function InstanceVariableSelector({ label, options, globalValue, overrideValue, 
       
       <div className="flex flex-wrap gap-1 mt-0.5">
         {options.map((opt) => {
-          const isSelected = activeValue === opt;
+          const active = isSelected(opt);
           return (
             <button
               key={opt}
               type="button"
-              onClick={() => {
-                if (isSelected && isOverridden) {
-                  onChange(undefined);
-                } else {
-                  onChange(opt);
-                }
-              }}
+              onClick={() => handleSelect(opt)}
               className={`text-xs px-2 py-0.5 rounded-md border transition duration-150 font-medium ${
-                isSelected
+                active
                   ? 'bg-primary border-primary text-primary-foreground shadow-sm'
                   : 'bg-secondary/40 border-secondary-foreground/10 text-muted-foreground hover:bg-secondary/80 hover:text-foreground'
               }`}
@@ -211,16 +280,29 @@ function InstanceVariableSelector({ label, options, globalValue, overrideValue, 
         })}
       </div>
 
-      <div className="flex items-center gap-2 mt-0.5">
-        <span className="text-[11px] text-muted-foreground whitespace-nowrap">Otro:</span>
-        <Input
-          type="text"
-          placeholder={isOverridden ? "Escribe otra opción..." : `Usar global: ${customValue || 'Ninguno'}`}
-          value={isOverridden ? overrideValue : ''}
-          onChange={(e) => onChange(e.target.value || undefined)}
-          className="h-7 text-xs px-2 py-0.5"
-        />
-      </div>
+      {!multiSelect ? (
+        <div className="flex items-center gap-2 mt-0.5">
+          <span className="text-[11px] text-muted-foreground whitespace-nowrap">Otro:</span>
+          <Input
+            type="text"
+            placeholder={isOverridden ? "Escribe otra opción..." : `Usar global: ${customValue || 'Ninguno'}`}
+            value={isOverridden ? overrideValue : ''}
+            onChange={(e) => onChange(e.target.value || undefined)}
+            className="h-7 text-xs px-2 py-0.5"
+          />
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 mt-0.5">
+          <span className="text-[11px] text-muted-foreground whitespace-nowrap">Personalizadas / Otras:</span>
+          <Input
+            type="text"
+            placeholder={isOverridden ? "Escribe palabras separadas por comas..." : `Usar global: ${globalValue || 'Ninguno'}`}
+            value={isOverridden ? overrideValue : ''}
+            onChange={(e) => onChange(e.target.value || undefined)}
+            className="h-7 text-xs px-2 py-0.5"
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -797,6 +879,7 @@ export default function TryOnStudio() {
                 options={KEY_WORDS_OPTIONS}
                 value={globalVars.keyWords}
                 onChange={(val) => updateGlobalVars(prev => ({ ...prev, keyWords: val }))}
+                multiSelect={true}
               />
             </div>
           )}
@@ -914,6 +997,7 @@ export default function TryOnStudio() {
                         copy[instIdx].variables = { ...copy[instIdx].variables, keyWords: val };
                         return copy;
                       })}
+                      multiSelect={true}
                     />
                   </div>
                 )}
