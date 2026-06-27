@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { Save, RefreshCw, Upload, Image as ImageIcon, X, Sparkles, Trash2 } from 'lucide-react'
+import { processVirtualTryOn } from '@/actions/gemini'
 
 const ASPECT_RATIOS = [
   { label: '1:1', icon: 'Square' },
@@ -17,17 +18,31 @@ export default function GeneratorPage() {
   const [showGenerateModal, setShowGenerateModal] = useState(false)
   const [showPromptsModal, setShowPromptsModal] = useState(false)
   const [savedPrompts, setSavedPrompts] = useState<string[]>([])
+  const [isGenerating, setIsGenerating] = useState(false)
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
+    setIsGenerating(true)
+    
+    // Hardcoded demo images to test the API until library selection is fully wired
+    const modelUrl = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&q=80&w=400'
+    const clothesUrl = 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&q=80&w=400'
+    const fallbackPrompt = "Studio lighting, high contrast, clean background"
+    
+    const response = await processVirtualTryOn(masterPrompt || fallbackPrompt, modelUrl, [clothesUrl])
+
     const newCollection = {
       id: `batch-${Math.floor(1000 + Math.random() * 9000)}`,
       date: new Date().toISOString(),
-      prompt: masterPrompt || "Studio lighting, high contrast, clean background",
-      clothes: ['/placeholder-clothes-1.jpg'],
+      prompt: masterPrompt || fallbackPrompt,
+      clothes: [clothesUrl],
       generations: [
-        { id: `gen-${Math.floor(Math.random() * 10000)}`, status: 'success', date: new Date().toISOString(), image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&q=80&w=400' },
-        { id: `gen-${Math.floor(Math.random() * 10000)}`, status: 'error', date: new Date().toISOString(), errorMsg: 'Failed to process model mask' },
-        { id: `gen-${Math.floor(Math.random() * 10000)}`, status: 'success', date: new Date().toISOString(), image: 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&q=80&w=400' }
+        { 
+          id: `gen-${Math.floor(Math.random() * 10000)}`, 
+          status: response.success ? 'success' : 'error', 
+          date: new Date().toISOString(), 
+          image: response.success ? `data:${response.mimeType};base64,${response.base64}` : undefined,
+          errorMsg: response.error
+        }
       ]
     }
 
@@ -38,6 +53,7 @@ export default function GeneratorPage() {
       console.error(e)
     }
 
+    setIsGenerating(false)
     setShowGenerateModal(false)
     window.location.href = '/main/collections'
   }
@@ -214,9 +230,10 @@ export default function GeneratorPage() {
             <div className="flex justify-end pt-2">
               <button 
                 onClick={handleGenerate}
-                className="w-full px-6 py-2.5 rounded-xl bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium"
+                disabled={isGenerating}
+                className="w-full px-6 py-2.5 rounded-xl bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium disabled:opacity-50"
               >
-                Ir a Collections
+                {isGenerating ? 'Procesando (Toma un momento)...' : 'Confirmar e Ir a Collections'}
               </button>
             </div>
           </div>
