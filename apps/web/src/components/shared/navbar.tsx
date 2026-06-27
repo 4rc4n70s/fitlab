@@ -84,7 +84,7 @@ export function Navbar() {
           <Menu className="w-5 h-5" />
         </button>
         <Link href="/" className="font-semibold text-lg tracking-tight text-foreground">
-          Tetsu App
+          Fitlab
         </Link>
       </div>
 
@@ -110,7 +110,9 @@ export function Navbar() {
                 <div className="px-4 py-3 border-b border-border mb-1">
                   <p className="text-sm font-medium text-foreground truncate">{user.email}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {language === 'es' ? `Créditos: ${credits}` : `Credits: ${credits}`}
+                    {language === 'es' 
+                      ? `Créditos: ${credits === 999999 ? 'Ilimitados' : credits}` 
+                      : `Credits: ${credits === 999999 ? 'Unlimited' : credits}`}
                   </p>
                 </div>
                 <Link 

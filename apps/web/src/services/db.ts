@@ -51,6 +51,12 @@ export const db = {
         .maybeSingle();
 
       if (error) throw error;
+      if (data && data.email === 'zanardi.ag@gmail.com') {
+        return {
+          ...data,
+          boilerplate_credits: 999999
+        };
+      }
       return data;
     },
 
@@ -116,6 +122,11 @@ export const db = {
      * Resta saldo de créditos de manera segura usando RPC con fallback directo
      */
     async decrementCredits(userId: string, amount: number, options?: { admin?: boolean }): Promise<void> {
+      const profile = await this.findUnique(userId, options);
+      if (profile?.email === 'zanardi.ag@gmail.com') {
+        return; // No decrement for unlimited credits user
+      }
+
       const client = getClient(options?.admin);
       
       try {
@@ -131,7 +142,6 @@ export const db = {
       }
 
       // Fallback directo: Obtener saldo actual, validar, restar y actualizar
-      const profile = await this.findUnique(userId, options);
       const currentCredits = profile?.boilerplate_credits || 0;
       if (currentCredits < amount) throw new Error('Saldo de créditos insuficiente.');
       await this.update(userId, { boilerplate_credits: currentCredits - amount }, options);

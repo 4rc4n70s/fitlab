@@ -14,14 +14,6 @@ export default async function MainPage() {
 
   return (
     <div className="flex flex-col gap-8 p-6 md:p-10 max-w-5xl mx-auto w-full">
-      {/* Banner */}
-      <div className="rounded-xl border border-amber-500/50 bg-amber-500/10 p-4 flex gap-4 items-start">
-        <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-        <div className="flex flex-col gap-1">
-          <h4 className="text-sm font-medium text-amber-600 dark:text-amber-500">Aviso sobre retención de imágenes</h4>
-          <p className="text-sm text-amber-600/80 dark:text-amber-500/80">Recuerda que todas las imágenes generadas se eliminarán automáticamente de nuestros servidores una semana (7 días) después de su creación. Asegúrate de descargar las que desees conservar.</p>
-        </div>
-      </div>
 
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-heading font-semibold text-foreground">Bienvenido a FitLab</h1>
@@ -72,6 +64,15 @@ export default async function MainPage() {
             <p className="text-sm text-muted mt-1">Selecciona tus imágenes y genera descripciones persuasivas automáticamente usando IA (Próximamente).</p>
           </div>
         </Link>
+      </div>
+
+      {/* Banner */}
+      <div className="rounded-xl border border-amber-500/50 bg-amber-500/10 p-4 flex gap-4 items-start mt-4">
+        <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+        <div className="flex flex-col gap-1">
+          <h4 className="text-sm font-medium text-amber-600 dark:text-amber-500">Aviso sobre retención de imágenes</h4>
+          <p className="text-sm text-amber-600/80 dark:text-amber-500/80">Recuerda que todas las imágenes generadas se eliminarán automáticamente de nuestros servidores una semana (7 días) después de su creación. Asegúrate de descargar las que desees conservar.</p>
+        </div>
       </div>
 
     </div>

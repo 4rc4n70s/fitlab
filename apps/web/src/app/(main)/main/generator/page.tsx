@@ -1,14 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Save, RefreshCw, Upload, Image as ImageIcon, X, Sparkles } from 'lucide-react'
-
-// Dummy Data
-const SAVED_PROMPTS = [
-  "Studio lighting, high contrast, clean background",
-  "Outdoor, natural sunlight, urban street style",
-  "Cinematic lighting, dark mood, neon accents"
-]
+import { Save, RefreshCw, Upload, Image as ImageIcon, X, Sparkles, Trash2 } from 'lucide-react'
 
 const ASPECT_RATIOS = [
   { label: '1:1', icon: 'Square' },
@@ -22,6 +15,30 @@ export default function GeneratorPage() {
   const [masterPrompt, setMasterPrompt] = useState('')
   const [selectedRatio, setSelectedRatio] = useState('3:4')
   const [showGenerateModal, setShowGenerateModal] = useState(false)
+  const [showPromptsModal, setShowPromptsModal] = useState(false)
+  const [savedPrompts, setSavedPrompts] = useState([
+    "Studio lighting, high contrast, clean background",
+    "Outdoor, natural sunlight, urban street style",
+    "Cinematic lighting, dark mood, neon accents"
+  ])
+
+  const handleSavePrompt = () => {
+    if (masterPrompt.trim() === '') {
+      alert('Por favor escribe un prompt antes de guardar.')
+      return
+    }
+    if (savedPrompts.includes(masterPrompt)) {
+      alert('Este prompt ya está guardado.')
+      return
+    }
+    setSavedPrompts([...savedPrompts, masterPrompt])
+    alert('Prompt guardado con éxito.')
+  }
+
+  const handleDeletePrompt = (e: React.MouseEvent, promptToDelete: string) => {
+    e.stopPropagation()
+    setSavedPrompts(savedPrompts.filter(p => p !== promptToDelete))
+  }
 
   return (
     <div className="relative min-h-[calc(100vh-4rem)] flex flex-col pb-24">
@@ -36,18 +53,21 @@ export default function GeneratorPage() {
         <section className="flex flex-col gap-4 border-b border-border pb-10">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-medium text-foreground">Prompt Engineering</h2>
-            <select className="px-3 py-2 text-sm border border-border rounded-lg bg-surface-card text-foreground focus:outline-none focus:border-foreground/50">
-              <option value="">Saved Prompts</option>
-              {SAVED_PROMPTS.map((prompt, i) => (
-                <option key={i} value={prompt}>{prompt.substring(0, 30)}...</option>
-              ))}
-            </select>
+            <button 
+              onClick={() => setShowPromptsModal(true)}
+              className="px-4 py-2 text-sm border border-border rounded-lg bg-surface-card text-foreground hover:bg-surface-soft transition-colors font-medium"
+            >
+              Saved Prompts ({savedPrompts.length})
+            </button>
           </div>
           
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <label className="text-sm font-medium text-foreground">Master Prompt</label>
-              <button className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg bg-surface-soft hover:bg-border transition-colors text-foreground">
+              <button 
+                onClick={handleSavePrompt}
+                className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg bg-surface-soft hover:bg-border transition-colors text-foreground"
+              >
                 <Save className="w-4 h-4" /> Save Prompt
               </button>
             </div>
@@ -78,24 +98,21 @@ export default function GeneratorPage() {
               <button
                 key={ratio.label}
                 onClick={() => setSelectedRatio(ratio.label)}
-                className={`flex flex-col items-center justify-center gap-2 w-20 h-24 rounded-xl border transition-all ${
+                className={`flex flex-col items-center justify-center gap-2 w-24 h-24 rounded-xl border transition-all ${
                   selectedRatio === ratio.label 
                     ? 'border-foreground bg-surface-soft text-foreground shadow-sm' 
                     : 'border-border bg-surface-card text-muted hover:border-foreground/30'
                 }`}
               >
-                <div className={`
-                  border-2 border-current rounded-sm
-                  ${ratio.label === '1:1' ? 'w-8 h-8' : ''}
-                  ${ratio.label === '4:3' ? 'w-10 h-7.5' : ''}
-                  ${ratio.label === '3:4' ? 'w-7.5 h-10' : ''}
-                  ${ratio.label === '16:9' ? 'w-10 h-5.5' : ''}
-                  ${ratio.label === '9:16' ? 'w-5.5 h-10' : ''}
-                `} style={{
-                  width: ratio.label === '1:1' ? '32px' : ratio.label === '4:3' ? '40px' : ratio.label === '3:4' ? '30px' : ratio.label === '16:9' ? '40px' : '22px',
-                  height: ratio.label === '1:1' ? '32px' : ratio.label === '4:3' ? '30px' : ratio.label === '3:4' ? '40px' : ratio.label === '16:9' ? '22px' : '40px'
-                }} />
-                <span className="text-xs font-medium">{ratio.label}</span>
+                <div className="flex items-center justify-center h-10 w-10">
+                  <div className={`
+                    border-2 border-current rounded-sm
+                  `} style={{
+                    width: ratio.label === '1:1' ? '26px' : ratio.label === '4:3' ? '34px' : ratio.label === '3:4' ? '26px' : ratio.label === '16:9' ? '34px' : '20px',
+                    height: ratio.label === '1:1' ? '26px' : ratio.label === '4:3' ? '26px' : ratio.label === '3:4' ? '34px' : ratio.label === '16:9' ? '20px' : '34px'
+                  }} />
+                </div>
+                <span className="text-xs font-semibold">{ratio.label}</span>
               </button>
             ))}
           </div>
@@ -111,12 +128,12 @@ export default function GeneratorPage() {
           </div>
           <p className="text-sm text-muted">Todas las prendas seleccionadas se aplicarán a los modelos.</p>
           
-          <div className="flex gap-4 overflow-x-auto pb-4 pt-2">
-            <div className="min-w-[120px] h-[160px] rounded-xl border-2 border-dashed border-border bg-surface-card flex flex-col items-center justify-center gap-2 text-muted hover:border-foreground/30 hover:text-foreground cursor-pointer transition-colors">
-              <Upload className="w-6 h-6" />
-              <span className="text-xs font-medium">Upload</span>
+          <div className="w-full h-36 rounded-xl border-2 border-dashed border-border bg-surface-card flex flex-col items-center justify-center gap-3 text-muted hover:border-foreground/30 hover:text-foreground cursor-pointer transition-colors">
+            <Upload className="w-8 h-8 text-muted-foreground" />
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-sm font-medium">Sube tus prendas o arrástralas aquí</span>
+              <span className="text-xs text-muted-foreground">Soporta PNG, JPG de hasta 10MB</span>
             </div>
-            {/* Placeholder for selected clothes */}
           </div>
         </section>
 
@@ -130,12 +147,12 @@ export default function GeneratorPage() {
           </div>
           <p className="text-sm text-muted">Se generará una foto por cada modelo cargado, utilizando las prendas anteriores.</p>
           
-          <div className="flex gap-4 overflow-x-auto pb-4 pt-2">
-            <div className="min-w-[120px] h-[160px] rounded-xl border-2 border-dashed border-border bg-surface-card flex flex-col items-center justify-center gap-2 text-muted hover:border-foreground/30 hover:text-foreground cursor-pointer transition-colors">
-              <Upload className="w-6 h-6" />
-              <span className="text-xs font-medium">Upload</span>
+          <div className="w-full h-36 rounded-xl border-2 border-dashed border-border bg-surface-card flex flex-col items-center justify-center gap-3 text-muted hover:border-foreground/30 hover:text-foreground cursor-pointer transition-colors">
+            <Upload className="w-8 h-8 text-muted-foreground" />
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-sm font-medium">Sube tus modelos o arrástralas aquí</span>
+              <span className="text-xs text-muted-foreground">Soporta PNG, JPG de hasta 10MB</span>
             </div>
-            {/* Placeholder for selected models */}
           </div>
         </section>
 
@@ -184,6 +201,48 @@ export default function GeneratorPage() {
               >
                 Ir a Collections
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Saved Prompts Modal */}
+      {showPromptsModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-surface-card border border-border rounded-2xl w-full max-w-lg p-6 flex flex-col gap-6 shadow-xl animate-in zoom-in-95 max-h-[80vh]">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-medium text-foreground">Saved Prompts</h3>
+              <button 
+                onClick={() => setShowPromptsModal(false)}
+                className="p-1 rounded-lg hover:bg-surface-soft text-muted hover:text-foreground transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto flex flex-col gap-3 pr-1">
+              {savedPrompts.length === 0 ? (
+                <p className="text-muted text-sm text-center py-6">No tienes prompts guardados.</p>
+              ) : (
+                savedPrompts.map((prompt, i) => (
+                  <div 
+                    key={i} 
+                    className="flex items-start justify-between gap-4 p-4 rounded-xl border border-border bg-surface-soft hover:border-foreground/30 transition-colors cursor-pointer group"
+                    onClick={() => {
+                      setMasterPrompt(prompt)
+                      setShowPromptsModal(false)
+                    }}
+                  >
+                    <p className="text-sm text-foreground flex-1 break-words font-medium">{prompt}</p>
+                    <button 
+                      onClick={(e) => handleDeletePrompt(e, prompt)}
+                      className="p-1.5 rounded-lg text-muted hover:text-red-500 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100 focus:opacity-100"
+                      title="Eliminar Prompt"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

@@ -15,8 +15,8 @@ export default function LoginPage({
       <div className="flex-1 flex flex-col items-center justify-center w-full">
         <div className="w-full max-w-sm flex flex-col gap-6">
           <div className="text-center">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Tetsu App</h1>
-            <p className="text-sm text-muted mt-2">Boilerplate de tetsustudio.</p>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Fitlab</h1>
+            <p className="text-sm text-muted mt-2">La plataforma de generación de imágenes con IA para tu marca de ropa.</p>
           </div>
           <div className="h-px w-full bg-border" />
 

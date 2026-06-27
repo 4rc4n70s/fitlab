@@ -207,7 +207,9 @@ export default function BillingPage() {
                 {isUserLoading ? (
                   <span className="inline-block w-16 h-10 bg-surface-soft rounded-lg animate-pulse" />
                 ) : (
-                  creditsToShow
+                  creditsToShow === 999999 
+                    ? (language === 'es' ? 'Ilimitados' : 'Unlimited') 
+                    : creditsToShow
                 )}
               </p>
             </div>

@@ -7,13 +7,13 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-sans' })
 const nunito = Nunito({ subsets: ['latin'], variable: '--font-heading', weight: ['500', '600', '700'] })
 const jetbrains = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono' })
 export const metadata: Metadata = {
-  title: 'Tetsu App',
+  title: 'Fitlab',
   description: 'Boilerplate escalable con Next.js 14 y Supabase',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Tetsu App',
+    title: 'Fitlab',
   },
 }
 

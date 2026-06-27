@@ -60,7 +60,7 @@ export function Sidebar() {
       {/* Sidebar Container */}
       <aside 
         className={`
-          fixed md:sticky top-0 md:top-14 left-0 z-50 h-[100dvh] md:h-[calc(100dvh-3.5rem)]
+          fixed md:relative top-0 left-0 z-50 h-[100dvh] md:h-full
           bg-surface-card border-r border-border
           transition-all duration-300 ease-in-out
           flex flex-col
@@ -72,7 +72,7 @@ export function Sidebar() {
           
           {/* Mobile Header */}
           <div className="md:hidden flex items-center justify-between p-4 border-b border-border h-14 shrink-0">
-            <span className="font-semibold text-lg tracking-tight text-foreground">Tetsu App</span>
+            <span className="font-semibold text-lg tracking-tight text-foreground">Fitlab</span>
             <button 
               onClick={() => setIsMobileSidebarOpen(false)} 
               className="p-1.5 -mr-1.5 rounded-full hover:bg-surface-soft transition-colors text-foreground"
