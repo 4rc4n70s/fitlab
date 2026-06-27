@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { X, ZoomIn, ZoomOut, Maximize, RotateCcw, Download, SplitSquareHorizontal, Image as ImageIcon, Sparkles } from 'lucide-react'
+import { X, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, Download, SplitSquareHorizontal, Image as ImageIcon, Sparkles } from 'lucide-react'
 
 export interface ViewerImage {
   url: string
@@ -53,16 +53,12 @@ export function ImageViewer({ images, initialIndex = 0, onClose }: ImageViewerPr
   const handleZoomOut = (e: React.MouseEvent) => {
     e.stopPropagation()
     setZoom(prev => {
-      const newZoom = Math.max(prev - 0.1, 1)
+      const newZoom = Math.max(prev - 0.1, 0.1)
       if (newZoom === 1) setPosition({ x: 0, y: 0 })
       return newZoom
     })
   }
 
-  const handleReset = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    resetView()
-  }
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (zoom > 1) {
@@ -101,9 +97,6 @@ export function ImageViewer({ images, initialIndex = 0, onClose }: ImageViewerPr
           <span className="text-white/90 text-sm font-medium w-14 text-center">{Math.round(zoom * 100)}%</span>
           <button onClick={handleZoomIn} className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors">
             <ZoomIn className="w-5 h-5" />
-          </button>
-          <button onClick={handleReset} className="p-2 ml-1 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors">
-            <Maximize className="w-4 h-4" />
           </button>
         </div>
 
@@ -148,18 +141,18 @@ export function ImageViewer({ images, initialIndex = 0, onClose }: ImageViewerPr
       {currentIndex > 0 && (
         <button 
           onClick={handlePrev}
-          className="absolute left-6 top-1/2 -translate-y-1/2 p-3 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors z-50"
+          className="absolute left-6 top-1/2 -translate-y-1/2 p-3 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors z-50 bg-black/20"
         >
-          <RotateCcw className="w-6 h-6 -rotate-90" />
+          <ChevronLeft className="w-8 h-8" />
         </button>
       )}
 
       {currentIndex < images.length - 1 && (
         <button 
           onClick={handleNext}
-          className="absolute right-6 top-1/2 -translate-y-1/2 p-3 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors z-50"
+          className="absolute right-6 top-1/2 -translate-y-1/2 p-3 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors z-50 bg-black/20"
         >
-          <RotateCcw className="w-6 h-6 rotate-90" />
+          <ChevronRight className="w-8 h-8" />
         </button>
       )}
 

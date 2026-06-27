@@ -31,6 +31,7 @@ export default function CollectionsPage() {
   // Regenerate Modal state
   const [regenModal, setRegenModal] = useState<{ collectionId: string, genId: string, generation: Generation, prompt: string } | null>(null)
   const [regenBase, setRegenBase] = useState<'original' | 'result'>('original')
+  const [deleteModal, setDeleteModal] = useState<{ type: 'collection' | 'photo', collectionId: string, genId?: string } | null>(null)
 
   // Load from localStorage on mount and listen to updates
   useEffect(() => {
@@ -68,35 +69,29 @@ export default function CollectionsPage() {
 
   const handleRegenerateSubmit = () => {
     if (!regenModal) return
-    alert('Esta funcionalidad se conectará en el próximo paso para generar una nueva variante en este batch.')
     setRegenModal(null)
   }
 
-  const handleDeleteCollection = (collectionId: string) => {
-    const confirmDelete = window.confirm('¿Estás seguro de que deseas eliminar esta colección por completo?')
-    if (!confirmDelete) return
-
-    const updated = collections.filter(c => c.id !== collectionId)
-    setCollections(updated)
-    localStorage.setItem('fitlab_collections', JSON.stringify(updated))
-  }
-
-  const handleDeletePhoto = (collectionId: string, genId: string) => {
-    const confirmDelete = window.confirm('¿Estás seguro de que deseas eliminar esta foto?')
-    if (!confirmDelete) return
-
-    const updated = collections.map(c => {
-      if (c.id === collectionId) {
-        return {
-          ...c,
-          generations: c.generations.filter((g) => g.id !== genId)
+  const handleDeleteConfirm = () => {
+    if (!deleteModal) return
+    if (deleteModal.type === 'collection') {
+      const updated = collections.filter(c => c.id !== deleteModal.collectionId)
+      setCollections(updated)
+      localStorage.setItem('fitlab_collections', JSON.stringify(updated))
+    } else if (deleteModal.type === 'photo' && deleteModal.genId) {
+      const updated = collections.map(c => {
+        if (c.id === deleteModal.collectionId) {
+          return {
+            ...c,
+            generations: c.generations.filter((g) => g.id !== deleteModal.genId)
+          }
         }
-      }
-      return c
-    }).filter(c => c.generations.length > 0) // Remove collection if it has no photos left
-
-    setCollections(updated)
-    localStorage.setItem('fitlab_collections', JSON.stringify(updated))
+        return c
+      }).filter(c => c.generations.length > 0)
+      setCollections(updated)
+      localStorage.setItem('fitlab_collections', JSON.stringify(updated))
+    }
+    setDeleteModal(null)
   }
 
   return (
@@ -131,7 +126,7 @@ export default function CollectionsPage() {
                   </span>
                   
                   <button 
-                    onClick={() => handleDeleteCollection(collection.id)}
+                    onClick={() => setDeleteModal({ type: 'collection', collectionId: collection.id })}
                     className="p-1.5 rounded-lg text-muted hover:text-red-500 hover:bg-red-500/10 transition-colors ml-auto flex items-center gap-1.5 text-xs font-semibold"
                     title="Eliminar Colección"
                   >
@@ -196,7 +191,7 @@ export default function CollectionsPage() {
                           </button>
                           
                           <button 
-                            onClick={() => handleDeletePhoto(collection.id, gen.id)}
+                            onClick={() => setDeleteModal({ type: 'photo', collectionId: collection.id, genId: gen.id })}
                             className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg border border-border text-red-500/80 hover:text-red-500 hover:bg-red-500/10 transition-colors font-medium"
                           >
                             <Trash2 className="w-4 h-4" /> Eliminar Foto
@@ -314,6 +309,37 @@ export default function CollectionsPage() {
                 className="w-full px-6 py-2.5 rounded-xl bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium flex items-center justify-center gap-2"
               >
                 <RefreshCw className="w-4 h-4" /> Generar Variante
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-surface-card border border-border rounded-2xl w-full max-w-sm p-6 flex flex-col gap-6 shadow-xl animate-in zoom-in-95 text-center">
+            <Trash2 className="w-12 h-12 text-red-500 mx-auto" />
+            <div className="flex flex-col gap-2">
+              <h3 className="text-xl font-medium text-foreground">Confirmar eliminación</h3>
+              <p className="text-sm text-muted">
+                {deleteModal.type === 'collection' 
+                  ? '¿Estás seguro de que deseas eliminar esta colección por completo?' 
+                  : '¿Estás seguro de que deseas eliminar esta foto?'}
+              </p>
+            </div>
+            <div className="flex justify-center gap-3 pt-2">
+              <button 
+                onClick={() => setDeleteModal(null)}
+                className="px-6 py-2 rounded-xl border border-border text-foreground hover:bg-surface-soft transition-colors font-medium"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleDeleteConfirm}
+                className="px-6 py-2 rounded-xl bg-red-500 text-white hover:bg-red-600 transition-colors font-medium"
+              >
+                Eliminar
               </button>
             </div>
           </div>

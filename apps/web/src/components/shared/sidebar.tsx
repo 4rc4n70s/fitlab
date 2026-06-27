@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Settings, User, X, CreditCard, ImagePlus, Library, Images, FileText } from 'lucide-react'
+import { LayoutDashboard, X, CreditCard, ImagePlus, Library, Images, FileText } from 'lucide-react'
 import { useUI } from '@/hooks/use-ui'
 
 const sidebarLinks = [
@@ -35,11 +35,6 @@ const sidebarLinks = [
     title: { es: 'Facturación', en: 'Billing' },
     href: '/main/billing',
     icon: CreditCard,
-  },
-  {
-    title: { es: 'Perfil', en: 'Profile' },
-    href: '/main/profile',
-    icon: User,
   },
 ]
 
@@ -107,17 +102,6 @@ export function Sidebar() {
 
           {/* Bottom Section */}
           <div className="flex flex-col gap-4 p-4 border-t border-border mt-auto">
-            <Link
-              href="/main/settings"
-              className={`flex items-center gap-3 rounded-full px-3 py-2 text-sm font-medium transition-colors ${
-                pathname === '/main/settings'
-                  ? 'bg-surface-soft text-foreground'
-                  : 'text-muted hover:bg-surface-soft hover:text-foreground'
-              }`}
-            >
-              <Settings className="h-4 w-4" />
-              {language === 'es' ? 'Configuración' : 'Settings'}
-            </Link>
 
             <div className="h-px bg-border -mx-4" />
 

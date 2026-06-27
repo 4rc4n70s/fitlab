@@ -78,13 +78,13 @@ export async function processVirtualTryOn(
     }
 
     const allModels = await getAvailableModels()
-    const nanoModel = allModels.find(m => m.name.toLowerCase().includes('nano banana'))
+    const nanoModel = allModels.find(m => m.name.toLowerCase().includes('nano banana') || m.name.toLowerCase().includes('nano banano pro'))
     const finalModelName = nanoModel ? nanoModel.id : 'models/gemini-1.5-pro-latest'
 
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/${finalModelName.includes('/') ? finalModelName : `models/${finalModelName}`}:generateContent?key=${apiKey}`
     
     // Construct the mandatory prompt
-    const contextPrompt = "MANDATORY: You are a precision clothing applicator. Your task is to apply the provided clothing items (Anchor Images) to the person in the Target Model Image. Make sure the clothing perfectly fits the model's body, respecting lighting, shadows, and folds. Maintain the EXACT same camera distance, perspective, angle, and composition framing as the target model image. DO NOT change, crop, or zoom in. Exactly copy original environment geometry. " + prompt
+    const contextPrompt = "MANDATORY INSTRUCTION: You are an expert virtual try-on and clothing applicator AI. Your task is to dress the person in the Target Model Image using the exact clothing provided in the Anchor Images. You MUST put the provided clothes on the model. Ensure the clothing perfectly fits the model's body, respecting lighting, shadows, folds, and body shape. Maintain the EXACT same camera distance, perspective, angle, facial features, background, and composition framing as the Target Model Image. DO NOT change, crop, or zoom in. Exactly copy original environment geometry. " + (prompt ? "Additional User Instructions: " + prompt : "")
 
     interface Part {
       text?: string

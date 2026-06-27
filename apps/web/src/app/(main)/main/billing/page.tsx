@@ -217,8 +217,8 @@ export default function BillingPage() {
           
           <div className="mt-8 pt-4 border-t border-border/60 text-xs text-muted-foreground relative z-10">
             {language === 'es' 
-              ? 'Los créditos se consumen al ejecutar tareas en el Boilerplate.' 
-              : 'Credits are consumed when running tasks on the Boilerplate.'}
+              ? 'Se consume 1 crédito por cada imagen generada.' 
+              : '1 credit is consumed per generated image.'}
           </div>
         </div>
 
@@ -229,9 +229,6 @@ export default function BillingPage() {
           {/* Detalles del paquete */}
           <div className="flex flex-col justify-between gap-6 flex-1">
             <div className="flex flex-col gap-2">
-              <span className="inline-block px-3 py-1 rounded-full bg-primary/15 text-primary text-xs font-semibold tracking-wider uppercase w-fit">
-                {language === 'es' ? 'Oferta de Lanzamiento' : 'Launch Offer'}
-              </span>
               <h2 className="text-2xl font-bold text-foreground">
                 {language === 'es' ? 'Paquete Estándar' : 'Standard Pack'}
               </h2>
@@ -287,6 +284,45 @@ export default function BillingPage() {
               )}
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* Historial de compras (Mock) */}
+      <div className="mt-8 flex flex-col gap-4">
+        <h2 className="text-xl font-bold text-foreground font-heading">
+          {language === 'es' ? 'Historial de Compras' : 'Purchase History'}
+        </h2>
+        <div className="rounded-2xl border border-border bg-surface-card overflow-hidden">
+          <table className="w-full text-sm text-left">
+            <thead className="bg-surface-soft text-muted-foreground uppercase text-xs">
+              <tr>
+                <th className="px-6 py-4 font-medium">{language === 'es' ? 'Fecha' : 'Date'}</th>
+                <th className="px-6 py-4 font-medium">{language === 'es' ? 'Detalle' : 'Detail'}</th>
+                <th className="px-6 py-4 font-medium">{language === 'es' ? 'Monto' : 'Amount'}</th>
+                <th className="px-6 py-4 font-medium">{language === 'es' ? 'Estado' : 'Status'}</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {/* Ejemplo mockeado */}
+              <tr className="hover:bg-surface-soft/50 transition-colors">
+                <td className="px-6 py-4 text-foreground whitespace-nowrap">
+                  {new Date().toLocaleDateString()}
+                </td>
+                <td className="px-6 py-4 text-muted-foreground">
+                  {language === 'es' ? 'Paquete Estándar (100 créditos)' : 'Standard Pack (100 credits)'}
+                </td>
+                <td className="px-6 py-4 text-foreground font-medium">
+                  $100 ARS
+                </td>
+                <td className="px-6 py-4">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-xs font-medium">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    {language === 'es' ? 'Aprobado' : 'Approved'}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 

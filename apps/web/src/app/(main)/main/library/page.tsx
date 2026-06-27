@@ -32,8 +32,11 @@ export default function LibraryPage() {
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [uploadFiles, setUploadFiles] = useState<{id: string, file?: File, url: string, name: string, type: 'clothes'|'model'}[]>([])
   const [editItem, setEditItem] = useState<ItemType | null>(null)
-  
-  // Viewer States
+  const [showFolderModal, setShowFolderModal] = useState(false)
+  const [newFolderName, setNewFolderName] = useState('')
+  const [showBulkEditModal, setShowBulkEditModal] = useState(false)
+  const [bulkEditItems, setBulkEditItems] = useState<ItemType[]>([])
+  const [deleteModal, setDeleteModal] = useState<{ type: 'folder' | 'item', id: string } | null>(null)
   const [showViewer, setShowViewer] = useState(false)
   const [viewerIndex, setViewerIndex] = useState(0)
 
@@ -90,7 +93,7 @@ export default function LibraryPage() {
   }, [])
 
   const filteredItems = items.filter(item => {
-    const matchFolder = currentFolder ? item.folderId === currentFolder : true
+    const matchFolder = currentFolder ? item.folderId === currentFolder : !item.folderId
     const matchType = filterType === 'all' ? true : item.type === filterType
     const matchSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase())
     return matchFolder && matchType && matchSearch
@@ -161,65 +164,76 @@ export default function LibraryPage() {
     setEditItem(null)
   }
 
-  // Handle Mock Create Folder
   const handleCreateFolder = () => {
-    const name = window.prompt('Nombre de la nueva carpeta:')
-    if (!name) return
+    setNewFolderName('')
+    setShowFolderModal(true)
+  }
 
+  const submitCreateFolder = () => {
+    if (!newFolderName.trim()) return
     const newFolder: FolderType = {
       id: `f-${Date.now()}`,
-      name,
+      name: newFolderName,
       itemCount: 0
     }
-
     const updated = [...folders, newFolder]
     setFolders(updated)
     localStorage.setItem('fitlab_library_folders', JSON.stringify(updated))
+    setShowFolderModal(false)
   }
 
-  // Handle Delete Item
-  const handleDeleteItem = (e: React.MouseEvent, itemId: string) => {
-    e.stopPropagation()
-    const confirmDelete = window.confirm('¿Estás seguro de que deseas eliminar este archivo?')
-    if (!confirmDelete) return
+  const handleOpenBulkEdit = () => {
+    setBulkEditItems([...filteredItems])
+    setShowBulkEditModal(true)
+  }
 
-    const itemToDelete = items.find(i => i.id === itemId)
-    const updated = items.filter(i => i.id !== itemId)
+  const submitBulkEdit = () => {
+    const updated = items.map(item => {
+      const edited = bulkEditItems.find(b => b.id === item.id)
+      return edited || item
+    })
     setItems(updated)
     localStorage.setItem('fitlab_library_items', JSON.stringify(updated))
-
-    // Decrement item count in its folder
-    if (itemToDelete && itemToDelete.folderId) {
-      const updatedFolders = folders.map(f => {
-        if (f.id === itemToDelete.folderId) {
-          return { ...f, itemCount: Math.max(0, f.itemCount - 1) }
-        }
-        return f
-      })
-      setFolders(updatedFolders)
-      localStorage.setItem('fitlab_library_folders', JSON.stringify(updatedFolders))
-    }
+    setShowBulkEditModal(false)
   }
 
-  // Handle Delete Folder
-  const handleDeleteFolder = (e: React.MouseEvent, folderId: string) => {
-    e.stopPropagation()
-    const confirmDelete = window.confirm('¿Estás seguro de que deseas eliminar esta carpeta? Las imágenes dentro de ella quedarán huérfanas pero no se eliminarán.')
-    if (!confirmDelete) return
+  const handleDeleteConfirm = () => {
+    if (!deleteModal) return
 
-    const updatedFolders = folders.filter(f => f.id !== folderId)
-    setFolders(updatedFolders)
-    localStorage.setItem('fitlab_library_folders', JSON.stringify(updatedFolders))
+    if (deleteModal.type === 'item') {
+      const itemToDelete = items.find(i => i.id === deleteModal.id)
+      const updated = items.filter(i => i.id !== deleteModal.id)
+      setItems(updated)
+      localStorage.setItem('fitlab_library_items', JSON.stringify(updated))
 
-    // Unassign folderId from items inside that folder
-    const updatedItems = items.map(item => {
-      if (item.folderId === folderId) {
-        return { ...item, folderId: undefined }
+      // Decrement item count in its folder
+      if (itemToDelete && itemToDelete.folderId) {
+        const updatedFolders = folders.map(f => {
+          if (f.id === itemToDelete.folderId) {
+            return { ...f, itemCount: Math.max(0, f.itemCount - 1) }
+          }
+          return f
+        })
+        setFolders(updatedFolders)
+        localStorage.setItem('fitlab_library_folders', JSON.stringify(updatedFolders))
       }
-      return item
-    })
-    setItems(updatedItems)
-    localStorage.setItem('fitlab_library_items', JSON.stringify(updatedItems))
+    } else if (deleteModal.type === 'folder') {
+      const updatedFolders = folders.filter(f => f.id !== deleteModal.id)
+      setFolders(updatedFolders)
+      localStorage.setItem('fitlab_library_folders', JSON.stringify(updatedFolders))
+
+      // Unassign folderId from items inside that folder
+      const updatedItems = items.map(item => {
+        if (item.folderId === deleteModal.id) {
+          return { ...item, folderId: undefined }
+        }
+        return item
+      })
+      setItems(updatedItems)
+      localStorage.setItem('fitlab_library_items', JSON.stringify(updatedItems))
+    }
+
+    setDeleteModal(null)
   }
 
   return (
@@ -243,6 +257,13 @@ export default function LibraryPage() {
               className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium text-sm"
             >
               <Upload className="w-4 h-4" /> Subir Imagen
+            </button>
+            <button 
+              onClick={handleOpenBulkEdit}
+              disabled={filteredItems.length === 0}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-surface-card hover:bg-surface-soft transition-colors font-medium text-sm disabled:opacity-50"
+            >
+              <Edit2 className="w-4 h-4" /> Edición Masiva
             </button>
           </div>
         </div>
@@ -319,7 +340,7 @@ export default function LibraryPage() {
                     </div>
                   </div>
                   <button 
-                    onClick={(e) => handleDeleteFolder(e, folder.id)}
+                    onClick={(e) => { e.stopPropagation(); setDeleteModal({ type: 'folder', id: folder.id }) }}
                     className="p-1 rounded text-muted hover:text-red-500 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
                     title="Eliminar Carpeta"
                   >
@@ -386,7 +407,7 @@ export default function LibraryPage() {
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button 
-                        onClick={(e) => handleDeleteItem(e, item.id)}
+                        onClick={(e) => { e.stopPropagation(); setDeleteModal({ type: 'item', id: item.id }) }}
                         className="p-2 bg-red-500/80 hover:bg-red-500 text-white rounded-full backdrop-blur-md transition-colors" 
                         title="Eliminar"
                       >
@@ -424,7 +445,10 @@ export default function LibraryPage() {
                     </span>
                     
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="p-2 text-muted hover:text-foreground rounded-lg hover:bg-border transition-colors">
+                      <button 
+                        onClick={() => setEditItem(item)}
+                        className="p-2 text-muted hover:text-foreground rounded-lg hover:bg-border transition-colors"
+                      >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <a 
@@ -437,7 +461,7 @@ export default function LibraryPage() {
                         <Download className="w-4 h-4" />
                       </a>
                       <button 
-                        onClick={(e) => handleDeleteItem(e, item.id)}
+                        onClick={(e) => { e.stopPropagation(); setDeleteModal({ type: 'item', id: item.id }) }}
                         className="p-2 text-red-500/70 hover:text-red-500 rounded-lg hover:bg-red-500/10 transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -576,6 +600,117 @@ export default function LibraryPage() {
           initialIndex={viewerIndex}
           onClose={() => setShowViewer(false)}
         />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-surface-card border border-border rounded-2xl w-full max-w-sm p-6 flex flex-col gap-6 shadow-xl animate-in zoom-in-95 text-center">
+            <Trash2 className="w-12 h-12 text-red-500 mx-auto" />
+            <div className="flex flex-col gap-2">
+              <h3 className="text-xl font-medium text-foreground">Confirmar eliminación</h3>
+              <p className="text-sm text-muted">
+                {deleteModal.type === 'folder' 
+                  ? '¿Estás seguro de que deseas eliminar esta carpeta? Las imágenes dentro de ella quedarán huérfanas pero no se eliminarán.' 
+                  : '¿Estás seguro de que deseas eliminar este archivo?'}
+              </p>
+            </div>
+            <div className="flex justify-center gap-3 pt-2">
+              <button 
+                onClick={() => setDeleteModal(null)}
+                className="px-6 py-2 rounded-xl border border-border text-foreground hover:bg-surface-soft transition-colors font-medium"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleDeleteConfirm}
+                className="px-6 py-2 rounded-xl bg-red-500 text-white hover:bg-red-600 transition-colors font-medium"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Folder Modal */}
+      {showFolderModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-surface-card border border-border rounded-2xl w-full max-w-sm p-6 flex flex-col gap-6 shadow-xl animate-in zoom-in-95">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-medium text-foreground">Nueva Carpeta</h3>
+              <button onClick={() => setShowFolderModal(false)} className="p-1 rounded-lg hover:bg-surface-soft text-muted hover:text-foreground transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-foreground">Nombre de la carpeta</label>
+              <input 
+                type="text" 
+                value={newFolderName}
+                onChange={(e) => setNewFolderName(e.target.value)}
+                placeholder="Ej. Colección Verano"
+                className="w-full px-3 py-2 text-sm bg-surface-card border border-border rounded-lg focus:outline-none focus:border-foreground/50 transition-colors"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button onClick={() => setShowFolderModal(false)} className="px-4 py-2 rounded-lg border border-border text-foreground hover:bg-surface-soft transition-colors font-medium">
+                Cancelar
+              </button>
+              <button onClick={submitCreateFolder} disabled={!newFolderName.trim()} className="px-4 py-2 rounded-lg bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium disabled:opacity-50">
+                Crear
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Edit Modal */}
+      {showBulkEditModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-surface-card border border-border rounded-2xl w-full max-w-4xl p-6 flex flex-col gap-6 shadow-xl animate-in zoom-in-95 max-h-[85vh]">
+            <div className="flex items-center justify-between border-b border-border pb-4">
+              <h3 className="text-xl font-medium text-foreground">Edición Masiva ({bulkEditItems.length} elementos)</h3>
+              <button onClick={() => setShowBulkEditModal(false)} className="p-1 rounded-lg hover:bg-surface-soft text-muted hover:text-foreground transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto pr-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {bulkEditItems.map(item => (
+                  <div key={item.id} className="flex gap-3 p-3 border border-border rounded-xl bg-surface-card">
+                    <img src={item.url} alt={item.name} className="w-16 h-24 object-cover rounded-md bg-surface-soft shrink-0" />
+                    <div className="flex flex-col gap-2 flex-1">
+                      <input 
+                        type="text" 
+                        value={item.name}
+                        onChange={(e) => setBulkEditItems(prev => prev.map(p => p.id === item.id ? { ...p, name: e.target.value } : p))}
+                        className="w-full px-2 py-1 text-xs bg-surface-soft border border-border rounded focus:outline-none focus:border-foreground/50"
+                        placeholder="Nombre"
+                      />
+                      <select 
+                        value={item.type}
+                        onChange={(e) => setBulkEditItems(prev => prev.map(p => p.id === item.id ? { ...p, type: e.target.value as 'clothes'|'model' } : p))}
+                        className="w-full px-2 py-1 text-xs bg-surface-soft border border-border rounded focus:outline-none focus:border-foreground/50"
+                      >
+                        <option value="clothes">Prenda</option>
+                        <option value="model">Modelo</option>
+                      </select>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-4 border-t border-border mt-auto">
+              <button onClick={() => setShowBulkEditModal(false)} className="px-6 py-2.5 rounded-xl border border-border text-foreground hover:bg-surface-soft transition-colors font-medium">
+                Cancelar
+              </button>
+              <button onClick={submitBulkEdit} className="px-6 py-2.5 rounded-xl bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium">
+                Guardar Cambios
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

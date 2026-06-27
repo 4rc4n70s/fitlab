@@ -89,8 +89,7 @@ export default function GeneratorPage() {
   const handleGenerate = async () => {
     setIsGenerating(true)
     
-    const clothesUrl = selectedClothes.length > 0 ? selectedClothes[0].url : '/clothes/pexels-cottonbro-7716960.jpg'
-    const fallbackPrompt = "Studio lighting, high contrast, clean background"
+    const clothesUrls = selectedClothes.length > 0 ? selectedClothes.map(c => c.url) : ['/clothes/pexels-cottonbro-7716960.jpg']
     
     // Support generating for multiple models if selected
     const modelsToProcess = selectedModels.length > 0 
@@ -99,17 +98,18 @@ export default function GeneratorPage() {
 
     const batchId = `batch-${Math.floor(1000 + Math.random() * 9000)}`
     
-    const initialGenerations = modelsToProcess.map((_, i) => ({
+    const initialGenerations = modelsToProcess.map((model, i) => ({
       id: `gen-${batchId}-${i}`,
       status: 'processing',
-      date: new Date().toISOString()
+      date: new Date().toISOString(),
+      modelUrl: model.url
     }))
 
     const newCollection = {
       id: batchId,
       date: new Date().toISOString(),
-      prompt: masterPrompt || fallbackPrompt,
-      clothes: [clothesUrl],
+      prompt: masterPrompt,
+      clothes: clothesUrls,
       generations: initialGenerations
     }
 
@@ -126,11 +126,11 @@ export default function GeneratorPage() {
     
     // Start background processing
     try {
-      const clothesBase64 = await urlToBase64(clothesUrl)
+      const clothesBase64s = await Promise.all(clothesUrls.map(url => urlToBase64(url)))
       
       for (let i = 0; i < modelsToProcess.length; i++) {
         const modelBase64 = await urlToBase64(modelsToProcess[i].url)
-        const response = await processVirtualTryOn(masterPrompt || fallbackPrompt, modelBase64, [clothesBase64])
+        const response = await processVirtualTryOn(masterPrompt, modelBase64, clothesBase64s)
         
         // Update specific generation inside the collection
         const currentCols = JSON.parse(localStorage.getItem('fitlab_collections') || '[]') as Collection[]
@@ -186,11 +186,9 @@ export default function GeneratorPage() {
 
   const handleSavePrompt = async () => {
     if (masterPrompt.trim() === '') {
-      alert('Por favor escribe un prompt antes de guardar.')
       return
     }
     if (savedPrompts.includes(masterPrompt)) {
-      alert('Este prompt ya está guardado.')
       return
     }
     const previous = [...savedPrompts]
@@ -198,9 +196,6 @@ export default function GeneratorPage() {
     const res = await savePrompt(masterPrompt)
     if (!res.success) {
       setSavedPrompts(previous)
-      alert(res.error || 'Error al guardar el prompt, revisa si tienes configurada la tabla "user_prompts"')
-    } else {
-      alert('Prompt guardado con éxito.')
     }
   }
 
@@ -267,7 +262,7 @@ export default function GeneratorPage() {
           </div>
           <p className="text-sm text-muted">Select the output dimensions for your generation.</p>
           
-          <div className="flex flex-col sm:grid sm:grid-cols-5 gap-4 w-full">
+          <div className="grid grid-cols-5 gap-2 md:gap-4 w-full">
             {ASPECT_RATIOS.map((ratio) => (
               <button
                 key={ratio.label}
@@ -501,7 +496,7 @@ export default function GeneratorPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                   {libraryItems
                     .filter(item => item.type === showLibraryModal)
-                    .filter(item => currentFolder ? item.folderId === currentFolder : true)
+                    .filter(item => currentFolder ? item.folderId === currentFolder : !item.folderId)
                     .map(item => {
                       const isSelected = showLibraryModal === 'clothes' 
                         ? selectedClothes.some(i => i.id === item.id) 
