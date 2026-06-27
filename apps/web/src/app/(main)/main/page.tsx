@@ -13,14 +13,14 @@ export default async function MainPage() {
     .single()
 
   return (
-    <div className="flex flex-col gap-8 p-6 md:p-10 max-w-5xl mx-auto w-full">
+    <div className="flex flex-col gap-6 p-4 md:p-8 max-w-5xl mx-auto w-full">
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1">
         <h1 className="text-3xl font-heading font-semibold text-foreground">Bienvenido a Fit Lab</h1>
         <p className="text-muted text-base">La plataforma de generación de imágenes con IA para tu marca de ropa. Explora las secciones a continuación para comenzar.</p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-4 md:gap-6 md:grid-cols-2">
         {/* Generator */}
         <Link href="/main/generator" className="group rounded-xl border border-border bg-surface-card p-6 flex flex-col gap-4 hover:border-foreground/50 transition-colors">
           <div className="w-12 h-12 rounded-lg bg-surface-soft flex items-center justify-center text-foreground group-hover:bg-foreground group-hover:text-background transition-colors">

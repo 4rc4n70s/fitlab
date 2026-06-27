@@ -4,6 +4,22 @@ import React, { useState, useEffect } from 'react'
 import { Calendar, RefreshCw, AlertCircle, CheckCircle2, Images, Trash, Trash2, Download } from 'lucide-react'
 import { ImageViewer } from '@/components/shared/image-viewer'
 import Link from 'next/link'
+import JSZip from 'jszip'
+import { saveAs } from 'file-saver'
+import { processVirtualTryOn } from '@/actions/gemini'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+
+const urlToBase64 = async (url: string) => {
+  if (url.startsWith('data:')) return url
+  const res = await fetch(url)
+  const blob = await res.blob()
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onloadend = () => resolve(reader.result as string)
+    reader.onerror = reject
+    reader.readAsDataURL(blob)
+  })
+}
 
 interface Generation {
   id: string
@@ -32,6 +48,10 @@ export default function CollectionsPage() {
   const [regenModal, setRegenModal] = useState<{ collectionId: string, genId: string, generation: Generation, prompt: string } | null>(null)
   const [regenBase, setRegenBase] = useState<'original' | 'result'>('original')
   const [deleteModal, setDeleteModal] = useState<{ type: 'collection' | 'photo', collectionId: string, genId?: string } | null>(null)
+  
+  const [currentPage, setCurrentPage] = useState(1)
+  const ITEMS_PER_PAGE = 10
+  const [isRegenerating, setIsRegenerating] = useState(false)
 
   // Load from localStorage on mount and listen to updates
   useEffect(() => {
@@ -67,9 +87,85 @@ export default function CollectionsPage() {
     setShowViewer(true)
   }
 
-  const handleRegenerateSubmit = () => {
+  const handleRegenerateSubmit = async () => {
     if (!regenModal) return
-    setRegenModal(null)
+    setIsRegenerating(true)
+    
+    try {
+      const { collectionId, genId, generation, prompt } = regenModal
+      const collection = collections.find(c => c.id === collectionId)
+      if (!collection) return
+      
+      const clothesBase64s = await Promise.all(collection.clothes.map(url => urlToBase64(url)))
+      const modelBase64 = await urlToBase64(regenBase === 'original' ? (generation.modelUrl || '') : (generation.image || ''))
+      
+      const currentCols = JSON.parse(localStorage.getItem('fitlab_collections') || '[]') as Collection[]
+      const targetCol = currentCols.find((c: Collection) => c.id === collectionId)
+      if (targetCol) {
+        const targetGenIndex = targetCol.generations.findIndex((g: Generation) => g.id === genId)
+        if (targetGenIndex >= 0) {
+          targetCol.generations[targetGenIndex].status = 'processing'
+          localStorage.setItem('fitlab_collections', JSON.stringify(currentCols))
+          setCollections(currentCols)
+        }
+      }
+      
+      setRegenModal(null)
+      
+      const response = await processVirtualTryOn(prompt, modelBase64, clothesBase64s)
+      
+      const updatedCols = JSON.parse(localStorage.getItem('fitlab_collections') || '[]') as Collection[]
+      const uCol = updatedCols.find((c: Collection) => c.id === collectionId)
+      if (uCol) {
+        const uGenIndex = uCol.generations.findIndex((g: Generation) => g.id === genId)
+        if (uGenIndex >= 0) {
+          uCol.generations[uGenIndex] = {
+            ...uCol.generations[uGenIndex],
+            status: response.success ? 'success' : 'error',
+            image: response.success ? `data:${response.mimeType};base64,${response.base64}` : undefined,
+            errorMsg: response.error
+          }
+          localStorage.setItem('fitlab_collections', JSON.stringify(updatedCols))
+          setCollections(updatedCols)
+        }
+      }
+    } catch (e: any) {
+      console.error(e)
+      const updatedCols = JSON.parse(localStorage.getItem('fitlab_collections') || '[]') as Collection[]
+      const uCol = updatedCols.find((c: Collection) => c.id === regenModal.collectionId)
+      if (uCol) {
+        const uGenIndex = uCol.generations.findIndex((g: Generation) => g.id === regenModal.genId)
+        if (uGenIndex >= 0) {
+          uCol.generations[uGenIndex] = {
+            ...uCol.generations[uGenIndex],
+            status: 'error',
+            errorMsg: 'Error al regenerar: ' + (e.message || '')
+          }
+          localStorage.setItem('fitlab_collections', JSON.stringify(updatedCols))
+          setCollections(updatedCols)
+        }
+      }
+    } finally {
+      setIsRegenerating(false)
+    }
+  }
+
+  const handleDownloadImage = (base64Url: string, name: string) => {
+    saveAs(base64Url, name)
+  }
+
+  const handleDownloadZip = async (collection: Collection) => {
+    const zip = new JSZip()
+    const successGens = collection.generations.filter(g => g.status === 'success' && g.image)
+    if (successGens.length === 0) return
+    
+    successGens.forEach((gen, index) => {
+      const base64Data = gen.image.split(',')[1]
+      zip.file(`generacion_${index + 1}.jpg`, base64Data, { base64: true })
+    })
+    
+    const content = await zip.generateAsync({ type: 'blob' })
+    saveAs(content, `coleccion_${collection.id}.zip`)
   }
 
   const handleDeleteConfirm = () => {
@@ -114,7 +210,7 @@ export default function CollectionsPage() {
         </div>
       ) : (
         <div className="flex flex-col gap-12">
-          {collections.map((collection) => {
+          {collections.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map((collection) => {
             return (
               <div key={collection.id} className="flex flex-col gap-4">
                 {/* Collection Header */}
@@ -126,7 +222,7 @@ export default function CollectionsPage() {
                   </span>
                   
                   <div className="ml-auto flex items-center gap-2">
-                    <button className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg bg-surface-soft hover:bg-border transition-colors text-foreground font-medium">
+                    <button onClick={() => handleDownloadZip(collection)} className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg bg-surface-soft hover:bg-border transition-colors text-foreground font-medium">
                       <Download className="w-4 h-4" /> Descargar ZIP
                     </button>
                     <button 
@@ -189,7 +285,7 @@ export default function CollectionsPage() {
 
                         <div className="mt-auto pt-4 flex gap-3">
                           {gen.status === 'success' && gen.image && (
-                            <button className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg bg-surface-soft text-foreground hover:bg-border transition-colors font-medium">
+                            <button onClick={() => handleDownloadImage(gen.image!, `foto_${gen.id}.jpg`)} className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg bg-surface-soft text-foreground hover:bg-border transition-colors font-medium">
                               <Download className="w-4 h-4" /> Descargar
                             </button>
                           )}
@@ -250,6 +346,29 @@ export default function CollectionsPage() {
               </div>
             )
           })}
+          
+          {/* Pagination Controls */}
+          {collections.length > ITEMS_PER_PAGE && (
+            <div className="flex items-center justify-center gap-4 mt-8">
+              <button 
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="p-2 rounded-lg border border-border bg-surface-card hover:bg-surface-soft disabled:opacity-50 transition-colors"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <span className="text-sm font-medium">
+                Página {currentPage} de {Math.ceil(collections.length / ITEMS_PER_PAGE)}
+              </span>
+              <button 
+                onClick={() => setCurrentPage(prev => Math.min(Math.ceil(collections.length / ITEMS_PER_PAGE), prev + 1))}
+                disabled={currentPage === Math.ceil(collections.length / ITEMS_PER_PAGE)}
+                className="p-2 rounded-lg border border-border bg-surface-card hover:bg-surface-soft disabled:opacity-50 transition-colors"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -316,9 +435,11 @@ export default function CollectionsPage() {
             <div className="flex justify-end pt-2">
               <button 
                 onClick={handleRegenerateSubmit}
-                className="w-full px-6 py-2.5 rounded-xl bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium flex items-center justify-center gap-2"
+                disabled={isRegenerating}
+                className="w-full px-6 py-2.5 rounded-xl bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                <RefreshCw className="w-4 h-4" /> Generar Variante
+                <RefreshCw className={`w-4 h-4 ${isRegenerating ? 'animate-spin' : ''}`} /> 
+                {isRegenerating ? 'Generando...' : 'Generar Variante'}
               </button>
             </div>
           </div>

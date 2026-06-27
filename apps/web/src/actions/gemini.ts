@@ -84,7 +84,8 @@ export async function processVirtualTryOn(
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/${finalModelName.includes('/') ? finalModelName : `models/${finalModelName}`}:generateContent?key=${apiKey}`
     
     // Construct the mandatory prompt
-    const contextPrompt = "MANDATORY INSTRUCTION: You are an expert virtual try-on and clothing applicator AI. Your task is to dress the person in the Target Model Image using the exact clothing provided in the Anchor Images. You MUST put the provided clothes on the model. Ensure the clothing perfectly fits the model's body, respecting lighting, shadows, folds, and body shape. Maintain the EXACT same camera distance, perspective, angle, facial features, background, and composition framing as the Target Model Image. DO NOT change, crop, or zoom in. Exactly copy original environment geometry. " + (prompt ? "Additional User Instructions: " + prompt : "")
+    const userPrompt = prompt
+    const contextPrompt = "MANDATORY INSTRUCTION: You are an expert virtual try-on and clothing applicator AI. Your ONLY task is to dress the person in the Target Model Image using the exact clothing provided in the Anchor Images. CRITICAL: You MUST strictly preserve the ORIGINAL BACKGROUND, ORIGINAL CROP, and ORIGINAL PROPORTIONS of the Target Model Image. DO NOT use the background from the Anchor (clothing) images. The final image must look exactly like the Target Model Image in its environment, model's pose, and face, but wearing the new clothes. " + (userPrompt ? "Additional User Instructions: " + userPrompt : "")
 
     interface Part {
       text?: string

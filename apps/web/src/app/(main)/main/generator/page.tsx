@@ -125,10 +125,10 @@ export default function GeneratorPage() {
     router.push('/main/collections')
     
     // Start background processing
-    try {
-      const clothesBase64s = await Promise.all(clothesUrls.map(url => urlToBase64(url)))
-      
-      for (let i = 0; i < modelsToProcess.length; i++) {
+    const clothesBase64s = await Promise.all(clothesUrls.map(url => urlToBase64(url)))
+    
+    for (let i = 0; i < modelsToProcess.length; i++) {
+      try {
         const modelBase64 = await urlToBase64(modelsToProcess[i].url)
         const response = await processVirtualTryOn(masterPrompt, modelBase64, clothesBase64s)
         
@@ -145,20 +145,27 @@ export default function GeneratorPage() {
           localStorage.setItem('fitlab_collections', JSON.stringify(currentCols))
           window.dispatchEvent(new Event('fitlab_collections_updated'))
         }
+        
+        // Pequeño delay para no saturar la API
+        if (i < modelsToProcess.length - 1) {
+          await new Promise(r => setTimeout(r, 1500))
+        }
+      } catch (err: any) {
+        console.error('Error generating image', err)
+        const currentCols = JSON.parse(localStorage.getItem('fitlab_collections') || '[]') as Collection[]
+        const targetCol = currentCols.find((c: Collection) => c.id === batchId)
+        if (targetCol && targetCol.generations[i]) {
+          targetCol.generations[i] = {
+            ...targetCol.generations[i],
+            status: 'error',
+            errorMsg: err?.message || 'Error de red inesperado.'
+          }
+          localStorage.setItem('fitlab_collections', JSON.stringify(currentCols))
+          window.dispatchEvent(new Event('fitlab_collections_updated'))
+        }
       }
-    } catch (e: unknown) {
-      console.error(e)
-      // Mark remainings as error
-      const currentCols = JSON.parse(localStorage.getItem('fitlab_collections') || '[]') as Collection[]
-      const targetCol = currentCols.find((c: Collection) => c.id === batchId)
-      if (targetCol) {
-        targetCol.generations = targetCol.generations.map((g: Generation) => g.status === 'processing' ? { ...g, status: 'error', errorMsg: 'Error de red inesperado.' } : g)
-        localStorage.setItem('fitlab_collections', JSON.stringify(currentCols))
-        window.dispatchEvent(new Event('fitlab_collections_updated'))
-      }
-    } finally {
-      setIsGenerating(false)
     }
+    setIsGenerating(false)
   }
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'clothes' | 'model') => {
