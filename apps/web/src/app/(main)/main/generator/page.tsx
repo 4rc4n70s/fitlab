@@ -31,6 +31,22 @@ export default function GeneratorPage() {
     date: string
     folderId?: string
   }
+
+  interface Generation {
+    id: string
+    status: 'success' | 'error' | 'processing'
+    date: string
+    image?: string
+    errorMsg?: string
+  }
+  
+  interface Collection {
+    id: string
+    date: string
+    prompt: string
+    clothes: string[]
+    generations: Generation[]
+  }
   
   const [selectedClothes, setSelectedClothes] = useState<LibraryItem[]>([])
   const [selectedModels, setSelectedModels] = useState<LibraryItem[]>([])
@@ -111,8 +127,8 @@ export default function GeneratorPage() {
         const response = await processVirtualTryOn(masterPrompt || fallbackPrompt, modelBase64, [clothesBase64])
         
         // Update specific generation inside the collection
-        const currentCols = JSON.parse(localStorage.getItem('fitlab_collections') || '[]')
-        const targetCol = currentCols.find((c: any) => c.id === batchId)
+        const currentCols = JSON.parse(localStorage.getItem('fitlab_collections') || '[]') as Collection[]
+        const targetCol = currentCols.find((c: Collection) => c.id === batchId)
         if (targetCol && targetCol.generations[i]) {
           targetCol.generations[i] = {
             ...targetCol.generations[i],
@@ -127,10 +143,10 @@ export default function GeneratorPage() {
     } catch (e: unknown) {
       console.error(e)
       // Mark remainings as error
-      const currentCols = JSON.parse(localStorage.getItem('fitlab_collections') || '[]')
-      const targetCol = currentCols.find((c: any) => c.id === batchId)
+      const currentCols = JSON.parse(localStorage.getItem('fitlab_collections') || '[]') as Collection[]
+      const targetCol = currentCols.find((c: Collection) => c.id === batchId)
       if (targetCol) {
-        targetCol.generations = targetCol.generations.map((g: any) => g.status === 'processing' ? { ...g, status: 'error', errorMsg: 'Error de red inesperado.' } : g)
+        targetCol.generations = targetCol.generations.map((g: Generation) => g.status === 'processing' ? { ...g, status: 'error', errorMsg: 'Error de red inesperado.' } : g)
         localStorage.setItem('fitlab_collections', JSON.stringify(currentCols))
         window.dispatchEvent(new Event('fitlab_collections_updated'))
       }
