@@ -53,8 +53,7 @@ export async function getAvailableModels(): Promise<{ id: string, name: string }
 export async function processVirtualTryOn(
   prompt: string, 
   modelImageUrl: string, 
-  clothesImageUrls: string[],
-  modelName: string = 'models/gemini-1.5-pro-latest'
+  clothesImageUrls: string[]
 ): Promise<GenerationResponse> {
   try {
     const supabase = await createClient()
@@ -78,7 +77,11 @@ export async function processVirtualTryOn(
       return { success: false, error: 'GEMINI_API_KEY is not configured in the environment.' }
     }
 
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/${modelName.includes('/') ? modelName : `models/${modelName}`}:generateContent?key=${apiKey}`
+    const allModels = await getAvailableModels()
+    const nanoModel = allModels.find(m => m.name.toLowerCase().includes('nano banana'))
+    const finalModelName = nanoModel ? nanoModel.id : 'models/gemini-1.5-pro-latest'
+
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/${finalModelName.includes('/') ? finalModelName : `models/${finalModelName}`}:generateContent?key=${apiKey}`
     
     // Construct the mandatory prompt
     const contextPrompt = "MANDATORY: You are a precision clothing applicator. Maintain the EXACT same camera distance, perspective, angle, and composition framing as the target model image. DO NOT change, crop, or zoom in. Exactly copy original environment geometry. " + prompt
