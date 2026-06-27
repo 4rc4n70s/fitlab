@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { Save, RefreshCw, Upload, Image as ImageIcon, X, Sparkles, Trash2 } from 'lucide-react'
-import { processVirtualTryOn } from '@/actions/gemini'
+import { processVirtualTryOn, getAvailableModels } from '@/actions/gemini'
 
 const ASPECT_RATIOS = [
   { label: '1:1', icon: 'Square' },
@@ -20,6 +20,9 @@ export default function GeneratorPage() {
   const [savedPrompts, setSavedPrompts] = useState<string[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
   const [showLibraryModal, setShowLibraryModal] = useState<'clothes' | 'model' | null>(null)
+  
+  const [availableModels, setAvailableModels] = useState<{id: string, name: string}[]>([])
+  const [selectedModelId, setSelectedModelId] = useState<string>('')
   
   interface LibraryItem {
     id: string
@@ -42,6 +45,16 @@ export default function GeneratorPage() {
       }
     }
   }, [showLibraryModal])
+
+  React.useEffect(() => {
+    getAvailableModels().then(models => {
+      setAvailableModels(models)
+      // Try to pre-select Nano Banana Pro or fallback
+      const nano = models.find(m => m.name.toLowerCase().includes('nano banana'))
+      if (nano) setSelectedModelId(nano.id)
+      else if (models.length > 0) setSelectedModelId(models[0].id)
+    })
+  }, [])
 
   const urlToBase64 = async (url: string) => {
     if (url.startsWith('data:')) return url
@@ -73,7 +86,7 @@ export default function GeneratorPage() {
       
       for (const model of modelsToProcess) {
         const modelBase64 = await urlToBase64(model.url)
-        const response = await processVirtualTryOn(masterPrompt || fallbackPrompt, modelBase64, [clothesBase64])
+        const response = await processVirtualTryOn(masterPrompt || fallbackPrompt, modelBase64, [clothesBase64], selectedModelId || undefined)
         generations.push({ 
           id: `gen-${Math.floor(Math.random() * 10000)}`, 
           status: response.success ? 'success' : 'error', 
@@ -188,6 +201,20 @@ export default function GeneratorPage() {
               value={masterPrompt}
               onChange={(e) => setMasterPrompt(e.target.value)}
             />
+          </div>
+
+          <div className="flex flex-col gap-2 mt-4">
+            <label className="text-sm font-medium text-foreground">AI Model</label>
+            <select 
+              className="px-4 py-2 text-sm border border-border rounded-lg bg-surface-card text-foreground focus:outline-none focus:border-foreground/50"
+              value={selectedModelId}
+              onChange={(e) => setSelectedModelId(e.target.value)}
+            >
+              <option value="" disabled>Selecciona un modelo...</option>
+              {availableModels.map(model => (
+                <option key={model.id} value={model.id}>{model.name}</option>
+              ))}
+            </select>
           </div>
         </section>
 
