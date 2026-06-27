@@ -1,7 +1,22 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Search, Grid, List, Folder, Upload, MoreVertical, Edit2, Download, Trash2, ChevronRight, FolderPlus } from 'lucide-react'
+import { Search, Grid, List, Folder, Upload, Edit2, Download, Trash2, ChevronRight, FolderPlus } from 'lucide-react'
+
+interface FolderType {
+  id: string
+  name: string
+  itemCount: number
+}
+
+interface ItemType {
+  id: string
+  name: string
+  type: 'clothes' | 'model'
+  url: string
+  date: string
+  folderId?: string
+}
 
 export default function LibraryPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
@@ -10,8 +25,8 @@ export default function LibraryPage() {
   const [currentFolder, setCurrentFolder] = useState<string | null>(null)
   
   // Stateful items and folders loaded from localStorage
-  const [folders, setFolders] = useState<any[]>([])
-  const [items, setItems] = useState<any[]>([])
+  const [folders, setFolders] = useState<FolderType[]>([])
+  const [items, setItems] = useState<ItemType[]>([])
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -22,7 +37,7 @@ export default function LibraryPage() {
       try { setFolders(JSON.parse(savedFolders)) } catch (e) { console.error(e) }
     } else {
       // Default initial mock folders if empty
-      const defaultFolders = [
+      const defaultFolders: FolderType[] = [
         { id: 'f1', name: 'Campaña Verano 26', itemCount: 2 },
         { id: 'f2', name: 'Modelos Base', itemCount: 2 },
         { id: 'f3', name: 'Prendas Deportivas', itemCount: 0 },
@@ -35,7 +50,7 @@ export default function LibraryPage() {
       try { setItems(JSON.parse(savedItems)) } catch (e) { console.error(e) }
     } else {
       // Default initial mock items if empty
-      const defaultItems = [
+      const defaultItems: ItemType[] = [
         { id: 'img1', name: 'Remera Negra Oversize', type: 'clothes', url: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?auto=format&fit=crop&q=80&w=400', date: new Date().toISOString(), folderId: 'f1' },
         { id: 'img2', name: 'Modelo Carlos', type: 'model', url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=400', date: new Date().toISOString(), folderId: 'f2' },
         { id: 'img4', name: 'Modelo Ana', type: 'model', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400', date: new Date().toISOString(), folderId: 'f2' },
@@ -75,7 +90,7 @@ export default function LibraryPage() {
       ? modelImages[Math.floor(Math.random() * modelImages.length)] 
       : clothesImages[Math.floor(Math.random() * clothesImages.length)]
 
-    const newItem = {
+    const newItem: ItemType = {
       id: `img-${Date.now()}`,
       name,
       type,
@@ -106,7 +121,7 @@ export default function LibraryPage() {
     const name = window.prompt('Nombre de la nueva carpeta:')
     if (!name) return
 
-    const newFolder = {
+    const newFolder: FolderType = {
       id: `f-${Date.now()}`,
       name,
       itemCount: 0
@@ -281,7 +296,9 @@ export default function LibraryPage() {
             <div className="p-12 text-center flex flex-col items-center justify-center gap-3 bg-surface-card border border-border rounded-xl border-dashed">
               <Folder className="w-10 h-10 text-muted" />
               <p className="text-foreground font-semibold">Tu librería está vacía</p>
-              <p className="text-sm text-muted max-w-sm">Comienza subiendo imágenes de tus prendas o modelos de referencia utilizando el botón de "Subir Imagen" arriba.</p>
+              <p className="text-sm text-muted max-w-sm">
+                Comienza subiendo imágenes de tus prendas o modelos de referencia utilizando el botón de &quot;Subir Imagen&quot; arriba.
+              </p>
             </div>
           ) : filteredItems.length === 0 ? (
             <div className="p-10 text-center flex flex-col items-center justify-center gap-2 bg-surface-card border border-border rounded-xl border-dashed">

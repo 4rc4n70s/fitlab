@@ -5,8 +5,26 @@ import { Calendar, RefreshCw, AlertCircle, CheckCircle2, Images, Trash, Trash2 }
 import { ImageViewer } from '@/components/shared/image-viewer'
 import Link from 'next/link'
 
+interface Generation {
+  id: string
+  status: 'success' | 'error'
+  date: string
+  image?: string
+  errorMsg?: string
+}
+
+interface Collection {
+  id: string
+  date: string
+  prompt: string
+  clothes: string[]
+  generations: Generation[]
+}
+
+const INITIAL_COLLECTIONS: Collection[] = []
+
 export default function CollectionsPage() {
-  const [collections, setCollections] = useState<any[]>([])
+  const [collections, setCollections] = useState<Collection[]>([])
   const [viewerImages, setViewerImages] = useState<string[]>([])
   const [viewerIndex, setViewerIndex] = useState<number>(0)
   const [showViewer, setShowViewer] = useState(false)
@@ -46,7 +64,7 @@ export default function CollectionsPage() {
       if (c.id === collectionId) {
         return {
           ...c,
-          generations: c.generations.filter((g: any) => g.id !== genId)
+          generations: c.generations.filter((g) => g.id !== genId)
         }
       }
       return c
@@ -77,7 +95,7 @@ export default function CollectionsPage() {
       ) : (
         <div className="flex flex-col gap-12">
           {collections.map((collection) => {
-            const successImages = collection.generations.filter((g: any) => g.status === 'success' && g.image).map((g: any) => g.image as string)
+            const successImages = collection.generations.filter((g) => g.status === 'success' && g.image).map((g) => g.image as string)
 
             return (
               <div key={collection.id} className="flex flex-col gap-4">
@@ -100,7 +118,7 @@ export default function CollectionsPage() {
 
                 {/* Generations List */}
                 <div className="flex flex-col gap-4">
-                  {collection.generations.map((gen: any) => (
+                  {collection.generations.map((gen) => (
                     <div key={gen.id} className="flex bg-surface-card border border-border rounded-xl overflow-hidden shadow-sm hover:border-foreground/30 transition-colors">
                       
                       {/* Info Section */}
@@ -129,7 +147,7 @@ export default function CollectionsPage() {
                           <div className="flex flex-col gap-1">
                             <span className="text-xs font-medium text-muted uppercase tracking-wider">Prendas Usadas</span>
                             <div className="flex gap-1">
-                              {collection.clothes.map((c: any, i: number) => (
+                              {collection.clothes.map((c, i) => (
                                 <div key={i} className="w-8 h-8 rounded bg-surface-soft border border-border flex items-center justify-center text-xs text-muted">
                                   IMG
                                 </div>
