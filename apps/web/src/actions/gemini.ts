@@ -146,7 +146,7 @@ export async function processVirtualTryOn(
       }
     } else if (outputPart.text) {
       await db.profiles.incrementCredits(user.id, 1)
-      return { success: false, error: "Model returned text instead of an image. Verify the model capabilities and prompt." }
+      return { success: false, error: `El modelo devolvió texto en lugar de una imagen. Respuesta del modelo: "${outputPart.text}"` }
     } else {
       await db.profiles.incrementCredits(user.id, 1)
       return { success: false, error: "Response did not contain image data." }

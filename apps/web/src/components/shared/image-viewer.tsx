@@ -27,7 +27,6 @@ export function ImageViewer({ images, initialIndex = 0, onClose }: ImageViewerPr
     e.stopPropagation()
     if (currentIndex < images.length - 1) {
       setCurrentIndex(prev => prev + 1)
-      resetView()
     }
   }
 
@@ -35,7 +34,6 @@ export function ImageViewer({ images, initialIndex = 0, onClose }: ImageViewerPr
     e.stopPropagation()
     if (currentIndex > 0) {
       setCurrentIndex(prev => prev - 1)
-      resetView()
     }
   }
   

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Calendar, RefreshCw, AlertCircle, CheckCircle2, Images, Trash, Trash2 } from 'lucide-react'
+import { Calendar, RefreshCw, AlertCircle, CheckCircle2, Images, Trash, Trash2, Download } from 'lucide-react'
 import { ImageViewer } from '@/components/shared/image-viewer'
 import Link from 'next/link'
 
@@ -125,13 +125,18 @@ export default function CollectionsPage() {
                     {new Date(collection.date).toLocaleString()}
                   </span>
                   
-                  <button 
-                    onClick={() => setDeleteModal({ type: 'collection', collectionId: collection.id })}
-                    className="p-1.5 rounded-lg text-muted hover:text-red-500 hover:bg-red-500/10 transition-colors ml-auto flex items-center gap-1.5 text-xs font-semibold"
-                    title="Eliminar Colección"
-                  >
-                    <Trash className="w-4 h-4" /> Eliminar Colección
-                  </button>
+                  <div className="ml-auto flex items-center gap-2">
+                    <button className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg bg-surface-soft hover:bg-border transition-colors text-foreground font-medium">
+                      <Download className="w-4 h-4" /> Descargar ZIP
+                    </button>
+                    <button 
+                      onClick={() => setDeleteModal({ type: 'collection', collectionId: collection.id })}
+                      className="p-1.5 rounded-lg text-muted hover:text-red-500 hover:bg-red-500/10 transition-colors flex items-center gap-1.5 text-xs font-semibold"
+                      title="Eliminar Colección"
+                    >
+                      <Trash className="w-4 h-4" /> Eliminar
+                    </button>
+                  </div>
                 </div>
 
                 {/* Generations List */}
@@ -183,6 +188,11 @@ export default function CollectionsPage() {
                         )}
 
                         <div className="mt-auto pt-4 flex gap-3">
+                          {gen.status === 'success' && gen.image && (
+                            <button className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg bg-surface-soft text-foreground hover:bg-border transition-colors font-medium">
+                              <Download className="w-4 h-4" /> Descargar
+                            </button>
+                          )}
                           <button 
                             onClick={() => setRegenModal({ collectionId: collection.id, genId: gen.id, generation: gen, prompt: collection.prompt })}
                             className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium"

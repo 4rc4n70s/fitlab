@@ -320,7 +320,7 @@ export default function LibraryPage() {
       <div className="flex-1 overflow-y-auto p-6 md:p-10 flex flex-col gap-8">
         
         {/* Folders Section (Only show if not inside a folder) */}
-        {!currentFolder && filterType === 'all' && !searchQuery && folders.length > 0 && (
+        {!currentFolder && !searchQuery && folders.length > 0 && (
           <div className="flex flex-col gap-4">
             <h2 className="text-sm font-medium text-foreground uppercase tracking-wider">Carpetas</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
