@@ -59,8 +59,9 @@ export async function processVirtualTryOn(
     // Decrement credits before generating
     try {
       await db.profiles.decrementCredits(user.id, 1)
-    } catch (e: any) {
-      return { success: false, error: e.message || 'Saldo de créditos insuficiente.' }
+    } catch (e: unknown) {
+      const err = e as Error
+      return { success: false, error: err.message || 'Saldo de créditos insuficiente.' }
     }
 
     const apiKey = process.env.GEMINI_API_KEY
