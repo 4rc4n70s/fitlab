@@ -161,6 +161,7 @@ export default function CollectionsPage() {
     if (successGens.length === 0) return
     
     successGens.forEach((gen, index) => {
+      if (!gen.image) return
       const base64Data = gen.image.split(',')[1]
       zip.file(`generacion_${index + 1}.jpg`, base64Data, { base64: true })
     })
