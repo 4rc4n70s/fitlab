@@ -19,13 +19,26 @@ export default function GeneratorPage() {
   const [showPromptsModal, setShowPromptsModal] = useState(false)
   const [savedPrompts, setSavedPrompts] = useState<string[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
+  const [showLibraryModal, setShowLibraryModal] = useState<'clothes' | 'model' | null>(null)
+  const [selectedClothes, setSelectedClothes] = useState<any[]>([])
+  const [selectedModels, setSelectedModels] = useState<any[]>([])
+  const [libraryItems, setLibraryItems] = useState<any[]>([])
+
+  React.useEffect(() => {
+    if (showLibraryModal) {
+      const saved = localStorage.getItem('fitlab_library_items')
+      if (saved) {
+        try { setLibraryItems(JSON.parse(saved)) } catch (e) { console.error(e) }
+      }
+    }
+  }, [showLibraryModal])
 
   const handleGenerate = async () => {
     setIsGenerating(true)
     
-    // Hardcoded demo images to test the API until library selection is fully wired
-    const modelUrl = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&q=80&w=400'
-    const clothesUrl = 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&q=80&w=400'
+    // Use selected images or fallback to demo
+    const modelUrl = selectedModels.length > 0 ? selectedModels[0].url : 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&q=80&w=400'
+    const clothesUrl = selectedClothes.length > 0 ? selectedClothes[0].url : 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&q=80&w=400'
     const fallbackPrompt = "Studio lighting, high contrast, clean background"
     
     const response = await processVirtualTryOn(masterPrompt || fallbackPrompt, modelUrl, [clothesUrl])
@@ -158,17 +171,27 @@ export default function GeneratorPage() {
         <section className="flex flex-col gap-4 border-b border-border pb-10">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-medium text-foreground">Clothes Selections</h2>
-            <button className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg bg-surface-soft hover:bg-border transition-colors text-foreground">
+            <button 
+              onClick={() => setShowLibraryModal('clothes')}
+              className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg bg-surface-soft hover:bg-border transition-colors text-foreground"
+            >
               <ImageIcon className="w-4 h-4" /> Select from Library
             </button>
           </div>
           <p className="text-sm text-muted">Todas las prendas seleccionadas se aplicarán a los modelos.</p>
           
-          <div className="w-full h-36 rounded-xl border-2 border-dashed border-border bg-surface-card flex flex-col items-center justify-center gap-3 text-muted hover:border-foreground/30 hover:text-foreground cursor-pointer transition-colors">
-            <Upload className="w-8 h-8 text-muted-foreground" />
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-sm font-medium">Sube tus prendas o arrástralas aquí</span>
-              <span className="text-xs text-muted-foreground">Soporta PNG, JPG de hasta 10MB</span>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {selectedClothes.map(item => (
+              <div key={item.id} className="relative aspect-[3/4] rounded-xl overflow-hidden border border-border">
+                <img src={item.url} alt={item.name} className="w-full h-full object-cover" />
+                <button onClick={() => setSelectedClothes(prev => prev.filter(i => i.id !== item.id))} className="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded-md hover:bg-red-500/80 backdrop-blur-md">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+            <div onClick={() => setShowLibraryModal('clothes')} className="w-full aspect-[3/4] rounded-xl border-2 border-dashed border-border bg-surface-card flex flex-col items-center justify-center gap-3 text-muted hover:border-foreground/30 hover:text-foreground cursor-pointer transition-colors">
+              <Upload className="w-8 h-8 text-muted-foreground" />
+              <span className="text-xs font-medium text-center px-4">Añadir Prenda</span>
             </div>
           </div>
         </section>
@@ -177,17 +200,27 @@ export default function GeneratorPage() {
         <section className="flex flex-col gap-4 pb-10">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-medium text-foreground">Model Selections</h2>
-            <button className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg bg-surface-soft hover:bg-border transition-colors text-foreground">
+            <button 
+              onClick={() => setShowLibraryModal('model')}
+              className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg bg-surface-soft hover:bg-border transition-colors text-foreground"
+            >
               <ImageIcon className="w-4 h-4" /> Select from Library
             </button>
           </div>
           <p className="text-sm text-muted">Se generará una foto por cada modelo cargado, utilizando las prendas anteriores.</p>
           
-          <div className="w-full h-36 rounded-xl border-2 border-dashed border-border bg-surface-card flex flex-col items-center justify-center gap-3 text-muted hover:border-foreground/30 hover:text-foreground cursor-pointer transition-colors">
-            <Upload className="w-8 h-8 text-muted-foreground" />
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-sm font-medium">Sube tus modelos o arrástralas aquí</span>
-              <span className="text-xs text-muted-foreground">Soporta PNG, JPG de hasta 10MB</span>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {selectedModels.map(item => (
+              <div key={item.id} className="relative aspect-[3/4] rounded-xl overflow-hidden border border-border">
+                <img src={item.url} alt={item.name} className="w-full h-full object-cover" />
+                <button onClick={() => setSelectedModels(prev => prev.filter(i => i.id !== item.id))} className="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded-md hover:bg-red-500/80 backdrop-blur-md">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+            <div onClick={() => setShowLibraryModal('model')} className="w-full aspect-[3/4] rounded-xl border-2 border-dashed border-border bg-surface-card flex flex-col items-center justify-center gap-3 text-muted hover:border-foreground/30 hover:text-foreground cursor-pointer transition-colors">
+              <Upload className="w-8 h-8 text-muted-foreground" />
+              <span className="text-xs font-medium text-center px-4">Añadir Modelo</span>
             </div>
           </div>
         </section>
@@ -276,6 +309,55 @@ export default function GeneratorPage() {
                     </button>
                   </div>
                 ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Library Selection Modal */}
+      {showLibraryModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-surface-card border border-border rounded-2xl w-full max-w-4xl p-6 flex flex-col gap-6 shadow-xl animate-in zoom-in-95 max-h-[80vh]">
+            <div className="flex items-center justify-between border-b border-border pb-4">
+              <h3 className="text-xl font-medium text-foreground">
+                Selecciona {showLibraryModal === 'clothes' ? 'Prenda' : 'Modelo'} desde tu Librería
+              </h3>
+              <button 
+                onClick={() => setShowLibraryModal(null)}
+                className="p-1 rounded-lg hover:bg-surface-soft text-muted hover:text-foreground transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto pr-1">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                {libraryItems
+                  .filter(item => item.type === showLibraryModal)
+                  .map(item => (
+                    <div 
+                      key={item.id} 
+                      className="group cursor-pointer flex flex-col gap-2"
+                      onClick={() => {
+                        if (showLibraryModal === 'clothes') {
+                          setSelectedClothes(prev => [...prev, item])
+                        } else {
+                          setSelectedModels(prev => [...prev, item])
+                        }
+                        setShowLibraryModal(null)
+                      }}
+                    >
+                      <div className="relative aspect-[3/4] rounded-xl overflow-hidden border border-border group-hover:border-foreground/50 transition-colors">
+                        <img src={item.url} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      </div>
+                      <span className="text-sm font-medium text-foreground truncate px-1">{item.name}</span>
+                    </div>
+                ))}
+              </div>
+              {libraryItems.filter(item => item.type === showLibraryModal).length === 0 && (
+                <div className="p-12 text-center text-muted">
+                  No tienes {showLibraryModal === 'clothes' ? 'prendas' : 'modelos'} en tu librería.
+                </div>
               )}
             </div>
           </div>

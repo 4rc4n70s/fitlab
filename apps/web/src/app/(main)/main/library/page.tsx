@@ -51,12 +51,32 @@ export default function LibraryPage() {
     } else {
       // Default initial mock items if empty
       const defaultItems: ItemType[] = [
-        { id: 'img1', name: 'Remera Negra Oversize', type: 'clothes', url: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?auto=format&fit=crop&q=80&w=400', date: new Date().toISOString(), folderId: 'f1' },
-        { id: 'img2', name: 'Modelo Carlos', type: 'model', url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=400', date: new Date().toISOString(), folderId: 'f2' },
-        { id: 'img4', name: 'Modelo Ana', type: 'model', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400', date: new Date().toISOString(), folderId: 'f2' },
+        { id: 'img1', name: 'Prenda 1', type: 'clothes', url: '/clothes/pexels-cottonbro-7716960.jpg', date: new Date().toISOString(), folderId: 'f1' },
+        { id: 'img2', name: 'Prenda 2', type: 'clothes', url: '/clothes/pexels-enginakyurt-19995460.jpg', date: new Date().toISOString(), folderId: 'f1' },
+        { id: 'img3', name: 'Prenda 3', type: 'clothes', url: '/clothes/pexels-enginakyurt-4554337.jpg', date: new Date().toISOString(), folderId: 'f3' },
+        { id: 'img4', name: 'Prenda 4', type: 'clothes', url: '/clothes/pexels-marceloverfe-19895977.jpg', date: new Date().toISOString(), folderId: 'f3' },
+        { id: 'img5', name: 'Prenda 5', type: 'clothes', url: '/clothes/pexels-mart-production-9558265.jpg', date: new Date().toISOString(), folderId: 'f3' },
+        { id: 'img6', name: 'Prenda Mockup', type: 'clothes', url: '/clothes/pexels-mockupbee-221716013-12039633.jpg', date: new Date().toISOString(), folderId: undefined },
+        { id: 'm1', name: 'Modelo Mens loose', type: 'model', url: '/models/mens-fashion-loose-cotton-shirt.jpg', date: new Date().toISOString(), folderId: 'f2' },
+        { id: 'm2', name: 'Modelo Laughs', type: 'model', url: '/models/model-laughs-barefoot.jpg', date: new Date().toISOString(), folderId: 'f2' },
+        { id: 'm3', name: 'Modelo Abaq', type: 'model', url: '/models/pexels-abaq-studio-1957487599-29119345.jpg', date: new Date().toISOString(), folderId: 'f2' },
+        { id: 'm4', name: 'Modelo Eduardo', type: 'model', url: '/models/pexels-eduardo-vite-211353151-24286256.jpg', date: new Date().toISOString(), folderId: 'f2' },
+        { id: 'm5', name: 'Modelo Er17', type: 'model', url: '/models/pexels-er17-16962545.jpg', date: new Date().toISOString(), folderId: undefined },
+        { id: 'm6', name: 'Modelo Godisable', type: 'model', url: '/models/pexels-godisable-jacob-226636-794063.jpg', date: new Date().toISOString(), folderId: undefined },
+        { id: 'm7', name: 'Modelo Gustavo', type: 'model', url: '/models/pexels-gustavo-fring-5622840.jpg', date: new Date().toISOString(), folderId: undefined },
+        { id: 'm8', name: 'Modelo Krivitskiy', type: 'model', url: '/models/pexels-krivitskiy-6971165.jpg', date: new Date().toISOString(), folderId: undefined },
+        { id: 'm9', name: 'Modelo Manzano', type: 'model', url: '/models/pexels-manzano-16924901.jpg', date: new Date().toISOString(), folderId: undefined },
+        { id: 'm10', name: 'Modelo Belu', type: 'model', url: '/models/pexels-ph-belu-jurado-615194884-17561664.jpg', date: new Date().toISOString(), folderId: undefined },
+        { id: 'm11', name: 'Modelo Rulomx', type: 'model', url: '/models/pexels-rulomx-11722289.jpg', date: new Date().toISOString(), folderId: undefined },
       ]
       setItems(defaultItems)
       localStorage.setItem('fitlab_library_items', JSON.stringify(defaultItems))
+      
+      // Update folder counts
+      const counts: Record<string, number> = { 'f1': 2, 'f2': 4, 'f3': 3 }
+      const updatedFolders = defaultFolders.map(f => ({ ...f, itemCount: counts[f.id] || 0 }))
+      setFolders(updatedFolders)
+      localStorage.setItem('fitlab_library_folders', JSON.stringify(updatedFolders))
     }
   }, [])
 
