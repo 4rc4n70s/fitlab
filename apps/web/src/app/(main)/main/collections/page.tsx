@@ -120,8 +120,6 @@ export default function CollectionsPage() {
       ) : (
         <div className="flex flex-col gap-12">
           {collections.map((collection) => {
-            const successImages = collection.generations.filter((g) => g.status === 'success' && g.image).map((g) => g.image as string)
-
             return (
               <div key={collection.id} className="flex flex-col gap-4">
                 {/* Collection Header */}

@@ -529,7 +529,7 @@ export default function LibraryPage() {
                           <X className="w-3 h-3" />
                         </button>
                         <div className="flex gap-3">
-                          <img src={uf.url} className="w-16 h-24 object-cover rounded-md bg-surface-soft shrink-0" />
+                          <img src={uf.url} alt="Vista previa de subida" className="w-16 h-24 object-cover rounded-md bg-surface-soft shrink-0" />
                           <div className="flex flex-col gap-2 flex-1">
                             <input 
                               type="text" 

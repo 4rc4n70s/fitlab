@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useRef } from 'react'
+import React, { useState } from 'react'
 import { X, ZoomIn, ZoomOut, Maximize, RotateCcw, Download, SplitSquareHorizontal, Image as ImageIcon, Sparkles } from 'lucide-react'
 
 export interface ViewerImage {
