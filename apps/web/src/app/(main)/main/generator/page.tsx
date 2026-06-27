@@ -20,9 +20,19 @@ export default function GeneratorPage() {
   const [savedPrompts, setSavedPrompts] = useState<string[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
   const [showLibraryModal, setShowLibraryModal] = useState<'clothes' | 'model' | null>(null)
-  const [selectedClothes, setSelectedClothes] = useState<any[]>([])
-  const [selectedModels, setSelectedModels] = useState<any[]>([])
-  const [libraryItems, setLibraryItems] = useState<any[]>([])
+  
+  interface LibraryItem {
+    id: string
+    name: string
+    type: 'clothes' | 'model'
+    url: string
+    date: string
+    folderId?: string
+  }
+  
+  const [selectedClothes, setSelectedClothes] = useState<LibraryItem[]>([])
+  const [selectedModels, setSelectedModels] = useState<LibraryItem[]>([])
+  const [libraryItems, setLibraryItems] = useState<LibraryItem[]>([])
 
   React.useEffect(() => {
     if (showLibraryModal) {
