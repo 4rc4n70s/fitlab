@@ -410,7 +410,7 @@ export default function CollectionsPage() {
                   <label className={`flex-1 flex flex-col items-center gap-2 p-3 border rounded-xl cursor-pointer transition-colors ${regenBase === 'original' ? 'border-foreground bg-surface-soft' : 'border-border'}`}>
                     <input type="radio" className="hidden" checked={regenBase === 'original'} onChange={() => setRegenBase('original')} />
                     {regenModal.generation.modelUrl && (
-                      <div className="w-full aspect-square rounded bg-surface-card overflow-hidden">
+                      <div className="w-full aspect-square bg-surface-card overflow-hidden">
                         <img src={regenModal.generation.modelUrl} className="w-full h-full object-cover" alt="Original" />
                       </div>
                     )}
@@ -420,11 +420,11 @@ export default function CollectionsPage() {
                   <label className={`flex-1 flex flex-col items-center gap-2 p-3 border rounded-xl cursor-pointer transition-colors ${regenBase === 'result' ? 'border-foreground bg-surface-soft' : 'border-border'} ${!regenModal.generation.image ? 'opacity-50 cursor-not-allowed' : ''}`}>
                     <input type="radio" className="hidden" disabled={!regenModal.generation.image} checked={regenBase === 'result'} onChange={() => setRegenBase('result')} />
                     {regenModal.generation.image ? (
-                      <div className="w-full aspect-square rounded bg-surface-card overflow-hidden">
+                      <div className="w-full aspect-square bg-surface-card overflow-hidden">
                         <img src={regenModal.generation.image} className="w-full h-full object-cover" alt="Generada" />
                       </div>
                     ) : (
-                      <div className="w-full aspect-square rounded bg-surface-card border border-dashed flex items-center justify-center text-xs text-muted text-center p-2">
+                      <div className="w-full aspect-square bg-surface-card border border-dashed flex items-center justify-center text-xs text-muted text-center p-2">
                         No hay imagen generada
                       </div>
                     )}
