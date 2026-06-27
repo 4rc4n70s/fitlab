@@ -373,7 +373,7 @@ export default function LibraryPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
               {filteredItems.map(item => (
                 <div key={item.id} className="group flex flex-col gap-2 relative">
-                  <div className="relative aspect-[3/4] rounded-xl overflow-hidden border border-border bg-surface-card">
+                  <div className="relative aspect-square rounded-xl overflow-hidden border border-border bg-surface-card">
                     <img src={item.url} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                     
                     {/* Badge */}
@@ -483,7 +483,7 @@ export default function LibraryPage() {
               </button>
             </div>
             <div className="flex flex-col gap-4">
-              <div className="aspect-[3/4] w-32 mx-auto rounded-lg overflow-hidden border border-border">
+              <div className="aspect-square w-32 mx-auto rounded-lg overflow-hidden border border-border">
                 <img src={editItem.url} alt={editItem.name} className="w-full h-full object-cover" />
               </div>
               <div className="flex flex-col gap-2">
