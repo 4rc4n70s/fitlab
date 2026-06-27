@@ -21,8 +21,6 @@ interface Collection {
   generations: Generation[]
 }
 
-const INITIAL_COLLECTIONS: Collection[] = []
-
 export default function CollectionsPage() {
   const [collections, setCollections] = useState<Collection[]>([])
   const [viewerImages, setViewerImages] = useState<string[]>([])
