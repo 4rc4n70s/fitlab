@@ -129,8 +129,9 @@ export default function CollectionsPage() {
           setCollections(updatedCols)
         }
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e)
+      const errorMessage = e instanceof Error ? e.message : 'Error desconocido'
       const updatedCols = JSON.parse(localStorage.getItem('fitlab_collections') || '[]') as Collection[]
       const uCol = updatedCols.find((c: Collection) => c.id === regenModal.collectionId)
       if (uCol) {
@@ -139,7 +140,7 @@ export default function CollectionsPage() {
           uCol.generations[uGenIndex] = {
             ...uCol.generations[uGenIndex],
             status: 'error',
-            errorMsg: 'Error al regenerar: ' + (e.message || '')
+            errorMsg: 'Error al regenerar: ' + errorMessage
           }
           localStorage.setItem('fitlab_collections', JSON.stringify(updatedCols))
           setCollections(updatedCols)

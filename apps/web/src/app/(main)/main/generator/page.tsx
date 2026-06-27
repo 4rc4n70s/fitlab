@@ -150,15 +150,16 @@ export default function GeneratorPage() {
         if (i < modelsToProcess.length - 1) {
           await new Promise(r => setTimeout(r, 1500))
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error generating image', err)
+        const errorMessage = err instanceof Error ? err.message : 'Error de red inesperado.'
         const currentCols = JSON.parse(localStorage.getItem('fitlab_collections') || '[]') as Collection[]
         const targetCol = currentCols.find((c: Collection) => c.id === batchId)
         if (targetCol && targetCol.generations[i]) {
           targetCol.generations[i] = {
             ...targetCol.generations[i],
             status: 'error',
-            errorMsg: err?.message || 'Error de red inesperado.'
+            errorMsg: errorMessage
           }
           localStorage.setItem('fitlab_collections', JSON.stringify(currentCols))
           window.dispatchEvent(new Event('fitlab_collections_updated'))
