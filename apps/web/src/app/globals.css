@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* MODO CLARO - Lienzo Blanco ("Canvas") */
+    --background: #ffffff;
+    --foreground: #000000;
+    
+    --surface-soft: #fafafa;
+    --surface-card: #ffffff;
+    
+    /* CTA y Elementos Interactivos - Píldora Negra */
+    --primary: #000000;
+    --primary-foreground: #ffffff;
+    --primary-hover: #090909;
+
+    /* Textos secundarios y separadores */
+    --charcoal: #525252;
+    --muted: #737373;
+    --border: #e5e5e5;
+    
+    /* Excepción semántica: Botones tipo terminal macOS */
+    --terminal-red: #ff5f56;
+    --terminal-yellow: #ffbd2e;
+    --terminal-green: #27c93f;
+    
+    --radius: 9999px; /* Geometría redonda por defecto */
+  }
+
+  .dark {
+    /* MODO OSCURO - Tinta Profunda */
+    --background: #090909;
+    --foreground: #ffffff;
+    
+    --surface-soft: #171717;
+    --surface-card: #171717;
+    
+    /* CTA y Elementos Interactivos - Píldora Blanca */
+    --primary: #ffffff;
+    --primary-foreground: #000000;
+    --primary-hover: #f3f4f6;
+
+    /* Textos secundarios y separadores */
+    --charcoal: #a3a3a3;
+    --muted: #a3a3a3;
+    --border: #262626;
+  }
+
+  * {
+    @apply border-border;
+  }
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  
+  /* Herencia de Tetsu: Ocultar barras de scroll globalmente */
+  ::-webkit-scrollbar {
+    display: none;
+  }
+  * {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;     /* Firefox */
+  }
+}
