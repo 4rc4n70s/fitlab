@@ -1,4 +1,5 @@
 'use client'
+import { get, set } from 'idb-keyval'
 
 import React, { useState } from 'react'
 import { Save, RefreshCw, Upload, Image as ImageIcon, X, Sparkles, Trash2, Folder, ChevronRight, Check } from 'lucide-react'
@@ -62,14 +63,17 @@ export default function GeneratorPage() {
 
   React.useEffect(() => {
     if (showLibraryModal) {
-      const savedItems = localStorage.getItem('fitlab_library_items')
-      const savedFolders = localStorage.getItem('fitlab_library_folders')
-      if (savedItems) {
-        try { setLibraryItems(JSON.parse(savedItems)) } catch (e) { console.error(e) }
+      const load = async () => {
+        const savedItems = await get('fitlab_library_items')
+        const savedFolders = await get('fitlab_library_folders')
+        if (savedItems) {
+          try { setLibraryItems(typeof savedItems === 'string' ? JSON.parse(savedItems) : savedItems) } catch (e) { console.error(e) }
+        }
+        if (savedFolders) {
+          try { setLibraryFolders(typeof savedFolders === 'string' ? JSON.parse(savedFolders) : savedFolders) } catch (e) { console.error(e) }
+        }
       }
-      if (savedFolders) {
-        try { setLibraryFolders(JSON.parse(savedFolders)) } catch (e) { console.error(e) }
-      }
+      load()
       setCurrentFolder(null)
     }
   }, [showLibraryModal])
@@ -115,7 +119,7 @@ export default function GeneratorPage() {
 
     try {
       const existing = JSON.parse(localStorage.getItem('fitlab_collections') || '[]')
-      localStorage.setItem('fitlab_collections', JSON.stringify([newCollection, ...existing]))
+      set('fitlab_collections', [newCollection, ...existing])
     } catch (e) {
       console.error(e)
     }
@@ -133,7 +137,7 @@ export default function GeneratorPage() {
         const response = await processVirtualTryOn(masterPrompt, modelBase64, clothesBase64s)
         
         // Update specific generation inside the collection
-        const currentCols = JSON.parse(localStorage.getItem('fitlab_collections') || '[]') as Collection[]
+        const currentCols = (await get('fitlab_collections') || []) as Collection[]
         const targetCol = currentCols.find((c: Collection) => c.id === batchId)
         if (targetCol && targetCol.generations[i]) {
           targetCol.generations[i] = {
@@ -142,7 +146,7 @@ export default function GeneratorPage() {
             image: response.success ? `data:${response.mimeType};base64,${response.base64}` : undefined,
             errorMsg: response.error
           }
-          localStorage.setItem('fitlab_collections', JSON.stringify(currentCols))
+          set('fitlab_collections', currentCols)
           window.dispatchEvent(new Event('fitlab_collections_updated'))
         }
         
@@ -153,7 +157,7 @@ export default function GeneratorPage() {
       } catch (err: unknown) {
         console.error('Error generating image', err)
         const errorMessage = err instanceof Error ? err.message : 'Error de red inesperado.'
-        const currentCols = JSON.parse(localStorage.getItem('fitlab_collections') || '[]') as Collection[]
+        const currentCols = (await get('fitlab_collections') || []) as Collection[]
         const targetCol = currentCols.find((c: Collection) => c.id === batchId)
         if (targetCol && targetCol.generations[i]) {
           targetCol.generations[i] = {
@@ -161,7 +165,7 @@ export default function GeneratorPage() {
             status: 'error',
             errorMsg: errorMessage
           }
-          localStorage.setItem('fitlab_collections', JSON.stringify(currentCols))
+          set('fitlab_collections', currentCols)
           window.dispatchEvent(new Event('fitlab_collections_updated'))
         }
       }

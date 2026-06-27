@@ -1,4 +1,5 @@
 'use client'
+import { get, set } from 'idb-keyval'
 
 import React, { useState, useEffect } from 'react'
 import { Calendar, RefreshCw, AlertCircle, CheckCircle2, Images, Trash, Trash2, Download } from 'lucide-react'
@@ -55,11 +56,11 @@ export default function CollectionsPage() {
 
   // Load from localStorage on mount and listen to updates
   useEffect(() => {
-    const loadCols = () => {
-      const saved = localStorage.getItem('fitlab_collections')
+    const loadCols = async () => {
+      const saved = await get('fitlab_collections')
       if (saved) {
         try {
-          setCollections(JSON.parse(saved))
+          setCollections(typeof saved === 'string' ? JSON.parse(saved) : saved)
         } catch (e) {
           console.error('Error parsing collections from localStorage', e)
         }
@@ -99,13 +100,13 @@ export default function CollectionsPage() {
       const clothesBase64s = await Promise.all(collection.clothes.map(url => urlToBase64(url)))
       const modelBase64 = await urlToBase64(regenBase === 'original' ? (generation.modelUrl || '') : (generation.image || ''))
       
-      const currentCols = JSON.parse(localStorage.getItem('fitlab_collections') || '[]') as Collection[]
+      const currentCols = (await get('fitlab_collections') || []) as Collection[]
       const targetCol = currentCols.find((c: Collection) => c.id === collectionId)
       if (targetCol) {
         const targetGenIndex = targetCol.generations.findIndex((g: Generation) => g.id === genId)
         if (targetGenIndex >= 0) {
           targetCol.generations[targetGenIndex].status = 'processing'
-          localStorage.setItem('fitlab_collections', JSON.stringify(currentCols))
+          set('fitlab_collections', currentCols)
           setCollections(currentCols)
         }
       }
@@ -114,7 +115,7 @@ export default function CollectionsPage() {
       
       const response = await processVirtualTryOn(prompt, modelBase64, clothesBase64s)
       
-      const updatedCols = JSON.parse(localStorage.getItem('fitlab_collections') || '[]') as Collection[]
+      const updatedCols = (await get('fitlab_collections') || []) as Collection[]
       const uCol = updatedCols.find((c: Collection) => c.id === collectionId)
       if (uCol) {
         const uGenIndex = uCol.generations.findIndex((g: Generation) => g.id === genId)
@@ -125,14 +126,14 @@ export default function CollectionsPage() {
             image: response.success ? `data:${response.mimeType};base64,${response.base64}` : undefined,
             errorMsg: response.error
           }
-          localStorage.setItem('fitlab_collections', JSON.stringify(updatedCols))
+          set('fitlab_collections', updatedCols)
           setCollections(updatedCols)
         }
       }
     } catch (e: unknown) {
       console.error(e)
       const errorMessage = e instanceof Error ? e.message : 'Error desconocido'
-      const updatedCols = JSON.parse(localStorage.getItem('fitlab_collections') || '[]') as Collection[]
+      const updatedCols = (await get('fitlab_collections') || []) as Collection[]
       const uCol = updatedCols.find((c: Collection) => c.id === regenModal.collectionId)
       if (uCol) {
         const uGenIndex = uCol.generations.findIndex((g: Generation) => g.id === regenModal.genId)
@@ -142,7 +143,7 @@ export default function CollectionsPage() {
             status: 'error',
             errorMsg: 'Error al regenerar: ' + errorMessage
           }
-          localStorage.setItem('fitlab_collections', JSON.stringify(updatedCols))
+          set('fitlab_collections', updatedCols)
           setCollections(updatedCols)
         }
       }
@@ -175,7 +176,7 @@ export default function CollectionsPage() {
     if (deleteModal.type === 'collection') {
       const updated = collections.filter(c => c.id !== deleteModal.collectionId)
       setCollections(updated)
-      localStorage.setItem('fitlab_collections', JSON.stringify(updated))
+      set('fitlab_collections', updated)
     } else if (deleteModal.type === 'photo' && deleteModal.genId) {
       const updated = collections.map(c => {
         if (c.id === deleteModal.collectionId) {
@@ -187,7 +188,7 @@ export default function CollectionsPage() {
         return c
       }).filter(c => c.generations.length > 0)
       setCollections(updated)
-      localStorage.setItem('fitlab_collections', JSON.stringify(updated))
+      set('fitlab_collections', updated)
     }
     setDeleteModal(null)
   }

@@ -1,4 +1,5 @@
 'use client'
+import { get, set } from 'idb-keyval'
 
 import React, { useState, useEffect } from 'react'
 import { Search, Grid, List, Folder, Upload, Edit2, Download, Trash2, ChevronRight, FolderPlus, X, Eye } from 'lucide-react'
@@ -42,8 +43,9 @@ export default function LibraryPage() {
 
   // Load from localStorage on mount
   useEffect(() => {
-    const savedFolders = localStorage.getItem('fitlab_library_folders')
-    const savedItems = localStorage.getItem('fitlab_library_items')
+    const init = async () => {
+      const savedFolders = await get('fitlab_library_folders')
+      const savedItems = await get('fitlab_library_items')
     
     const defaultFolders: FolderType[] = [
       { id: 'f1', name: 'Campaña Verano 26', itemCount: 2 },
@@ -52,14 +54,14 @@ export default function LibraryPage() {
     ]
 
     if (savedFolders) {
-      try { setFolders(JSON.parse(savedFolders)) } catch (e) { console.error(e) }
+      try { setFolders(typeof savedFolders === 'string' ? JSON.parse(savedFolders) : savedFolders) } catch (e) { console.error(e) }
     } else {
       setFolders(defaultFolders)
-      localStorage.setItem('fitlab_library_folders', JSON.stringify(defaultFolders))
+      set('fitlab_library_folders', defaultFolders)
     }
 
     if (savedItems) {
-      try { setItems(JSON.parse(savedItems)) } catch (e) { console.error(e) }
+      try { setItems(typeof savedItems === 'string' ? JSON.parse(savedItems) : savedItems) } catch (e) { console.error(e) }
     } else {
       // Default initial mock items if empty
       const defaultItems: ItemType[] = [
@@ -82,14 +84,16 @@ export default function LibraryPage() {
         { id: 'm11', name: 'Modelo Rulomx', type: 'model', url: '/models/pexels-rulomx-11722289.jpg', date: new Date().toISOString(), folderId: undefined },
       ]
       setItems(defaultItems)
-      localStorage.setItem('fitlab_library_items', JSON.stringify(defaultItems))
+      set('fitlab_library_items', defaultItems)
       
       // Update folder counts
       const counts: Record<string, number> = { 'f1': 2, 'f2': 4, 'f3': 3 }
       const updatedFolders = defaultFolders.map(f => ({ ...f, itemCount: counts[f.id] || 0 }))
       setFolders(updatedFolders)
-      localStorage.setItem('fitlab_library_folders', JSON.stringify(updatedFolders))
+      set('fitlab_library_folders', updatedFolders)
     }
+    }
+    init()
   }, [])
 
   const filteredItems = items.filter(item => {
@@ -145,7 +149,7 @@ export default function LibraryPage() {
 
     const updated = [...newItems, ...items]
     setItems(updated)
-    localStorage.setItem('fitlab_library_items', JSON.stringify(updated))
+    set('fitlab_library_items', updated)
     
     updateFolderCounts(updated)
     setShowUploadModal(false)
@@ -157,14 +161,14 @@ export default function LibraryPage() {
       itemCount: currentItems.filter(i => i.folderId === f.id).length
     }))
     setFolders(newFolders)
-    localStorage.setItem('fitlab_library_folders', JSON.stringify(newFolders))
+    set('fitlab_library_folders', newFolders)
   }
 
   const handleSaveEdit = () => {
     if (!editItem) return
     const updated = items.map(i => i.id === editItem.id ? editItem : i)
     setItems(updated)
-    localStorage.setItem('fitlab_library_items', JSON.stringify(updated))
+    set('fitlab_library_items', updated)
     updateFolderCounts(updated)
     setEditItem(null)
   }
@@ -183,7 +187,7 @@ export default function LibraryPage() {
     }
     const updated = [...folders, newFolder]
     setFolders(updated)
-    localStorage.setItem('fitlab_library_folders', JSON.stringify(updated))
+    set('fitlab_library_folders', updated)
     setShowFolderModal(false)
   }
 
@@ -198,7 +202,7 @@ export default function LibraryPage() {
       return edited || item
     })
     setItems(updated)
-    localStorage.setItem('fitlab_library_items', JSON.stringify(updated))
+    set('fitlab_library_items', updated)
     updateFolderCounts(updated)
     setShowBulkEditModal(false)
   }
@@ -209,12 +213,12 @@ export default function LibraryPage() {
     if (deleteModal.type === 'item') {
       const updated = items.filter(i => i.id !== deleteModal.id)
       setItems(updated)
-      localStorage.setItem('fitlab_library_items', JSON.stringify(updated))
+      set('fitlab_library_items', updated)
       updateFolderCounts(updated)
     } else if (deleteModal.type === 'folder') {
       const updatedFolders = folders.filter(f => f.id !== deleteModal.id)
       setFolders(updatedFolders)
-      localStorage.setItem('fitlab_library_folders', JSON.stringify(updatedFolders))
+      set('fitlab_library_folders', updatedFolders)
 
       // Unassign folderId from items inside that folder
       const updatedItems = items.map(item => {
@@ -224,7 +228,7 @@ export default function LibraryPage() {
         return item
       })
       setItems(updatedItems)
-      localStorage.setItem('fitlab_library_items', JSON.stringify(updatedItems))
+      set('fitlab_library_items', updatedItems)
       // Since folder is deleted, we don't need to recount for it, but just in case:
       // updateFolderCounts isn't strictly needed here since we already replaced folders.
     }

@@ -79,7 +79,7 @@ export async function processVirtualTryOn(
 
     const allModels = await getAvailableModels()
     const nanoModel = allModels.find(m => m.name.toLowerCase().includes('nano banana') || m.name.toLowerCase().includes('nano banano pro'))
-    const finalModelName = nanoModel ? nanoModel.id : 'models/gemini-1.5-pro-latest'
+    const finalModelName = nanoModel ? nanoModel.id : 'models/gemini-3-pro-image'
 
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/${finalModelName.includes('/') ? finalModelName : `models/${finalModelName}`}:generateContent?key=${apiKey}`
     
