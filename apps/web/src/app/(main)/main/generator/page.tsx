@@ -82,7 +82,7 @@ export default function GeneratorPage() {
           errorMsg: response.error
         })
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e)
       alert('Error procesando las imágenes. Asegúrate de que las imágenes estén disponibles.')
       setIsGenerating(false)

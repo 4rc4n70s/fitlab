@@ -7,8 +7,6 @@ interface GenerationResponse {
   error?: string
 }
 
-import fs from 'fs/promises'
-import path from 'path'
 import { createClient } from '@/lib/supabase/server'
 import { db } from '@/services/db'
 
