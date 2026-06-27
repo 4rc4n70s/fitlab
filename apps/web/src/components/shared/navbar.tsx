@@ -84,7 +84,7 @@ export function Navbar() {
           <Menu className="w-5 h-5" />
         </button>
         <Link href="/" className="font-semibold text-lg tracking-tight text-foreground">
-          Fitlab
+          Fit Lab
         </Link>
       </div>
 

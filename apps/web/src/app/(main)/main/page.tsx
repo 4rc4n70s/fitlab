@@ -16,7 +16,7 @@ export default async function MainPage() {
     <div className="flex flex-col gap-8 p-6 md:p-10 max-w-5xl mx-auto w-full">
 
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-heading font-semibold text-foreground">Bienvenido a FitLab</h1>
+        <h1 className="text-3xl font-heading font-semibold text-foreground">Bienvenido a Fit Lab</h1>
         <p className="text-muted text-base">La plataforma de generación de imágenes con IA para tu marca de ropa. Explora las secciones a continuación para comenzar.</p>
       </div>
 

@@ -72,7 +72,7 @@ export function Sidebar() {
           
           {/* Mobile Header */}
           <div className="md:hidden flex items-center justify-between p-4 border-b border-border h-14 shrink-0">
-            <span className="font-semibold text-lg tracking-tight text-foreground">Fitlab</span>
+            <span className="font-semibold text-lg tracking-tight text-foreground">Fit Lab</span>
             <button 
               onClick={() => setIsMobileSidebarOpen(false)} 
               className="p-1.5 -mr-1.5 rounded-full hover:bg-surface-soft transition-colors text-foreground"
