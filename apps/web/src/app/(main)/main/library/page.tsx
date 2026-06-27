@@ -146,14 +146,18 @@ export default function LibraryPage() {
     const updated = [...newItems, ...items]
     setItems(updated)
     localStorage.setItem('fitlab_library_items', JSON.stringify(updated))
-
-    if (currentFolder) {
-      const updatedFolders = folders.map(f => f.id === currentFolder ? { ...f, itemCount: f.itemCount + newItems.length } : f)
-      setFolders(updatedFolders)
-      localStorage.setItem('fitlab_library_folders', JSON.stringify(updatedFolders))
-    }
     
+    updateFolderCounts(updated)
     setShowUploadModal(false)
+  }
+
+  const updateFolderCounts = (currentItems: ItemType[]) => {
+    const newFolders = folders.map(f => ({
+      ...f,
+      itemCount: currentItems.filter(i => i.folderId === f.id).length
+    }))
+    setFolders(newFolders)
+    localStorage.setItem('fitlab_library_folders', JSON.stringify(newFolders))
   }
 
   const handleSaveEdit = () => {
@@ -161,6 +165,7 @@ export default function LibraryPage() {
     const updated = items.map(i => i.id === editItem.id ? editItem : i)
     setItems(updated)
     localStorage.setItem('fitlab_library_items', JSON.stringify(updated))
+    updateFolderCounts(updated)
     setEditItem(null)
   }
 
@@ -194,6 +199,7 @@ export default function LibraryPage() {
     })
     setItems(updated)
     localStorage.setItem('fitlab_library_items', JSON.stringify(updated))
+    updateFolderCounts(updated)
     setShowBulkEditModal(false)
   }
 
@@ -201,22 +207,10 @@ export default function LibraryPage() {
     if (!deleteModal) return
 
     if (deleteModal.type === 'item') {
-      const itemToDelete = items.find(i => i.id === deleteModal.id)
       const updated = items.filter(i => i.id !== deleteModal.id)
       setItems(updated)
       localStorage.setItem('fitlab_library_items', JSON.stringify(updated))
-
-      // Decrement item count in its folder
-      if (itemToDelete && itemToDelete.folderId) {
-        const updatedFolders = folders.map(f => {
-          if (f.id === itemToDelete.folderId) {
-            return { ...f, itemCount: Math.max(0, f.itemCount - 1) }
-          }
-          return f
-        })
-        setFolders(updatedFolders)
-        localStorage.setItem('fitlab_library_folders', JSON.stringify(updatedFolders))
-      }
+      updateFolderCounts(updated)
     } else if (deleteModal.type === 'folder') {
       const updatedFolders = folders.filter(f => f.id !== deleteModal.id)
       setFolders(updatedFolders)
@@ -231,6 +225,8 @@ export default function LibraryPage() {
       })
       setItems(updatedItems)
       localStorage.setItem('fitlab_library_items', JSON.stringify(updatedItems))
+      // Since folder is deleted, we don't need to recount for it, but just in case:
+      // updateFolderCounts isn't strictly needed here since we already replaced folders.
     }
 
     setDeleteModal(null)
@@ -510,6 +506,19 @@ export default function LibraryPage() {
                   <option value="model">Modelo</option>
                 </select>
               </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-foreground">Carpeta</label>
+                <select 
+                  value={editItem.folderId || ''}
+                  onChange={(e) => setEditItem({ ...editItem, folderId: e.target.value || undefined })}
+                  className="px-3 py-2 text-sm bg-surface-card border border-border rounded-lg focus:outline-none focus:border-foreground/50 transition-colors"
+                >
+                  <option value="">Sin carpeta (Raíz)</option>
+                  {folders.map(f => (
+                    <option key={f.id} value={f.id}>{f.name}</option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <button onClick={() => setEditItem(null)} className="px-4 py-2 rounded-lg border border-border text-foreground hover:bg-surface-soft transition-colors font-medium">
@@ -695,6 +704,16 @@ export default function LibraryPage() {
                       >
                         <option value="clothes">Prenda</option>
                         <option value="model">Modelo</option>
+                      </select>
+                      <select 
+                        value={item.folderId || ''}
+                        onChange={(e) => setBulkEditItems(prev => prev.map(p => p.id === item.id ? { ...p, folderId: e.target.value || undefined } : p))}
+                        className="w-full px-2 py-1 text-xs bg-surface-soft border border-border rounded focus:outline-none focus:border-foreground/50 mt-1"
+                      >
+                        <option value="">Sin carpeta</option>
+                        {folders.map(f => (
+                          <option key={f.id} value={f.id}>{f.name}</option>
+                        ))}
                       </select>
                     </div>
                   </div>
