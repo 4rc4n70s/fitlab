@@ -37,11 +37,6 @@ export function ImageViewer({ images, initialIndex = 0, onClose }: ImageViewerPr
     }
   }
   
-  const resetView = () => {
-    setZoom(1)
-    setPosition({ x: 0, y: 0 })
-    setViewMode('result')
-  }
 
   const handleZoomIn = (e: React.MouseEvent) => {
     e.stopPropagation()
