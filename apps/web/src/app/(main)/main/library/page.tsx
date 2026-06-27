@@ -33,15 +33,15 @@ export default function LibraryPage() {
     const savedFolders = localStorage.getItem('fitlab_library_folders')
     const savedItems = localStorage.getItem('fitlab_library_items')
     
+    const defaultFolders: FolderType[] = [
+      { id: 'f1', name: 'Campaña Verano 26', itemCount: 2 },
+      { id: 'f2', name: 'Modelos Base', itemCount: 2 },
+      { id: 'f3', name: 'Prendas Deportivas', itemCount: 0 },
+    ]
+
     if (savedFolders) {
       try { setFolders(JSON.parse(savedFolders)) } catch (e) { console.error(e) }
     } else {
-      // Default initial mock folders if empty
-      const defaultFolders: FolderType[] = [
-        { id: 'f1', name: 'Campaña Verano 26', itemCount: 2 },
-        { id: 'f2', name: 'Modelos Base', itemCount: 2 },
-        { id: 'f3', name: 'Prendas Deportivas', itemCount: 0 },
-      ]
       setFolders(defaultFolders)
       localStorage.setItem('fitlab_library_folders', JSON.stringify(defaultFolders))
     }
