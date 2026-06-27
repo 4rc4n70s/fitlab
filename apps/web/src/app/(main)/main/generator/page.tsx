@@ -483,7 +483,7 @@ export default function GeneratorPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                   {libraryItems
                     .filter(item => item.type === showLibraryModal)
-                    .filter(item => currentFolder ? item.folderId === currentFolder : !item.folderId)
+                    .filter(item => currentFolder ? item.folderId === currentFolder : true)
                     .map(item => {
                       const isSelected = showLibraryModal === 'clothes' 
                         ? selectedClothes.some(i => i.id === item.id) 
