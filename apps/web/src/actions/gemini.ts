@@ -7,12 +7,26 @@ interface GenerationResponse {
   error?: string
 }
 
+import fs from 'fs/promises'
+import path from 'path'
+
 async function fetchImageAsBase64(url: string): Promise<{ mimeType: string, base64: string }> {
   // If it's already a base64 string
   if (url.startsWith('data:')) {
     const [header, data] = url.split(',')
     const mimeType = header.replace('data:', '').replace(';base64', '')
     return { mimeType, base64: data }
+  }
+
+  // If it's a local public file (starts with /)
+  if (url.startsWith('/')) {
+    const filePath = path.join(process.cwd(), 'public', url)
+    const buffer = await fs.readFile(filePath)
+    const ext = path.extname(url).toLowerCase()
+    let mimeType = 'image/jpeg'
+    if (ext === '.png') mimeType = 'image/png'
+    if (ext === '.webp') mimeType = 'image/webp'
+    return { mimeType, base64: buffer.toString('base64') }
   }
 
   // Otherwise, fetch the image from URL

@@ -46,27 +46,33 @@ export default function GeneratorPage() {
   const handleGenerate = async () => {
     setIsGenerating(true)
     
-    // Use selected images or fallback to demo
-    const modelUrl = selectedModels.length > 0 ? selectedModels[0].url : 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&q=80&w=400'
     const clothesUrl = selectedClothes.length > 0 ? selectedClothes[0].url : 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&q=80&w=400'
     const fallbackPrompt = "Studio lighting, high contrast, clean background"
     
-    const response = await processVirtualTryOn(masterPrompt || fallbackPrompt, modelUrl, [clothesUrl])
+    // Support generating for multiple models if selected
+    const modelsToProcess = selectedModels.length > 0 
+      ? selectedModels 
+      : [{ id: 'default', name: 'Default', type: 'model', url: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&q=80&w=400', date: '' } as LibraryItem]
+
+    const generations = []
+    
+    for (const model of modelsToProcess) {
+      const response = await processVirtualTryOn(masterPrompt || fallbackPrompt, model.url, [clothesUrl])
+      generations.push({ 
+        id: `gen-${Math.floor(Math.random() * 10000)}`, 
+        status: response.success ? 'success' : 'error', 
+        date: new Date().toISOString(), 
+        image: response.success ? `data:${response.mimeType};base64,${response.base64}` : undefined,
+        errorMsg: response.error
+      })
+    }
 
     const newCollection = {
       id: `batch-${Math.floor(1000 + Math.random() * 9000)}`,
       date: new Date().toISOString(),
       prompt: masterPrompt || fallbackPrompt,
       clothes: [clothesUrl],
-      generations: [
-        { 
-          id: `gen-${Math.floor(Math.random() * 10000)}`, 
-          status: response.success ? 'success' : 'error', 
-          date: new Date().toISOString(), 
-          image: response.success ? `data:${response.mimeType};base64,${response.base64}` : undefined,
-          errorMsg: response.error
-        }
-      ]
+      generations
     }
 
     try {
@@ -79,6 +85,29 @@ export default function GeneratorPage() {
     setIsGenerating(false)
     setShowGenerateModal(false)
     window.location.href = '/main/collections'
+  }
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'clothes' | 'model') => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const base64Url = event.target?.result as string
+      const newItem: LibraryItem = {
+        id: `local-${Date.now()}`,
+        name: file.name,
+        type,
+        url: base64Url,
+        date: new Date().toISOString()
+      }
+      if (type === 'clothes') {
+        setSelectedClothes(prev => [...prev, newItem])
+      } else {
+        setSelectedModels(prev => [...prev, newItem])
+      }
+    }
+    reader.readAsDataURL(file)
   }
 
   const handleSavePrompt = () => {
@@ -199,10 +228,11 @@ export default function GeneratorPage() {
                 </button>
               </div>
             ))}
-            <div onClick={() => setShowLibraryModal('clothes')} className="w-full aspect-[3/4] rounded-xl border-2 border-dashed border-border bg-surface-card flex flex-col items-center justify-center gap-3 text-muted hover:border-foreground/30 hover:text-foreground cursor-pointer transition-colors">
+            <label className="w-full aspect-[3/4] rounded-xl border-2 border-dashed border-border bg-surface-card flex flex-col items-center justify-center gap-3 text-muted hover:border-foreground/30 hover:text-foreground cursor-pointer transition-colors relative">
+              <input type="file" accept="image/png, image/jpeg, image/webp" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleFileUpload(e, 'clothes')} />
               <Upload className="w-8 h-8 text-muted-foreground" />
-              <span className="text-xs font-medium text-center px-4">Añadir Prenda</span>
-            </div>
+              <span className="text-xs font-medium text-center px-4">Subir o Arrastrar Prenda</span>
+            </label>
           </div>
         </section>
 
@@ -228,10 +258,11 @@ export default function GeneratorPage() {
                 </button>
               </div>
             ))}
-            <div onClick={() => setShowLibraryModal('model')} className="w-full aspect-[3/4] rounded-xl border-2 border-dashed border-border bg-surface-card flex flex-col items-center justify-center gap-3 text-muted hover:border-foreground/30 hover:text-foreground cursor-pointer transition-colors">
+            <label className="w-full aspect-[3/4] rounded-xl border-2 border-dashed border-border bg-surface-card flex flex-col items-center justify-center gap-3 text-muted hover:border-foreground/30 hover:text-foreground cursor-pointer transition-colors relative">
+              <input type="file" accept="image/png, image/jpeg, image/webp" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleFileUpload(e, 'model')} />
               <Upload className="w-8 h-8 text-muted-foreground" />
-              <span className="text-xs font-medium text-center px-4">Añadir Modelo</span>
-            </div>
+              <span className="text-xs font-medium text-center px-4">Subir o Arrastrar Modelo</span>
+            </label>
           </div>
         </section>
 
