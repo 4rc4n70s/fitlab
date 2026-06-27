@@ -36,18 +36,23 @@ export function useUser() {
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        setUser(session?.user ?? null)
-        if (session?.user) {
-          const { data } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single()
-          setProfile(data)
-        } else {
-          setProfile(null)
+        try {
+          setUser(session?.user ?? null)
+          if (session?.user) {
+            const { data } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single()
+            setProfile(data)
+          } else {
+            setProfile(null)
+          }
+        } catch (err) {
+          console.error('Error fetching profile on auth change:', err)
+        } finally {
+          setIsLoading(false)
         }
-        setIsLoading(false)
       }
     )
 

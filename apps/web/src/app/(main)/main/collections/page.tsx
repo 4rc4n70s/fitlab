@@ -1,22 +1,59 @@
 'use client'
 
-import React, { useState } from 'react'
-import { Calendar, RefreshCw, AlertCircle, CheckCircle2, Images } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { Calendar, RefreshCw, AlertCircle, CheckCircle2, Images, Trash, Trash2 } from 'lucide-react'
 import { ImageViewer } from '@/components/shared/image-viewer'
 import Link from 'next/link'
 
-// Start with empty collections by default
-const COLLECTIONS: any[] = []
-
 export default function CollectionsPage() {
+  const [collections, setCollections] = useState<any[]>([])
   const [viewerImages, setViewerImages] = useState<string[]>([])
   const [viewerIndex, setViewerIndex] = useState<number>(0)
   const [showViewer, setShowViewer] = useState(false)
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('fitlab_collections')
+    if (saved) {
+      try {
+        setCollections(JSON.parse(saved))
+      } catch (e) {
+        console.error('Error parsing collections from localStorage', e)
+      }
+    }
+  }, [])
 
   const openViewer = (images: string[], index: number) => {
     setViewerImages(images)
     setViewerIndex(index)
     setShowViewer(true)
+  }
+
+  const handleDeleteCollection = (collectionId: string) => {
+    const confirmDelete = window.confirm('¿Estás seguro de que deseas eliminar esta colección por completo?')
+    if (!confirmDelete) return
+
+    const updated = collections.filter(c => c.id !== collectionId)
+    setCollections(updated)
+    localStorage.setItem('fitlab_collections', JSON.stringify(updated))
+  }
+
+  const handleDeletePhoto = (collectionId: string, genId: string) => {
+    const confirmDelete = window.confirm('¿Estás seguro de que deseas eliminar esta foto?')
+    if (!confirmDelete) return
+
+    const updated = collections.map(c => {
+      if (c.id === collectionId) {
+        return {
+          ...c,
+          generations: c.generations.filter((g: any) => g.id !== genId)
+        }
+      }
+      return c
+    }).filter(c => c.generations.length > 0) // Remove collection if it has no photos left
+
+    setCollections(updated)
+    localStorage.setItem('fitlab_collections', JSON.stringify(updated))
   }
 
   return (
@@ -26,7 +63,7 @@ export default function CollectionsPage() {
         <p className="text-muted text-base">Historial de generaciones agrupadas por lote. Haz click en una imagen para abrir el visualizador.</p>
       </div>
 
-      {COLLECTIONS.length === 0 ? (
+      {collections.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center gap-4 border-2 border-dashed border-border rounded-2xl bg-surface-card p-12 text-center my-8">
           <Images className="w-12 h-12 text-muted" />
           <div className="flex flex-col gap-1 max-w-sm">
@@ -39,18 +76,26 @@ export default function CollectionsPage() {
         </div>
       ) : (
         <div className="flex flex-col gap-12">
-          {COLLECTIONS.map((collection) => {
+          {collections.map((collection) => {
             const successImages = collection.generations.filter((g: any) => g.status === 'success' && g.image).map((g: any) => g.image as string)
 
             return (
               <div key={collection.id} className="flex flex-col gap-4">
                 {/* Collection Header */}
                 <div className="flex items-center gap-4 border-b border-border pb-2">
-                  <h2 className="text-lg font-medium text-foreground">Lote: {collection.id}</h2>
+                  <h2 className="text-lg font-medium text-foreground">Colección: {collection.id}</h2>
                   <span className="text-sm text-muted flex items-center gap-1">
                     <Calendar className="w-4 h-4" />
                     {new Date(collection.date).toLocaleString()}
                   </span>
+                  
+                  <button 
+                    onClick={() => handleDeleteCollection(collection.id)}
+                    className="p-1.5 rounded-lg text-muted hover:text-red-500 hover:bg-red-500/10 transition-colors ml-auto flex items-center gap-1.5 text-xs font-semibold"
+                    title="Eliminar Colección"
+                  >
+                    <Trash className="w-4 h-4" /> Eliminar Colección
+                  </button>
                 </div>
 
                 {/* Generations List */}
@@ -97,9 +142,16 @@ export default function CollectionsPage() {
                           <p className="text-sm text-red-500 mt-2">Motivo: {gen.errorMsg}</p>
                         )}
 
-                        <div className="mt-auto pt-4 flex gap-2">
+                        <div className="mt-auto pt-4 flex gap-3">
                           <button className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium">
                             <RefreshCw className="w-4 h-4" /> Volver a Generar
+                          </button>
+                          
+                          <button 
+                            onClick={() => handleDeletePhoto(collection.id, gen.id)}
+                            className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg border border-border text-red-500/80 hover:text-red-500 hover:bg-red-500/10 transition-colors font-medium"
+                          >
+                            <Trash2 className="w-4 h-4" /> Eliminar Foto
                           </button>
                         </div>
                       </div>

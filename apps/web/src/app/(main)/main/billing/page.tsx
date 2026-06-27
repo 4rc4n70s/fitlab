@@ -173,7 +173,7 @@ export default function BillingPage() {
         {/* Botón de Sincronizar */}
         <button
           onClick={handleManualSync}
-          disabled={isSyncing || isUserLoading}
+          disabled={isSyncing}
           className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full bg-surface-soft border border-border hover:bg-surface hover:text-foreground transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-muted-foreground"
         >
           <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />

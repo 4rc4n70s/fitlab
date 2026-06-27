@@ -18,6 +18,30 @@ export default function GeneratorPage() {
   const [showPromptsModal, setShowPromptsModal] = useState(false)
   const [savedPrompts, setSavedPrompts] = useState<string[]>([])
 
+  const handleGenerate = () => {
+    const newCollection = {
+      id: `batch-${Math.floor(1000 + Math.random() * 9000)}`,
+      date: new Date().toISOString(),
+      prompt: masterPrompt || "Studio lighting, high contrast, clean background",
+      clothes: ['/placeholder-clothes-1.jpg'],
+      generations: [
+        { id: `gen-${Math.floor(Math.random() * 10000)}`, status: 'success', date: new Date().toISOString(), image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&q=80&w=400' },
+        { id: `gen-${Math.floor(Math.random() * 10000)}`, status: 'error', date: new Date().toISOString(), errorMsg: 'Failed to process model mask' },
+        { id: `gen-${Math.floor(Math.random() * 10000)}`, status: 'success', date: new Date().toISOString(), image: 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&q=80&w=400' }
+      ]
+    }
+
+    try {
+      const existing = JSON.parse(localStorage.getItem('fitlab_collections') || '[]')
+      localStorage.setItem('fitlab_collections', JSON.stringify([newCollection, ...existing]))
+    } catch (e) {
+      console.error(e)
+    }
+
+    setShowGenerateModal(false)
+    window.location.href = '/main/collections'
+  }
+
   const handleSavePrompt = () => {
     if (masterPrompt.trim() === '') {
       alert('Por favor escribe un prompt antes de guardar.')
@@ -189,10 +213,7 @@ export default function GeneratorPage() {
             </div>
             <div className="flex justify-end pt-2">
               <button 
-                onClick={() => {
-                  setShowGenerateModal(false)
-                  window.location.href = '/main/collections'
-                }}
+                onClick={handleGenerate}
                 className="w-full px-6 py-2.5 rounded-xl bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium"
               >
                 Ir a Collections
