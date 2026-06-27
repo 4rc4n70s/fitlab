@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Save, RefreshCw, Upload, Image as ImageIcon, X, Sparkles, Trash2 } from 'lucide-react'
+import { Save, RefreshCw, Upload, Image as ImageIcon, X, Sparkles, Trash2, Folder, ChevronRight, Check } from 'lucide-react'
 import { processVirtualTryOn } from '@/actions/gemini'
 
 const ASPECT_RATIOS = [
@@ -33,13 +33,20 @@ export default function GeneratorPage() {
   const [selectedClothes, setSelectedClothes] = useState<LibraryItem[]>([])
   const [selectedModels, setSelectedModels] = useState<LibraryItem[]>([])
   const [libraryItems, setLibraryItems] = useState<LibraryItem[]>([])
+  const [libraryFolders, setLibraryFolders] = useState<{id: string, name: string}[]>([])
+  const [currentFolder, setCurrentFolder] = useState<string | null>(null)
 
   React.useEffect(() => {
     if (showLibraryModal) {
-      const saved = localStorage.getItem('fitlab_library_items')
-      if (saved) {
-        try { setLibraryItems(JSON.parse(saved)) } catch (e) { console.error(e) }
+      const savedItems = localStorage.getItem('fitlab_library_items')
+      const savedFolders = localStorage.getItem('fitlab_library_folders')
+      if (savedItems) {
+        try { setLibraryItems(JSON.parse(savedItems)) } catch (e) { console.error(e) }
       }
+      if (savedFolders) {
+        try { setLibraryFolders(JSON.parse(savedFolders)) } catch (e) { console.error(e) }
+      }
+      setCurrentFolder(null)
     }
   }, [showLibraryModal])
 
@@ -400,35 +407,83 @@ export default function GeneratorPage() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto pr-1">
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {libraryItems
-                  .filter(item => item.type === showLibraryModal)
-                  .map(item => (
-                    <div 
-                      key={item.id} 
-                      className="group cursor-pointer flex flex-col gap-2"
-                      onClick={() => {
-                        if (showLibraryModal === 'clothes') {
-                          setSelectedClothes(prev => [...prev, item])
-                        } else {
-                          setSelectedModels(prev => [...prev, item])
-                        }
-                        setShowLibraryModal(null)
-                      }}
-                    >
-                      <div className="relative aspect-[3/4] rounded-xl overflow-hidden border border-border group-hover:border-foreground/50 transition-colors">
-                        <img src={item.url} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                      </div>
-                      <span className="text-sm font-medium text-foreground truncate px-1">{item.name}</span>
-                    </div>
-                ))}
-              </div>
-              {libraryItems.filter(item => item.type === showLibraryModal).length === 0 && (
-                <div className="p-12 text-center text-muted">
-                  No tienes {showLibraryModal === 'clothes' ? 'prendas' : 'modelos'} en tu librería.
+            <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-8">
+              
+              {/* Breadcrumbs */}
+              {currentFolder && (
+                <div className="flex items-center gap-2 text-sm font-medium text-muted">
+                  <button onClick={() => setCurrentFolder(null)} className="hover:text-foreground transition-colors">Library</button>
+                  <ChevronRight className="w-4 h-4" />
+                  <span className="text-foreground">{libraryFolders.find(f => f.id === currentFolder)?.name}</span>
                 </div>
               )}
+
+              {/* Folders (only in root) */}
+              {!currentFolder && libraryFolders.length > 0 && (
+                <div className="flex flex-col gap-4">
+                  <h4 className="text-sm font-medium text-foreground uppercase tracking-wider">Carpetas</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    {libraryFolders.map(folder => (
+                      <div 
+                        key={folder.id}
+                        onClick={() => setCurrentFolder(folder.id)}
+                        className="flex items-center gap-3 p-3 rounded-xl border border-border bg-surface-card hover:border-foreground/30 cursor-pointer transition-colors"
+                      >
+                        <Folder className="w-5 h-5 text-muted shrink-0" />
+                        <span className="text-sm font-medium text-foreground truncate">{folder.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Items */}
+              <div className="flex flex-col gap-4">
+                <h4 className="text-sm font-medium text-foreground uppercase tracking-wider">
+                  {currentFolder ? 'Contenido de la carpeta' : 'Archivos'}
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {libraryItems
+                    .filter(item => item.type === showLibraryModal)
+                    .filter(item => currentFolder ? item.folderId === currentFolder : !item.folderId)
+                    .map(item => {
+                      const isSelected = showLibraryModal === 'clothes' 
+                        ? selectedClothes.some(i => i.id === item.id) 
+                        : selectedModels.some(i => i.id === item.id)
+
+                      return (
+                        <div 
+                          key={item.id} 
+                          className="group cursor-pointer flex flex-col gap-2 relative"
+                          onClick={() => {
+                            if (showLibraryModal === 'clothes') {
+                              if (isSelected) setSelectedClothes(prev => prev.filter(i => i.id !== item.id))
+                              else setSelectedClothes(prev => [...prev, item])
+                            } else {
+                              if (isSelected) setSelectedModels(prev => prev.filter(i => i.id !== item.id))
+                              else setSelectedModels(prev => [...prev, item])
+                            }
+                          }}
+                        >
+                          <div className={`relative aspect-[3/4] rounded-xl overflow-hidden border-2 transition-all ${isSelected ? 'border-foreground shadow-sm' : 'border-border group-hover:border-foreground/50'}`}>
+                            <img src={item.url} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                            {isSelected && (
+                              <div className="absolute top-2 right-2 bg-foreground text-background p-1.5 rounded-full shadow-md animate-in zoom-in">
+                                <Check className="w-3 h-3 stroke-[3]" />
+                              </div>
+                            )}
+                          </div>
+                          <span className="text-sm font-medium text-foreground truncate px-1">{item.name}</span>
+                        </div>
+                      )
+                  })}
+                </div>
+                {libraryItems.filter(item => item.type === showLibraryModal).length === 0 && (
+                  <div className="p-12 text-center text-muted">
+                    No tienes {showLibraryModal === 'clothes' ? 'prendas' : 'modelos'} en tu librería.
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
