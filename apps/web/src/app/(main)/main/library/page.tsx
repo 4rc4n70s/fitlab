@@ -3,19 +3,11 @@
 import React, { useState } from 'react'
 import { Search, Grid, List, Folder, Upload, MoreVertical, Edit2, Download, Trash2, ChevronRight } from 'lucide-react'
 
-// Dummy Data
-const FOLDERS = [
-  { id: 'f1', name: 'Campaña Verano 26', itemCount: 12 },
-  { id: 'f2', name: 'Modelos Base', itemCount: 5 },
-  { id: 'f3', name: 'Prendas Deportivas', itemCount: 8 },
-]
+// Empty default folders
+const FOLDERS: any[] = []
 
-const ITEMS = [
-  { id: 'img1', name: 'Remera Negra Oversize', type: 'clothes', url: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?auto=format&fit=crop&q=80&w=400', date: '2026-06-25', folderId: 'f1' },
-  { id: 'img2', name: 'Modelo Carlos', type: 'model', url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=400', date: '2026-06-26', folderId: 'f2' },
-  { id: 'img3', name: 'Short Deportivo', type: 'clothes', url: 'https://images.unsplash.com/photo-1591561954557-26941169b49e?auto=format&fit=crop&q=80&w=400', date: '2026-06-27', folderId: 'f3' },
-  { id: 'img4', name: 'Modelo Ana', type: 'model', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400', date: '2026-06-27', folderId: 'f2' },
-]
+// Empty default library items
+const ITEMS: any[] = []
 
 export default function LibraryPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
@@ -96,7 +88,7 @@ export default function LibraryPage() {
       <div className="flex-1 overflow-y-auto p-6 md:p-10 flex flex-col gap-8">
         
         {/* Folders Section (Only show if not inside a folder) */}
-        {!currentFolder && filterType === 'all' && !searchQuery && (
+        {!currentFolder && filterType === 'all' && !searchQuery && FOLDERS.length > 0 && (
           <div className="flex flex-col gap-4">
             <h2 className="text-sm font-medium text-foreground uppercase tracking-wider">Carpetas</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -125,7 +117,13 @@ export default function LibraryPage() {
             {currentFolder ? 'Contenido de la carpeta' : 'Todos los archivos'}
           </h2>
           
-          {filteredItems.length === 0 ? (
+          {ITEMS.length === 0 ? (
+            <div className="p-12 text-center flex flex-col items-center justify-center gap-3 bg-surface-card border border-border rounded-xl border-dashed">
+              <Folder className="w-10 h-10 text-muted" />
+              <p className="text-foreground font-semibold">Tu librería está vacía</p>
+              <p className="text-sm text-muted max-w-sm">Comienza subiendo imágenes de tus prendas o modelos de referencia utilizando el botón de "Subir Imagen" arriba.</p>
+            </div>
+          ) : filteredItems.length === 0 ? (
             <div className="p-10 text-center flex flex-col items-center justify-center gap-2 bg-surface-card border border-border rounded-xl border-dashed">
               <Search className="w-8 h-8 text-muted mb-2" />
               <p className="text-foreground font-medium">No se encontraron resultados</p>

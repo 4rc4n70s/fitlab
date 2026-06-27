@@ -16,11 +16,7 @@ export default function GeneratorPage() {
   const [selectedRatio, setSelectedRatio] = useState('3:4')
   const [showGenerateModal, setShowGenerateModal] = useState(false)
   const [showPromptsModal, setShowPromptsModal] = useState(false)
-  const [savedPrompts, setSavedPrompts] = useState([
-    "Studio lighting, high contrast, clean background",
-    "Outdoor, natural sunlight, urban street style",
-    "Cinematic lighting, dark mood, neon accents"
-  ])
+  const [savedPrompts, setSavedPrompts] = useState<string[]>([])
 
   const handleSavePrompt = () => {
     if (masterPrompt.trim() === '') {
