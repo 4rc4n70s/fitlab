@@ -9,6 +9,8 @@ interface GenerationResponse {
 
 import fs from 'fs/promises'
 import path from 'path'
+import { createClient } from '@/lib/supabase/server'
+import { db } from '@/services/db'
 
 async function fetchImageAsBase64(url: string): Promise<{ mimeType: string, base64: string }> {
   // If it's already a base64 string
@@ -47,8 +49,23 @@ export async function processVirtualTryOn(
   clothesImageUrls: string[]
 ): Promise<GenerationResponse> {
   try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { success: false, error: 'Usuario no autenticado.' }
+    }
+
+    // Decrement credits before generating
+    try {
+      await db.profiles.decrementCredits(user.id, 1)
+    } catch (e: any) {
+      return { success: false, error: e.message || 'Saldo de créditos insuficiente.' }
+    }
+
     const apiKey = process.env.GEMINI_API_KEY
     if (!apiKey) {
+      await db.profiles.incrementCredits(user.id, 1)
       return { success: false, error: 'GEMINI_API_KEY is not configured in the environment.' }
     }
 
@@ -99,11 +116,13 @@ export async function processVirtualTryOn(
     const json = await response.json()
     
     if (!response.ok) {
+      await db.profiles.incrementCredits(user.id, 1)
       return { success: false, error: json.error ? json.error.message : 'Model execution error.' }
     }
     
     const candidate = json.candidates && json.candidates[0]
     if (!candidate || !candidate.content || !candidate.content.parts) {
+      await db.profiles.incrementCredits(user.id, 1)
       return { success: false, error: "No response found from AI." }
     }
 
@@ -116,10 +135,10 @@ export async function processVirtualTryOn(
         mimeType: outputPart.inlineData.mimeType || 'image/jpeg' 
       }
     } else if (outputPart.text) {
-      // Sometimes models return the image as base64 text if incorrectly prompted, or it might just fail to generate an image and return text explaining why.
-      // We will assume failure if it doesn't use inlineData as requested by the old logic.
+      await db.profiles.incrementCredits(user.id, 1)
       return { success: false, error: "Model returned text instead of an image. Verify the model capabilities and prompt." }
     } else {
+      await db.profiles.incrementCredits(user.id, 1)
       return { success: false, error: "Response did not contain image data." }
     }
 
