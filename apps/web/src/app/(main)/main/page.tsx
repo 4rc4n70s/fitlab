@@ -6,7 +6,7 @@ export default async function MainPage() {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: profile } = await supabase
+  await supabase
     .from('profiles')
     .select('*')
     .eq('id', user?.id)

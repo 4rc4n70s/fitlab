@@ -63,7 +63,7 @@ export default function CollectionsPage() {
 
               {/* Generations List */}
               <div className="flex flex-col gap-4">
-                {collection.generations.map((gen, idx) => (
+                {collection.generations.map((gen) => (
                   <div key={gen.id} className="flex bg-surface-card border border-border rounded-xl overflow-hidden shadow-sm hover:border-foreground/30 transition-colors">
                     
                     {/* Info Section */}

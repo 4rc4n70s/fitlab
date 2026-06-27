@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Save, RefreshCw, Upload, Image as ImageIcon, Trash2, X, Sparkles } from 'lucide-react'
+import { Save, RefreshCw, Upload, Image as ImageIcon, X, Sparkles } from 'lucide-react'
 
 // Dummy Data
 const SAVED_PROMPTS = [

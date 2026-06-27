@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Search, Grid, List, Folder, Upload, MoreVertical, Edit2, Download, Trash2, Tag, ChevronRight } from 'lucide-react'
+import { Search, Grid, List, Folder, Upload, MoreVertical, Edit2, Download, Trash2, ChevronRight } from 'lucide-react'
 
 // Dummy Data
 const FOLDERS = [
@@ -59,7 +59,7 @@ export default function LibraryPage() {
             <select 
               className="px-3 py-2 text-sm border border-border rounded-lg bg-surface-card text-foreground focus:outline-none focus:border-foreground/50"
               value={filterType}
-              onChange={(e) => setFilterType(e.target.value as any)}
+              onChange={(e) => setFilterType(e.target.value as 'all' | 'clothes' | 'model')}
             >
               <option value="all">Todos los tipos</option>
               <option value="clothes">Solo Prendas</option>
