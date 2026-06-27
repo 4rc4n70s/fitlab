@@ -45,7 +45,15 @@ export async function processVirtualTryOn(
     // Construct the mandatory prompt
     const contextPrompt = "MANDATORY: You are a precision clothing applicator. Maintain the EXACT same camera distance, perspective, angle, and composition framing as the target model image. DO NOT change, crop, or zoom in. Exactly copy original environment geometry. " + prompt
 
-    const parts: any[] = []
+    interface Part {
+      text?: string
+      inlineData?: {
+        mimeType: string
+        data: string
+      }
+    }
+
+    const parts: Part[] = []
     
     // Fetch and process clothes images (anchors)
     for (let i = 0; i < clothesImageUrls.length; i++) {
@@ -101,7 +109,8 @@ export async function processVirtualTryOn(
       return { success: false, error: "Response did not contain image data." }
     }
 
-  } catch (error: any) {
-    return { success: false, error: error.message || 'Unknown error occurred during generation' }
+  } catch (error: unknown) {
+    const err = error as Error
+    return { success: false, error: err.message || 'Unknown error occurred during generation' }
   }
 }
