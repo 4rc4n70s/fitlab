@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { Save, RefreshCw, Upload, Image as ImageIcon, X, Sparkles, Trash2, Folder, ChevronRight, Check } from 'lucide-react'
 import { processVirtualTryOn } from '@/actions/gemini'
+import { useRouter } from 'next/navigation'
 
 const ASPECT_RATIOS = [
   { label: '1:1', icon: 'Square' },
@@ -15,6 +16,7 @@ const ASPECT_RATIOS = [
 export default function GeneratorPage() {
   const [masterPrompt, setMasterPrompt] = useState('')
   const [selectedRatio, setSelectedRatio] = useState('3:4')
+  const router = useRouter()
   const [showGenerateModal, setShowGenerateModal] = useState(false)
   const [showPromptsModal, setShowPromptsModal] = useState(false)
   const [savedPrompts, setSavedPrompts] = useState<string[]>([])
@@ -73,36 +75,20 @@ export default function GeneratorPage() {
       ? selectedModels 
       : [{ id: 'default', name: 'Default', type: 'model', url: '/models/mens-fashion-loose-cotton-shirt.jpg', date: '' } as LibraryItem]
 
-    const generations = []
+    const batchId = `batch-${Math.floor(1000 + Math.random() * 9000)}`
     
-    try {
-      const clothesBase64 = await urlToBase64(clothesUrl)
-      
-      for (const model of modelsToProcess) {
-        const modelBase64 = await urlToBase64(model.url)
-        const response = await processVirtualTryOn(masterPrompt || fallbackPrompt, modelBase64, [clothesBase64])
-        generations.push({ 
-          id: `gen-${Math.floor(Math.random() * 10000)}`, 
-          status: response.success ? 'success' : 'error', 
-          date: new Date().toISOString(), 
-          image: response.success ? `data:${response.mimeType};base64,${response.base64}` : undefined,
-          errorMsg: response.error
-        })
-      }
-    } catch (e: unknown) {
-      console.error(e)
-      alert('Error procesando las imágenes. Asegúrate de que las imágenes estén disponibles.')
-      setIsGenerating(false)
-      setShowGenerateModal(false)
-      return
-    }
+    const initialGenerations = modelsToProcess.map((_, i) => ({
+      id: `gen-${batchId}-${i}`,
+      status: 'processing',
+      date: new Date().toISOString()
+    }))
 
     const newCollection = {
-      id: `batch-${Math.floor(1000 + Math.random() * 9000)}`,
+      id: batchId,
       date: new Date().toISOString(),
       prompt: masterPrompt || fallbackPrompt,
       clothes: [clothesUrl],
-      generations
+      generations: initialGenerations
     }
 
     try {
@@ -112,9 +98,45 @@ export default function GeneratorPage() {
       console.error(e)
     }
 
-    setIsGenerating(false)
+    // Redirect IMMEDIATELY to collections page!
     setShowGenerateModal(false)
-    window.location.href = '/main/collections'
+    router.push('/main/collections')
+    
+    // Start background processing
+    try {
+      const clothesBase64 = await urlToBase64(clothesUrl)
+      
+      for (let i = 0; i < modelsToProcess.length; i++) {
+        const modelBase64 = await urlToBase64(modelsToProcess[i].url)
+        const response = await processVirtualTryOn(masterPrompt || fallbackPrompt, modelBase64, [clothesBase64])
+        
+        // Update specific generation inside the collection
+        const currentCols = JSON.parse(localStorage.getItem('fitlab_collections') || '[]')
+        const targetCol = currentCols.find((c: any) => c.id === batchId)
+        if (targetCol && targetCol.generations[i]) {
+          targetCol.generations[i] = {
+            ...targetCol.generations[i],
+            status: response.success ? 'success' : 'error',
+            image: response.success ? `data:${response.mimeType};base64,${response.base64}` : undefined,
+            errorMsg: response.error
+          }
+          localStorage.setItem('fitlab_collections', JSON.stringify(currentCols))
+          window.dispatchEvent(new Event('fitlab_collections_updated'))
+        }
+      }
+    } catch (e: unknown) {
+      console.error(e)
+      // Mark remainings as error
+      const currentCols = JSON.parse(localStorage.getItem('fitlab_collections') || '[]')
+      const targetCol = currentCols.find((c: any) => c.id === batchId)
+      if (targetCol) {
+        targetCol.generations = targetCol.generations.map((g: any) => g.status === 'processing' ? { ...g, status: 'error', errorMsg: 'Error de red inesperado.' } : g)
+        localStorage.setItem('fitlab_collections', JSON.stringify(currentCols))
+        window.dispatchEvent(new Event('fitlab_collections_updated'))
+      }
+    } finally {
+      setIsGenerating(false)
+    }
   }
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'clothes' | 'model') => {

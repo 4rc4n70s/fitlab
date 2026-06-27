@@ -7,7 +7,7 @@ import Link from 'next/link'
 
 interface Generation {
   id: string
-  status: 'success' | 'error'
+  status: 'success' | 'error' | 'processing'
   date: string
   image?: string
   errorMsg?: string
@@ -27,15 +27,27 @@ export default function CollectionsPage() {
   const [viewerIndex, setViewerIndex] = useState<number>(0)
   const [showViewer, setShowViewer] = useState(false)
 
-  // Load from localStorage on mount
+  // Load from localStorage on mount and listen to updates
   useEffect(() => {
-    const saved = localStorage.getItem('fitlab_collections')
-    if (saved) {
-      try {
-        setCollections(JSON.parse(saved))
-      } catch (e) {
-        console.error('Error parsing collections from localStorage', e)
+    const loadCols = () => {
+      const saved = localStorage.getItem('fitlab_collections')
+      if (saved) {
+        try {
+          setCollections(JSON.parse(saved))
+        } catch (e) {
+          console.error('Error parsing collections from localStorage', e)
+        }
       }
+    }
+    
+    loadCols()
+    
+    window.addEventListener('fitlab_collections_updated', loadCols)
+    const interval = setInterval(loadCols, 2000)
+    
+    return () => {
+      window.removeEventListener('fitlab_collections_updated', loadCols)
+      clearInterval(interval)
     }
   }, [])
 
@@ -128,6 +140,10 @@ export default function CollectionsPage() {
                               <span className="flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full">
                                 <CheckCircle2 className="w-3 h-3" /> Completado
                               </span>
+                            ) : gen.status === 'processing' ? (
+                              <span className="flex items-center gap-1 text-xs font-medium text-blue-600 bg-blue-500/10 px-2 py-0.5 rounded-full animate-pulse">
+                                <RefreshCw className="w-3 h-3 animate-spin" /> Procesando...
+                              </span>
                             ) : (
                               <span className="flex items-center gap-1 text-xs font-medium text-red-600 bg-red-500/10 px-2 py-0.5 rounded-full">
                                 <AlertCircle className="w-3 h-3" /> Error
@@ -192,6 +208,11 @@ export default function CollectionsPage() {
                                 Ver Imagen
                               </span>
                             </div>
+                          </div>
+                        ) : gen.status === 'processing' ? (
+                          <div className="w-full h-full flex flex-col items-center justify-center gap-3 text-muted p-4 text-center">
+                            <RefreshCw className="w-8 h-8 opacity-50 animate-spin" />
+                            <span className="text-xs font-medium">Generando magia...</span>
                           </div>
                         ) : (
                           <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-muted p-4 text-center">
