@@ -3,7 +3,7 @@ import { get, set } from 'idb-keyval'
 
 import React, { useState } from 'react'
 import { Save, RefreshCw, Upload, Image as ImageIcon, X, Sparkles, Trash2, Folder, ChevronRight, Check } from 'lucide-react'
-import { processVirtualTryOn } from '@/actions/gemini'
+import { getAvailableModels, processVirtualTryOn } from '@/actions/gemini'
 import { getSavedPrompts, savePrompt, deletePrompt } from '@/actions/prompts'
 import { useRouter } from 'next/navigation'
 
@@ -24,6 +24,11 @@ export default function GeneratorPage() {
   const [savedPrompts, setSavedPrompts] = useState<string[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
   const [showLibraryModal, setShowLibraryModal] = useState<'clothes' | 'model' | null>(null)
+  
+  // Model state
+  const [availableModels, setAvailableModels] = useState<{id: string, name: string}[]>([])
+  const [selectedModel, setSelectedModel] = useState<string>('')
+  const [isLoadingModels, setIsLoadingModels] = useState(true)
   
   interface LibraryItem {
     id: string
@@ -56,9 +61,28 @@ export default function GeneratorPage() {
   const [libraryFolders, setLibraryFolders] = useState<{id: string, name: string}[]>([])
   const [currentFolder, setCurrentFolder] = useState<string | null>(null)
 
-  React.useEffect(() => {
-    // Load prompts
-    getSavedPrompts().then(prompts => setSavedPrompts(prompts))
+  useEffect(() => {
+    const init = async () => {
+      // Load saved prompts
+      const prompts = await getSavedPrompts()
+      setSavedPrompts(prompts)
+
+      // Fetch models
+      try {
+        const models = await getAvailableModels()
+        setAvailableModels(models)
+        
+        // Auto select Nano Banana if exists, or first model
+        const nano = models.find(m => m.name.toLowerCase().includes('nano banana'))
+        if (nano) setSelectedModel(nano.id)
+        else if (models.length > 0) setSelectedModel(models[0].id)
+      } catch (err) {
+        console.error('Failed to load models:', err)
+      } finally {
+        setIsLoadingModels(false)
+      }
+    }
+    init()
   }, [])
 
   React.useEffect(() => {
@@ -134,7 +158,7 @@ export default function GeneratorPage() {
     for (let i = 0; i < modelsToProcess.length; i++) {
       try {
         const modelBase64 = await urlToBase64(modelsToProcess[i].url)
-        const response = await processVirtualTryOn(masterPrompt, modelBase64, clothesBase64s)
+        const response = await processVirtualTryOn(masterPrompt, modelBase64, clothesBase64s, selectedModel)
         
         // Update specific generation inside the collection
         const currentCols = (await get('fitlab_collections') || []) as Collection[]
@@ -229,6 +253,32 @@ export default function GeneratorPage() {
           <h1 className="text-3xl font-heading font-semibold text-foreground">Generator</h1>
           <p className="text-muted text-base">Configura tu prompt y selecciona las prendas y modelos para generar nuevas imágenes.</p>
         </div>
+
+        {/* 0. AI Model */}
+        <section className="flex flex-col gap-4 border-b border-border pb-10">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-medium text-foreground">AI Model</h2>
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-foreground">Selecciona el modelo generativo</label>
+            <select 
+              className="w-full md:w-1/2 p-3 rounded-xl border border-border bg-surface-card text-foreground focus:outline-none focus:border-foreground/50 appearance-none cursor-pointer"
+              value={selectedModel}
+              onChange={(e) => setSelectedModel(e.target.value)}
+              disabled={isLoadingModels || availableModels.length === 0}
+            >
+              {isLoadingModels ? (
+                <option>Cargando modelos...</option>
+              ) : availableModels.length === 0 ? (
+                <option>No se pudieron cargar modelos</option>
+              ) : (
+                availableModels.map(m => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
+                ))
+              )}
+            </select>
+          </div>
+        </section>
 
         {/* 1. Prompt Engineering */}
         <section className="flex flex-col gap-4 border-b border-border pb-10">
