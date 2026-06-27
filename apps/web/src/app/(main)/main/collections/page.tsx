@@ -40,7 +40,9 @@ interface Collection {
 }
 
 export default function CollectionsPage() {
-  const [collections, setCollections] = useState<Collection[]>([])
+const [collections, setCollections] = useState<Collection[]>([])
+  const [page, setPage] = useState(1)
+  const ITEMS_PER_PAGE = 10
   const [viewerImages, setViewerImages] = useState<{url: string, originalUrl?: string}[]>([])
   const [viewerIndex, setViewerIndex] = useState<number>(0)
   const [showViewer, setShowViewer] = useState(false)
@@ -50,8 +52,6 @@ export default function CollectionsPage() {
   const [regenBase, setRegenBase] = useState<'original' | 'result'>('original')
   const [deleteModal, setDeleteModal] = useState<{ type: 'collection' | 'photo', collectionId: string, genId?: string } | null>(null)
   
-  const [currentPage, setCurrentPage] = useState(1)
-  const ITEMS_PER_PAGE = 10
   const [isRegenerating, setIsRegenerating] = useState(false)
 
   // Load from localStorage on mount and listen to updates
@@ -111,8 +111,6 @@ export default function CollectionsPage() {
         }
       }
       
-      setRegenModal(null)
-      
       const response = await processVirtualTryOn(prompt, modelBase64, clothesBase64s)
       
       const updatedCols = (await get('fitlab_collections') || []) as Collection[]
@@ -149,11 +147,18 @@ export default function CollectionsPage() {
       }
     } finally {
       setIsRegenerating(false)
+      setRegenModal(null)
     }
   }
 
-  const handleDownloadImage = (base64Url: string, name: string) => {
-    saveAs(base64Url, name)
+  const handleDownloadImage = async (base64Url: string, name: string) => {
+    try {
+      const res = await fetch(base64Url)
+      const blob = await res.blob()
+      saveAs(blob, name)
+    } catch (e) {
+      console.error(e)
+    }
   }
 
   const handleDownloadZip = async (collection: Collection) => {
@@ -201,7 +206,7 @@ export default function CollectionsPage() {
       </div>
 
       {collections.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center gap-4 border-2 border-dashed border-border rounded-2xl bg-surface-card p-12 text-center my-8">
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 border-2 border-dashed border-border bg-surface-card p-12 text-center my-8">
           <Images className="w-12 h-12 text-muted" />
           <div className="flex flex-col gap-1 max-w-sm">
             <h3 className="text-lg font-medium text-foreground font-heading">No hay colecciones</h3>
@@ -213,7 +218,7 @@ export default function CollectionsPage() {
         </div>
       ) : (
         <div className="flex flex-col gap-12">
-          {collections.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map((collection) => {
+          {collections.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE).map((collection) => {
             return (
               <div key={collection.id} className="flex flex-col gap-4">
                 {/* Collection Header */}
@@ -241,7 +246,7 @@ export default function CollectionsPage() {
                 {/* Generations List */}
                 <div className="flex flex-col gap-4">
                   {collection.generations.map((gen) => (
-                    <div key={gen.id} className="flex bg-surface-card border border-border rounded-xl overflow-hidden shadow-sm hover:border-foreground/30 transition-colors">
+                    <div key={gen.id} className="flex bg-surface-card border border-border overflow-hidden shadow-sm hover:border-foreground/30 transition-colors">
                       
                       {/* Info Section */}
                       <div className="flex-1 p-6 flex flex-col gap-4">
@@ -355,17 +360,17 @@ export default function CollectionsPage() {
             <div className="flex items-center justify-center gap-4 mt-8">
               <button 
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                disabled={currentPage === 1}
+                disabled={page === 1}
                 className="p-2 rounded-lg border border-border bg-surface-card hover:bg-surface-soft disabled:opacity-50 transition-colors"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
               <span className="text-sm font-medium">
-                Página {currentPage} de {Math.ceil(collections.length / ITEMS_PER_PAGE)}
+                Página {page} de {Math.ceil(collections.length / ITEMS_PER_PAGE)}
               </span>
               <button 
                 onClick={() => setCurrentPage(prev => Math.min(Math.ceil(collections.length / ITEMS_PER_PAGE), prev + 1))}
-                disabled={currentPage === Math.ceil(collections.length / ITEMS_PER_PAGE)}
+                disabled={page === Math.ceil(collections.length / ITEMS_PER_PAGE)}
                 className="p-2 rounded-lg border border-border bg-surface-card hover:bg-surface-soft disabled:opacity-50 transition-colors"
               >
                 <ChevronRight className="w-5 h-5" />
