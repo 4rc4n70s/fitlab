@@ -31,11 +31,17 @@ export async function getAvailableModels(): Promise<{ id: string, name: string }
     const tunedData = await tunedRes.json()
 
     const models = []
+    
+    interface GeminiModel {
+      name: string
+      displayName?: string
+    }
+
     if (data.models) {
-      models.push(...data.models.map((m: any) => ({ id: m.name, name: m.displayName || m.name.replace('models/', '') })))
+      models.push(...data.models.map((m: GeminiModel) => ({ id: m.name, name: m.displayName || m.name.replace('models/', '') })))
     }
     if (tunedData.tunedModels) {
-      models.push(...tunedData.tunedModels.map((m: any) => ({ id: m.name, name: m.displayName || m.name.replace('tunedModels/', '') })))
+      models.push(...tunedData.tunedModels.map((m: GeminiModel) => ({ id: m.name, name: m.displayName || m.name.replace('tunedModels/', '') })))
     }
     return models
   } catch (e) {
