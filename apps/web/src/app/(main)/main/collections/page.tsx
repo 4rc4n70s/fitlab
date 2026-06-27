@@ -41,7 +41,7 @@ interface Collection {
 
 export default function CollectionsPage() {
 const [collections, setCollections] = useState<Collection[]>([])
-  const [page, setPage] = useState(1)
+  const [page, setCurrentPage] = useState(1)
   const ITEMS_PER_PAGE = 10
   const [viewerImages, setViewerImages] = useState<{url: string, originalUrl?: string}[]>([])
   const [viewerIndex, setViewerIndex] = useState<number>(0)
