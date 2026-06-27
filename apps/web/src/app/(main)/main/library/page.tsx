@@ -1,26 +1,166 @@
 'use client'
 
-import React, { useState } from 'react'
-import { Search, Grid, List, Folder, Upload, MoreVertical, Edit2, Download, Trash2, ChevronRight } from 'lucide-react'
-
-// Empty default folders
-const FOLDERS: any[] = []
-
-// Empty default library items
-const ITEMS: any[] = []
+import React, { useState, useEffect } from 'react'
+import { Search, Grid, List, Folder, Upload, MoreVertical, Edit2, Download, Trash2, ChevronRight, FolderPlus } from 'lucide-react'
 
 export default function LibraryPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [filterType, setFilterType] = useState<'all' | 'clothes' | 'model'>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [currentFolder, setCurrentFolder] = useState<string | null>(null)
+  
+  // Stateful items and folders loaded from localStorage
+  const [folders, setFolders] = useState<any[]>([])
+  const [items, setItems] = useState<any[]>([])
 
-  const filteredItems = ITEMS.filter(item => {
+  // Load from localStorage on mount
+  useEffect(() => {
+    const savedFolders = localStorage.getItem('fitlab_library_folders')
+    const savedItems = localStorage.getItem('fitlab_library_items')
+    
+    if (savedFolders) {
+      try { setFolders(JSON.parse(savedFolders)) } catch (e) { console.error(e) }
+    } else {
+      // Default initial mock folders if empty
+      const defaultFolders = [
+        { id: 'f1', name: 'Campaña Verano 26', itemCount: 2 },
+        { id: 'f2', name: 'Modelos Base', itemCount: 2 },
+        { id: 'f3', name: 'Prendas Deportivas', itemCount: 0 },
+      ]
+      setFolders(defaultFolders)
+      localStorage.setItem('fitlab_library_folders', JSON.stringify(defaultFolders))
+    }
+
+    if (savedItems) {
+      try { setItems(JSON.parse(savedItems)) } catch (e) { console.error(e) }
+    } else {
+      // Default initial mock items if empty
+      const defaultItems = [
+        { id: 'img1', name: 'Remera Negra Oversize', type: 'clothes', url: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?auto=format&fit=crop&q=80&w=400', date: new Date().toISOString(), folderId: 'f1' },
+        { id: 'img2', name: 'Modelo Carlos', type: 'model', url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=400', date: new Date().toISOString(), folderId: 'f2' },
+        { id: 'img4', name: 'Modelo Ana', type: 'model', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400', date: new Date().toISOString(), folderId: 'f2' },
+      ]
+      setItems(defaultItems)
+      localStorage.setItem('fitlab_library_items', JSON.stringify(defaultItems))
+    }
+  }, [])
+
+  const filteredItems = items.filter(item => {
     const matchFolder = currentFolder ? item.folderId === currentFolder : true
     const matchType = filterType === 'all' ? true : item.type === filterType
     const matchSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase())
     return matchFolder && matchType && matchSearch
   })
+
+  // Handle Mock Upload
+  const handleUploadImage = () => {
+    const name = window.prompt('Introduce el nombre de la imagen:')
+    if (!name) return
+
+    const typeChoice = window.prompt('Introduce el tipo: "prenda" o "modelo":')
+    const type = typeChoice?.toLowerCase() === 'modelo' ? 'model' : 'clothes'
+    
+    // Select a random image based on type
+    const clothesImages = [
+      'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&q=80&w=400',
+      'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&q=80&w=400',
+      'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&q=80&w=400'
+    ]
+    const modelImages = [
+      'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=400',
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=400',
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=400'
+    ]
+    const url = type === 'model' 
+      ? modelImages[Math.floor(Math.random() * modelImages.length)] 
+      : clothesImages[Math.floor(Math.random() * clothesImages.length)]
+
+    const newItem = {
+      id: `img-${Date.now()}`,
+      name,
+      type,
+      url,
+      date: new Date().toISOString(),
+      folderId: currentFolder || undefined
+    }
+
+    const updated = [newItem, ...items]
+    setItems(updated)
+    localStorage.setItem('fitlab_library_items', JSON.stringify(updated))
+
+    // Update folder item count if inside a folder
+    if (currentFolder) {
+      const updatedFolders = folders.map(f => {
+        if (f.id === currentFolder) {
+          return { ...f, itemCount: f.itemCount + 1 }
+        }
+        return f
+      })
+      setFolders(updatedFolders)
+      localStorage.setItem('fitlab_library_folders', JSON.stringify(updatedFolders))
+    }
+  }
+
+  // Handle Mock Create Folder
+  const handleCreateFolder = () => {
+    const name = window.prompt('Nombre de la nueva carpeta:')
+    if (!name) return
+
+    const newFolder = {
+      id: `f-${Date.now()}`,
+      name,
+      itemCount: 0
+    }
+
+    const updated = [...folders, newFolder]
+    setFolders(updated)
+    localStorage.setItem('fitlab_library_folders', JSON.stringify(updated))
+  }
+
+  // Handle Delete Item
+  const handleDeleteItem = (e: React.MouseEvent, itemId: string) => {
+    e.stopPropagation()
+    const confirmDelete = window.confirm('¿Estás seguro de que deseas eliminar este archivo?')
+    if (!confirmDelete) return
+
+    const itemToDelete = items.find(i => i.id === itemId)
+    const updated = items.filter(i => i.id !== itemId)
+    setItems(updated)
+    localStorage.setItem('fitlab_library_items', JSON.stringify(updated))
+
+    // Decrement item count in its folder
+    if (itemToDelete && itemToDelete.folderId) {
+      const updatedFolders = folders.map(f => {
+        if (f.id === itemToDelete.folderId) {
+          return { ...f, itemCount: Math.max(0, f.itemCount - 1) }
+        }
+        return f
+      })
+      setFolders(updatedFolders)
+      localStorage.setItem('fitlab_library_folders', JSON.stringify(updatedFolders))
+    }
+  }
+
+  // Handle Delete Folder
+  const handleDeleteFolder = (e: React.MouseEvent, folderId: string) => {
+    e.stopPropagation()
+    const confirmDelete = window.confirm('¿Estás seguro de que deseas eliminar esta carpeta? Las imágenes dentro de ella quedarán huérfanas pero no se eliminarán.')
+    if (!confirmDelete) return
+
+    const updatedFolders = folders.filter(f => f.id !== folderId)
+    setFolders(updatedFolders)
+    localStorage.setItem('fitlab_library_folders', JSON.stringify(updatedFolders))
+
+    // Unassign folderId from items inside that folder
+    const updatedItems = items.map(item => {
+      if (item.folderId === folderId) {
+        return { ...item, folderId: undefined }
+      }
+      return item
+    })
+    setItems(updatedItems)
+    localStorage.setItem('fitlab_library_items', JSON.stringify(updatedItems))
+  }
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
@@ -31,9 +171,20 @@ export default function LibraryPage() {
             <h1 className="text-3xl font-heading font-semibold text-foreground">Library</h1>
             <p className="text-muted text-sm">Gestiona tus prendas y modelos de referencia.</p>
           </div>
-          <button className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium">
-            <Upload className="w-4 h-4" /> Subir Imagen
-          </button>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={handleCreateFolder}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-surface-card hover:bg-surface-soft transition-colors font-medium text-sm"
+            >
+              <FolderPlus className="w-4 h-4" /> Nueva Carpeta
+            </button>
+            <button 
+              onClick={handleUploadImage}
+              className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium text-sm"
+            >
+              <Upload className="w-4 h-4" /> Subir Imagen
+            </button>
+          </div>
         </div>
 
         <div className="flex flex-col md:flex-row items-center gap-4 justify-between">
@@ -80,7 +231,7 @@ export default function LibraryPage() {
           <div className="flex items-center gap-2 text-sm font-medium text-muted">
             <button onClick={() => setCurrentFolder(null)} className="hover:text-foreground transition-colors">Library</button>
             <ChevronRight className="w-4 h-4" />
-            <span className="text-foreground">{FOLDERS.find(f => f.id === currentFolder)?.name}</span>
+            <span className="text-foreground">{folders.find(f => f.id === currentFolder)?.name}</span>
           </div>
         )}
       </div>
@@ -88,23 +239,32 @@ export default function LibraryPage() {
       <div className="flex-1 overflow-y-auto p-6 md:p-10 flex flex-col gap-8">
         
         {/* Folders Section (Only show if not inside a folder) */}
-        {!currentFolder && filterType === 'all' && !searchQuery && FOLDERS.length > 0 && (
+        {!currentFolder && filterType === 'all' && !searchQuery && folders.length > 0 && (
           <div className="flex flex-col gap-4">
             <h2 className="text-sm font-medium text-foreground uppercase tracking-wider">Carpetas</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {FOLDERS.map(folder => (
+              {folders.map(folder => (
                 <div 
                   key={folder.id}
                   onClick={() => setCurrentFolder(folder.id)}
-                  className="flex items-center gap-3 p-4 rounded-xl border border-border bg-surface-card hover:border-foreground/30 cursor-pointer transition-colors group"
+                  className="flex items-center justify-between p-4 rounded-xl border border-border bg-surface-card hover:border-foreground/30 cursor-pointer transition-colors group"
                 >
-                  <div className="p-2.5 rounded-lg bg-surface-soft text-foreground group-hover:bg-foreground group-hover:text-background transition-colors">
-                    <Folder className="w-5 h-5" />
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <div className="p-2.5 rounded-lg bg-surface-soft text-foreground group-hover:bg-foreground group-hover:text-background transition-colors shrink-0">
+                      <Folder className="w-5 h-5" />
+                    </div>
+                    <div className="flex flex-col overflow-hidden">
+                      <span className="text-sm font-medium text-foreground truncate">{folder.name}</span>
+                      <span className="text-xs text-muted">{folder.itemCount} elementos</span>
+                    </div>
                   </div>
-                  <div className="flex flex-col overflow-hidden">
-                    <span className="text-sm font-medium text-foreground truncate">{folder.name}</span>
-                    <span className="text-xs text-muted">{folder.itemCount} elementos</span>
-                  </div>
+                  <button 
+                    onClick={(e) => handleDeleteFolder(e, folder.id)}
+                    className="p-1 rounded text-muted hover:text-red-500 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+                    title="Eliminar Carpeta"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               ))}
             </div>
@@ -117,7 +277,7 @@ export default function LibraryPage() {
             {currentFolder ? 'Contenido de la carpeta' : 'Todos los archivos'}
           </h2>
           
-          {ITEMS.length === 0 ? (
+          {items.length === 0 ? (
             <div className="p-12 text-center flex flex-col items-center justify-center gap-3 bg-surface-card border border-border rounded-xl border-dashed">
               <Folder className="w-10 h-10 text-muted" />
               <p className="text-foreground font-semibold">Tu librería está vacía</p>
@@ -145,12 +305,23 @@ export default function LibraryPage() {
                     </div>
 
                     {/* Hover Overlay */}
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <button className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-colors" title="Descargar">
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 z-10">
+                      <a 
+                        href={item.url}
+                        download
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-colors" 
+                        title="Descargar"
+                      >
                         <Download className="w-4 h-4" />
-                      </button>
-                      <button className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-colors" title="Opciones">
-                        <MoreVertical className="w-4 h-4" />
+                      </a>
+                      <button 
+                        onClick={(e) => handleDeleteItem(e, item.id)}
+                        className="p-2 bg-red-500/80 hover:bg-red-500 text-white rounded-full backdrop-blur-md transition-colors" 
+                        title="Eliminar"
+                      >
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
@@ -187,10 +358,19 @@ export default function LibraryPage() {
                       <button className="p-2 text-muted hover:text-foreground rounded-lg hover:bg-border transition-colors">
                         <Edit2 className="w-4 h-4" />
                       </button>
-                      <button className="p-2 text-muted hover:text-foreground rounded-lg hover:bg-border transition-colors">
+                      <a 
+                        href={item.url} 
+                        download 
+                        target="_blank" 
+                        rel="noreferrer" 
+                        className="p-2 text-muted hover:text-foreground rounded-lg hover:bg-border transition-colors"
+                      >
                         <Download className="w-4 h-4" />
-                      </button>
-                      <button className="p-2 text-red-500/70 hover:text-red-500 rounded-lg hover:bg-red-500/10 transition-colors">
+                      </a>
+                      <button 
+                        onClick={(e) => handleDeleteItem(e, item.id)}
+                        className="p-2 text-red-500/70 hover:text-red-500 rounded-lg hover:bg-red-500/10 transition-colors"
+                      >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
