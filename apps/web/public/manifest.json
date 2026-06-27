@@ -1,7 +1,7 @@
 {
-  "name": "Tetsu App",
-  "short_name": "Tetsu",
-  "description": "Aplicación del ecosistema Tetsu Studio",
+  "name": "Fit Lab",
+  "short_name": "Fit Lab",
+  "description": "La plataforma de generación de imágenes con IA para tu marca de ropa.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
