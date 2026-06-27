@@ -43,28 +43,51 @@ export default function GeneratorPage() {
     }
   }, [showLibraryModal])
 
+  const urlToBase64 = async (url: string) => {
+    if (url.startsWith('data:')) return url
+    const res = await fetch(url)
+    const blob = await res.blob()
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result as string)
+      reader.onerror = reject
+      reader.readAsDataURL(blob)
+    })
+  }
+
   const handleGenerate = async () => {
     setIsGenerating(true)
     
-    const clothesUrl = selectedClothes.length > 0 ? selectedClothes[0].url : 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&q=80&w=400'
+    const clothesUrl = selectedClothes.length > 0 ? selectedClothes[0].url : '/clothes/pexels-cottonbro-7716960.jpg'
     const fallbackPrompt = "Studio lighting, high contrast, clean background"
     
     // Support generating for multiple models if selected
     const modelsToProcess = selectedModels.length > 0 
       ? selectedModels 
-      : [{ id: 'default', name: 'Default', type: 'model', url: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&q=80&w=400', date: '' } as LibraryItem]
+      : [{ id: 'default', name: 'Default', type: 'model', url: '/models/mens-fashion-loose-cotton-shirt.jpg', date: '' } as LibraryItem]
 
     const generations = []
     
-    for (const model of modelsToProcess) {
-      const response = await processVirtualTryOn(masterPrompt || fallbackPrompt, model.url, [clothesUrl])
-      generations.push({ 
-        id: `gen-${Math.floor(Math.random() * 10000)}`, 
-        status: response.success ? 'success' : 'error', 
-        date: new Date().toISOString(), 
-        image: response.success ? `data:${response.mimeType};base64,${response.base64}` : undefined,
-        errorMsg: response.error
-      })
+    try {
+      const clothesBase64 = await urlToBase64(clothesUrl)
+      
+      for (const model of modelsToProcess) {
+        const modelBase64 = await urlToBase64(model.url)
+        const response = await processVirtualTryOn(masterPrompt || fallbackPrompt, modelBase64, [clothesBase64])
+        generations.push({ 
+          id: `gen-${Math.floor(Math.random() * 10000)}`, 
+          status: response.success ? 'success' : 'error', 
+          date: new Date().toISOString(), 
+          image: response.success ? `data:${response.mimeType};base64,${response.base64}` : undefined,
+          errorMsg: response.error
+        })
+      }
+    } catch (e: any) {
+      console.error(e)
+      alert('Error procesando las imágenes. Asegúrate de que las imágenes estén disponibles.')
+      setIsGenerating(false)
+      setShowGenerateModal(false)
+      return
     }
 
     const newCollection = {
@@ -130,7 +153,7 @@ export default function GeneratorPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-4rem)] flex flex-col pb-24">
-      <div className="flex flex-col gap-10 p-6 md:p-10 max-w-4xl mx-auto w-full flex-1">
+      <div className="flex flex-col gap-10 p-6 md:p-10 max-w-6xl mx-auto w-full flex-1">
         
         <div className="flex flex-col gap-2">
           <h1 className="text-3xl font-heading font-semibold text-foreground">Generator</h1>
@@ -181,12 +204,12 @@ export default function GeneratorPage() {
           </div>
           <p className="text-sm text-muted">Select the output dimensions for your generation.</p>
           
-          <div className="flex items-center gap-4 flex-wrap">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 w-full">
             {ASPECT_RATIOS.map((ratio) => (
               <button
                 key={ratio.label}
                 onClick={() => setSelectedRatio(ratio.label)}
-                className={`flex flex-col items-center justify-center gap-2 w-24 h-24 rounded-xl border transition-all ${
+                className={`flex flex-col items-center justify-center gap-2 w-full h-24 rounded-xl border transition-all ${
                   selectedRatio === ratio.label 
                     ? 'border-foreground bg-surface-soft text-foreground shadow-sm' 
                     : 'border-border bg-surface-card text-muted hover:border-foreground/30'
@@ -219,7 +242,15 @@ export default function GeneratorPage() {
           </div>
           <p className="text-sm text-muted">Todas las prendas seleccionadas se aplicarán a los modelos.</p>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <label className="col-span-full h-48 rounded-xl border-2 border-dashed border-border bg-surface-card flex flex-col items-center justify-center gap-3 text-muted hover:border-foreground/30 hover:text-foreground cursor-pointer transition-colors relative">
+              <input type="file" accept="image/png, image/jpeg, image/webp" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleFileUpload(e, 'clothes')} />
+              <Upload className="w-8 h-8 text-muted-foreground" />
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-sm font-medium text-center px-4">Subir o Arrastrar Prenda</span>
+                <span className="text-xs text-muted-foreground">Soporta PNG, JPG de hasta 10MB</span>
+              </div>
+            </label>
             {selectedClothes.map(item => (
               <div key={item.id} className="relative aspect-[3/4] rounded-xl overflow-hidden border border-border">
                 <img src={item.url} alt={item.name} className="w-full h-full object-cover" />
@@ -228,11 +259,6 @@ export default function GeneratorPage() {
                 </button>
               </div>
             ))}
-            <label className="w-full aspect-[3/4] rounded-xl border-2 border-dashed border-border bg-surface-card flex flex-col items-center justify-center gap-3 text-muted hover:border-foreground/30 hover:text-foreground cursor-pointer transition-colors relative">
-              <input type="file" accept="image/png, image/jpeg, image/webp" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleFileUpload(e, 'clothes')} />
-              <Upload className="w-8 h-8 text-muted-foreground" />
-              <span className="text-xs font-medium text-center px-4">Subir o Arrastrar Prenda</span>
-            </label>
           </div>
         </section>
 
@@ -249,7 +275,15 @@ export default function GeneratorPage() {
           </div>
           <p className="text-sm text-muted">Se generará una foto por cada modelo cargado, utilizando las prendas anteriores.</p>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <label className="col-span-full h-48 rounded-xl border-2 border-dashed border-border bg-surface-card flex flex-col items-center justify-center gap-3 text-muted hover:border-foreground/30 hover:text-foreground cursor-pointer transition-colors relative">
+              <input type="file" accept="image/png, image/jpeg, image/webp" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleFileUpload(e, 'model')} />
+              <Upload className="w-8 h-8 text-muted-foreground" />
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-sm font-medium text-center px-4">Subir o Arrastrar Modelo</span>
+                <span className="text-xs text-muted-foreground">Soporta PNG, JPG de hasta 10MB</span>
+              </div>
+            </label>
             {selectedModels.map(item => (
               <div key={item.id} className="relative aspect-[3/4] rounded-xl overflow-hidden border border-border">
                 <img src={item.url} alt={item.name} className="w-full h-full object-cover" />
@@ -258,11 +292,6 @@ export default function GeneratorPage() {
                 </button>
               </div>
             ))}
-            <label className="w-full aspect-[3/4] rounded-xl border-2 border-dashed border-border bg-surface-card flex flex-col items-center justify-center gap-3 text-muted hover:border-foreground/30 hover:text-foreground cursor-pointer transition-colors relative">
-              <input type="file" accept="image/png, image/jpeg, image/webp" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleFileUpload(e, 'model')} />
-              <Upload className="w-8 h-8 text-muted-foreground" />
-              <span className="text-xs font-medium text-center px-4">Subir o Arrastrar Modelo</span>
-            </label>
           </div>
         </section>
 

@@ -13,34 +13,14 @@ import { createClient } from '@/lib/supabase/server'
 import { db } from '@/services/db'
 
 async function fetchImageAsBase64(url: string): Promise<{ mimeType: string, base64: string }> {
-  // If it's already a base64 string
+  // We now expect the client to always send a base64 string
   if (url.startsWith('data:')) {
     const [header, data] = url.split(',')
     const mimeType = header.replace('data:', '').replace(';base64', '')
     return { mimeType, base64: data }
   }
 
-  // If it's a local public file (starts with /)
-  if (url.startsWith('/')) {
-    const filePath = path.join(process.cwd(), 'public', url)
-    const buffer = await fs.readFile(filePath)
-    const ext = path.extname(url).toLowerCase()
-    let mimeType = 'image/jpeg'
-    if (ext === '.png') mimeType = 'image/png'
-    if (ext === '.webp') mimeType = 'image/webp'
-    return { mimeType, base64: buffer.toString('base64') }
-  }
-
-  // Otherwise, fetch the image from URL
-  const response = await fetch(url)
-  if (!response.ok) {
-    throw new Error(`Failed to fetch image from URL: ${url}`)
-  }
-  const arrayBuffer = await response.arrayBuffer()
-  const buffer = Buffer.from(arrayBuffer)
-  const mimeType = response.headers.get('content-type') || 'image/jpeg'
-  
-  return { mimeType, base64: buffer.toString('base64') }
+  throw new Error(`Expected base64 image data URL, but received: ${url.substring(0, 50)}...`)
 }
 
 export async function processVirtualTryOn(
