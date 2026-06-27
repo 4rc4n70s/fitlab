@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { Save, RefreshCw, Upload, Image as ImageIcon, X, Sparkles, Trash2, Folder, ChevronRight, Check } from 'lucide-react'
 import { processVirtualTryOn } from '@/actions/gemini'
+import { getSavedPrompts, savePrompt, deletePrompt } from '@/actions/prompts'
 import { useRouter } from 'next/navigation'
 
 const ASPECT_RATIOS = [
@@ -53,6 +54,11 @@ export default function GeneratorPage() {
   const [libraryItems, setLibraryItems] = useState<LibraryItem[]>([])
   const [libraryFolders, setLibraryFolders] = useState<{id: string, name: string}[]>([])
   const [currentFolder, setCurrentFolder] = useState<string | null>(null)
+
+  React.useEffect(() => {
+    // Load prompts
+    getSavedPrompts().then(prompts => setSavedPrompts(prompts))
+  }, [])
 
   React.useEffect(() => {
     if (showLibraryModal) {
@@ -178,7 +184,7 @@ export default function GeneratorPage() {
     reader.readAsDataURL(file)
   }
 
-  const handleSavePrompt = () => {
+  const handleSavePrompt = async () => {
     if (masterPrompt.trim() === '') {
       alert('Por favor escribe un prompt antes de guardar.')
       return
@@ -187,13 +193,25 @@ export default function GeneratorPage() {
       alert('Este prompt ya está guardado.')
       return
     }
-    setSavedPrompts([...savedPrompts, masterPrompt])
-    alert('Prompt guardado con éxito.')
+    const previous = [...savedPrompts]
+    setSavedPrompts([masterPrompt, ...savedPrompts])
+    const res = await savePrompt(masterPrompt)
+    if (!res.success) {
+      setSavedPrompts(previous)
+      alert(res.error || 'Error al guardar el prompt, revisa si tienes configurada la tabla "user_prompts"')
+    } else {
+      alert('Prompt guardado con éxito.')
+    }
   }
 
-  const handleDeletePrompt = (e: React.MouseEvent, promptToDelete: string) => {
+  const handleDeletePrompt = async (e: React.MouseEvent, promptToDelete: string) => {
     e.stopPropagation()
+    const previous = [...savedPrompts]
     setSavedPrompts(savedPrompts.filter(p => p !== promptToDelete))
+    const res = await deletePrompt(promptToDelete)
+    if (!res.success) {
+      setSavedPrompts(previous)
+    }
   }
 
   return (
@@ -249,7 +267,7 @@ export default function GeneratorPage() {
           </div>
           <p className="text-sm text-muted">Select the output dimensions for your generation.</p>
           
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 w-full">
+          <div className="flex flex-col sm:grid sm:grid-cols-5 gap-4 w-full">
             {ASPECT_RATIOS.map((ratio) => (
               <button
                 key={ratio.label}
@@ -522,6 +540,15 @@ export default function GeneratorPage() {
                   </div>
                 )}
               </div>
+            </div>
+            
+            <div className="flex justify-end pt-4 border-t border-border mt-auto">
+              <button 
+                onClick={() => setShowLibraryModal(null)}
+                className="px-8 py-2.5 rounded-xl bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium flex items-center justify-center gap-2"
+              >
+                OK
+              </button>
             </div>
           </div>
         </div>

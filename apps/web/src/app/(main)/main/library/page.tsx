@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { Search, Grid, List, Folder, Upload, Edit2, Download, Trash2, ChevronRight, FolderPlus } from 'lucide-react'
+import { Search, Grid, List, Folder, Upload, Edit2, Download, Trash2, ChevronRight, FolderPlus, X, Eye } from 'lucide-react'
+import { ImageViewer } from '@/components/shared/image-viewer'
 
 interface FolderType {
   id: string
@@ -24,9 +24,17 @@ export default function LibraryPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [currentFolder, setCurrentFolder] = useState<string | null>(null)
   
-  // Stateful items and folders loaded from localStorage
   const [folders, setFolders] = useState<FolderType[]>([])
   const [items, setItems] = useState<ItemType[]>([])
+
+  // Modal States
+  const [showUploadModal, setShowUploadModal] = useState(false)
+  const [uploadFiles, setUploadFiles] = useState<{id: string, file?: File, url: string, name: string, type: 'clothes'|'model'}[]>([])
+  const [editItem, setEditItem] = useState<ItemType | null>(null)
+  
+  // Viewer States
+  const [showViewer, setShowViewer] = useState(false)
+  const [viewerIndex, setViewerIndex] = useState(0)
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -87,53 +95,69 @@ export default function LibraryPage() {
     return matchFolder && matchType && matchSearch
   })
 
-  // Handle Mock Upload
-  const handleUploadImage = () => {
-    const name = window.prompt('Introduce el nombre de la imagen:')
-    if (!name) return
+  const handleOpenUpload = () => {
+    setUploadFiles([])
+    setShowUploadModal(true)
+  }
 
-    const typeChoice = window.prompt('Introduce el tipo: "prenda" o "modelo":')
-    const type = typeChoice?.toLowerCase() === 'modelo' ? 'model' : 'clothes'
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files) return
+
+    const newUploads = Array.from(files).map(file => ({
+      id: Math.random().toString(36).substr(2, 9),
+      file,
+      url: URL.createObjectURL(file),
+      name: file.name.split('.')[0],
+      type: 'clothes' as 'clothes' | 'model'
+    }))
     
-    // Select a random image based on type
-    const clothesImages = [
-      'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&q=80&w=400',
-      'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&q=80&w=400',
-      'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&q=80&w=400'
-    ]
-    const modelImages = [
-      'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=400',
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=400',
-      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=400'
-    ]
-    const url = type === 'model' 
-      ? modelImages[Math.floor(Math.random() * modelImages.length)] 
-      : clothesImages[Math.floor(Math.random() * clothesImages.length)]
+    setUploadFiles(prev => [...prev, ...newUploads])
+    e.target.value = ''
+  }
 
-    const newItem: ItemType = {
-      id: `img-${Date.now()}`,
-      name,
-      type,
-      url,
-      date: new Date().toISOString(),
-      folderId: currentFolder || undefined
+  const handleBulkUploadSubmit = async () => {
+    const newItems: ItemType[] = []
+    
+    // Simulate converting files to base64 for localstorage (normally you'd upload to a server here)
+    for (const uf of uploadFiles) {
+      if (!uf.file) continue
+      
+      const reader = new FileReader()
+      const base64 = await new Promise<string>((resolve) => {
+        reader.onload = (e) => resolve(e.target?.result as string)
+        reader.readAsDataURL(uf.file!)
+      })
+      
+      newItems.push({
+        id: `img-${Date.now()}-${Math.random().toString(36).substr(2,9)}`,
+        name: uf.name,
+        type: uf.type,
+        url: base64,
+        date: new Date().toISOString(),
+        folderId: currentFolder || undefined
+      })
     }
 
-    const updated = [newItem, ...items]
+    const updated = [...newItems, ...items]
     setItems(updated)
     localStorage.setItem('fitlab_library_items', JSON.stringify(updated))
 
-    // Update folder item count if inside a folder
     if (currentFolder) {
-      const updatedFolders = folders.map(f => {
-        if (f.id === currentFolder) {
-          return { ...f, itemCount: f.itemCount + 1 }
-        }
-        return f
-      })
+      const updatedFolders = folders.map(f => f.id === currentFolder ? { ...f, itemCount: f.itemCount + newItems.length } : f)
       setFolders(updatedFolders)
       localStorage.setItem('fitlab_library_folders', JSON.stringify(updatedFolders))
     }
+    
+    setShowUploadModal(false)
+  }
+
+  const handleSaveEdit = () => {
+    if (!editItem) return
+    const updated = items.map(i => i.id === editItem.id ? editItem : i)
+    setItems(updated)
+    localStorage.setItem('fitlab_library_items', JSON.stringify(updated))
+    setEditItem(null)
   }
 
   // Handle Mock Create Folder
@@ -214,7 +238,7 @@ export default function LibraryPage() {
               <FolderPlus className="w-4 h-4" /> Nueva Carpeta
             </button>
             <button 
-              onClick={handleUploadImage}
+              onClick={handleOpenUpload}
               className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium text-sm"
             >
               <Upload className="w-4 h-4" /> Subir Imagen
@@ -343,16 +367,23 @@ export default function LibraryPage() {
 
                     {/* Hover Overlay */}
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 z-10">
-                      <a 
-                        href={item.url}
-                        download
-                        target="_blank"
-                        rel="noreferrer"
+                      <button 
+                        onClick={() => {
+                          setViewerIndex(filteredItems.findIndex(i => i.id === item.id))
+                          setShowViewer(true)
+                        }}
                         className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-colors" 
-                        title="Descargar"
+                        title="Ver Imagen"
                       >
-                        <Download className="w-4 h-4" />
-                      </a>
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => setEditItem(item)}
+                        className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-colors" 
+                        title="Editar"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
                       <button 
                         onClick={(e) => handleDeleteItem(e, item.id)}
                         className="p-2 bg-red-500/80 hover:bg-red-500 text-white rounded-full backdrop-blur-md transition-colors" 
@@ -419,6 +450,132 @@ export default function LibraryPage() {
         </div>
 
       </div>
+
+      {/* Edit Modal */}
+      {editItem && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-surface-card border border-border rounded-2xl w-full max-w-sm p-6 flex flex-col gap-6 shadow-xl animate-in zoom-in-95">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-medium text-foreground">Editar Información</h3>
+              <button onClick={() => setEditItem(null)} className="p-1 rounded-lg hover:bg-surface-soft text-muted hover:text-foreground transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex flex-col gap-4">
+              <div className="aspect-[3/4] w-32 mx-auto rounded-lg overflow-hidden border border-border">
+                <img src={editItem.url} alt={editItem.name} className="w-full h-full object-cover" />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-foreground">Nombre</label>
+                <input 
+                  type="text" 
+                  value={editItem.name}
+                  onChange={(e) => setEditItem({ ...editItem, name: e.target.value })}
+                  className="px-3 py-2 text-sm bg-surface-card border border-border rounded-lg focus:outline-none focus:border-foreground/50 transition-colors"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-foreground">Tipo</label>
+                <select 
+                  value={editItem.type}
+                  onChange={(e) => setEditItem({ ...editItem, type: e.target.value as 'clothes' | 'model' })}
+                  className="px-3 py-2 text-sm bg-surface-card border border-border rounded-lg focus:outline-none focus:border-foreground/50 transition-colors"
+                >
+                  <option value="clothes">Prenda</option>
+                  <option value="model">Modelo</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button onClick={() => setEditItem(null)} className="px-4 py-2 rounded-lg border border-border text-foreground hover:bg-surface-soft transition-colors font-medium">
+                Cancelar
+              </button>
+              <button onClick={handleSaveEdit} className="px-4 py-2 rounded-lg bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium">
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Upload Modal */}
+      {showUploadModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-surface-card border border-border rounded-2xl w-full max-w-3xl p-6 flex flex-col gap-6 shadow-xl animate-in zoom-in-95 max-h-[85vh]">
+            <div className="flex items-center justify-between border-b border-border pb-4">
+              <h3 className="text-xl font-medium text-foreground">Subir Imágenes en Cantidad</h3>
+              <button onClick={() => setShowUploadModal(false)} className="p-1 rounded-lg hover:bg-surface-soft text-muted hover:text-foreground transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto flex flex-col gap-4">
+              <label className="w-full p-8 rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 hover:border-foreground/30 cursor-pointer transition-colors bg-surface-soft/50">
+                <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileSelect} />
+                <Upload className="w-8 h-8 text-muted" />
+                <span className="text-sm font-medium">Haz clic aquí para seleccionar múltiples imágenes</span>
+              </label>
+
+              {uploadFiles.length > 0 && (
+                <div className="flex flex-col gap-3">
+                  <h4 className="text-sm font-medium text-foreground">Archivos Seleccionados ({uploadFiles.length})</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {uploadFiles.map(uf => (
+                      <div key={uf.id} className="flex flex-col gap-2 p-3 border border-border rounded-xl bg-surface-card relative group">
+                        <button 
+                          onClick={() => setUploadFiles(prev => prev.filter(p => p.id !== uf.id))}
+                          className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                        <div className="flex gap-3">
+                          <img src={uf.url} className="w-16 h-24 object-cover rounded-md bg-surface-soft shrink-0" />
+                          <div className="flex flex-col gap-2 flex-1">
+                            <input 
+                              type="text" 
+                              value={uf.name}
+                              onChange={(e) => setUploadFiles(prev => prev.map(p => p.id === uf.id ? { ...p, name: e.target.value } : p))}
+                              className="w-full px-2 py-1 text-xs bg-surface-soft border border-border rounded focus:outline-none focus:border-foreground/50"
+                              placeholder="Nombre"
+                            />
+                            <select 
+                              value={uf.type}
+                              onChange={(e) => setUploadFiles(prev => prev.map(p => p.id === uf.id ? { ...p, type: e.target.value as 'clothes'|'model' } : p))}
+                              className="w-full px-2 py-1 text-xs bg-surface-soft border border-border rounded focus:outline-none focus:border-foreground/50"
+                            >
+                              <option value="clothes">Prenda</option>
+                              <option value="model">Modelo</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-4 border-t border-border">
+              <button 
+                disabled={uploadFiles.length === 0}
+                onClick={handleBulkUploadSubmit} 
+                className="px-6 py-2.5 rounded-xl bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium disabled:opacity-50 flex items-center gap-2"
+              >
+                <Upload className="w-4 h-4" /> Subir y Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Viewer */}
+      {showViewer && (
+        <ImageViewer 
+          images={filteredItems.map(i => ({ url: i.url }))}
+          initialIndex={viewerIndex}
+          onClose={() => setShowViewer(false)}
+        />
+      )}
     </div>
   )
 }

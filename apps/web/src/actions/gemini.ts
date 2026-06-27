@@ -84,7 +84,7 @@ export async function processVirtualTryOn(
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/${finalModelName.includes('/') ? finalModelName : `models/${finalModelName}`}:generateContent?key=${apiKey}`
     
     // Construct the mandatory prompt
-    const contextPrompt = "MANDATORY: You are a precision clothing applicator. Maintain the EXACT same camera distance, perspective, angle, and composition framing as the target model image. DO NOT change, crop, or zoom in. Exactly copy original environment geometry. " + prompt
+    const contextPrompt = "MANDATORY: You are a precision clothing applicator. Your task is to apply the provided clothing items (Anchor Images) to the person in the Target Model Image. Make sure the clothing perfectly fits the model's body, respecting lighting, shadows, and folds. Maintain the EXACT same camera distance, perspective, angle, and composition framing as the target model image. DO NOT change, crop, or zoom in. Exactly copy original environment geometry. " + prompt
 
     interface Part {
       text?: string

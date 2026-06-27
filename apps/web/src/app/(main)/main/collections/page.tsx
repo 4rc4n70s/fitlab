@@ -9,6 +9,7 @@ interface Generation {
   id: string
   status: 'success' | 'error' | 'processing'
   date: string
+  modelUrl?: string
   image?: string
   errorMsg?: string
 }
@@ -23,9 +24,13 @@ interface Collection {
 
 export default function CollectionsPage() {
   const [collections, setCollections] = useState<Collection[]>([])
-  const [viewerImages, setViewerImages] = useState<string[]>([])
+  const [viewerImages, setViewerImages] = useState<{url: string, originalUrl?: string}[]>([])
   const [viewerIndex, setViewerIndex] = useState<number>(0)
   const [showViewer, setShowViewer] = useState(false)
+  
+  // Regenerate Modal state
+  const [regenModal, setRegenModal] = useState<{ collectionId: string, genId: string, generation: Generation, prompt: string } | null>(null)
+  const [regenBase, setRegenBase] = useState<'original' | 'result'>('original')
 
   // Load from localStorage on mount and listen to updates
   useEffect(() => {
@@ -51,10 +56,20 @@ export default function CollectionsPage() {
     }
   }, [])
 
-  const openViewer = (images: string[], index: number) => {
-    setViewerImages(images)
+  const openViewer = (generations: Generation[], index: number) => {
+    const formatted = generations.map(g => ({
+      url: g.image as string,
+      originalUrl: g.modelUrl
+    }))
+    setViewerImages(formatted)
     setViewerIndex(index)
     setShowViewer(true)
+  }
+
+  const handleRegenerateSubmit = () => {
+    if (!regenModal) return
+    alert('Esta funcionalidad se conectará en el próximo paso para generar una nueva variante en este batch.')
+    setRegenModal(null)
   }
 
   const handleDeleteCollection = (collectionId: string) => {
@@ -160,10 +175,10 @@ export default function CollectionsPage() {
                           </div>
                           <div className="flex flex-col gap-1">
                             <span className="text-xs font-medium text-muted uppercase tracking-wider">Prendas Usadas</span>
-                            <div className="flex gap-1">
-                              {collection.clothes.map((c, i) => (
-                                <div key={i} className="w-8 h-8 rounded bg-surface-soft border border-border flex items-center justify-center text-xs text-muted">
-                                  IMG
+                            <div className="flex gap-2">
+                              {collection.clothes.map((cUrl, i) => (
+                                <div key={i} className="w-10 h-10 rounded-md bg-surface-soft border border-border overflow-hidden">
+                                  <img src={cUrl} alt={`Prenda ${i}`} className="w-full h-full object-cover" />
                                 </div>
                               ))}
                             </div>
@@ -175,7 +190,10 @@ export default function CollectionsPage() {
                         )}
 
                         <div className="mt-auto pt-4 flex gap-3">
-                          <button className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium">
+                          <button 
+                            onClick={() => setRegenModal({ collectionId: collection.id, genId: gen.id, generation: gen, prompt: collection.prompt })}
+                            className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium"
+                          >
                             <RefreshCw className="w-4 h-4" /> Volver a Generar
                           </button>
                           
@@ -194,8 +212,9 @@ export default function CollectionsPage() {
                           <div 
                             className="w-full h-full cursor-pointer relative group"
                             onClick={() => {
-                              const imageIndex = successImages.indexOf(gen.image as string)
-                              openViewer(successImages, imageIndex)
+                              const successGens = collection.generations.filter(g => g.status === 'success' && g.image)
+                              const imageIndex = successGens.findIndex(g => g.id === gen.id)
+                              openViewer(successGens, Math.max(0, imageIndex))
                             }}
                           >
                             <img 
@@ -212,7 +231,7 @@ export default function CollectionsPage() {
                         ) : gen.status === 'processing' ? (
                           <div className="w-full h-full flex flex-col items-center justify-center gap-3 text-muted p-4 text-center">
                             <RefreshCw className="w-8 h-8 opacity-50 animate-spin" />
-                            <span className="text-xs font-medium">Generando magia...</span>
+                            <span className="text-xs font-medium">Generando imagen...</span>
                           </div>
                         ) : (
                           <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-muted p-4 text-center">
@@ -237,6 +256,70 @@ export default function CollectionsPage() {
           initialIndex={viewerIndex} 
           onClose={() => setShowViewer(false)} 
         />
+      )}
+
+      {/* Regenerate Modal */}
+      {regenModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-surface-card border border-border rounded-2xl w-full max-w-lg p-6 flex flex-col gap-6 shadow-xl animate-in zoom-in-95">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-medium text-foreground">Regenerar Variante</h3>
+              <button onClick={() => setRegenModal(null)} className="p-1 rounded-lg hover:bg-surface-soft text-muted hover:text-foreground transition-colors">
+                <Trash2 className="w-5 h-5 hidden" /> {/* spacer */}
+                Cerrar
+              </button>
+            </div>
+            
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-foreground">Ajustar Master Prompt</label>
+                <textarea 
+                  className="w-full min-h-[100px] p-3 rounded-xl border border-border bg-surface-card text-foreground placeholder:text-muted focus:outline-none focus:border-foreground/50 resize-y"
+                  value={regenModal.prompt}
+                  onChange={(e) => setRegenModal({ ...regenModal, prompt: e.target.value })}
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-foreground">Usar como imagen base:</label>
+                <div className="flex gap-4">
+                  <label className={`flex-1 flex flex-col items-center gap-2 p-3 border rounded-xl cursor-pointer transition-colors ${regenBase === 'original' ? 'border-foreground bg-surface-soft' : 'border-border'}`}>
+                    <input type="radio" className="hidden" checked={regenBase === 'original'} onChange={() => setRegenBase('original')} />
+                    {regenModal.generation.modelUrl && (
+                      <div className="w-full aspect-[3/4] rounded bg-surface-card overflow-hidden">
+                        <img src={regenModal.generation.modelUrl} className="w-full h-full object-cover" alt="Original" />
+                      </div>
+                    )}
+                    <span className="text-sm font-medium">Foto Original</span>
+                  </label>
+                  
+                  <label className={`flex-1 flex flex-col items-center gap-2 p-3 border rounded-xl cursor-pointer transition-colors ${regenBase === 'result' ? 'border-foreground bg-surface-soft' : 'border-border'} ${!regenModal.generation.image ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                    <input type="radio" className="hidden" disabled={!regenModal.generation.image} checked={regenBase === 'result'} onChange={() => setRegenBase('result')} />
+                    {regenModal.generation.image ? (
+                      <div className="w-full aspect-[3/4] rounded bg-surface-card overflow-hidden">
+                        <img src={regenModal.generation.image} className="w-full h-full object-cover" alt="Generada" />
+                      </div>
+                    ) : (
+                      <div className="w-full aspect-[3/4] rounded bg-surface-card border border-dashed flex items-center justify-center text-xs text-muted text-center p-2">
+                        No hay imagen generada
+                      </div>
+                    )}
+                    <span className="text-sm font-medium">Foto Generada</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button 
+                onClick={handleRegenerateSubmit}
+                className="w-full px-6 py-2.5 rounded-xl bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium flex items-center justify-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" /> Generar Variante
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

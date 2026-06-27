@@ -1,10 +1,15 @@
 'use client'
 
-import React, { useState } from 'react'
-import { X, ZoomIn, ZoomOut, Maximize, RotateCcw, Download } from 'lucide-react'
+import React, { useState, useRef } from 'react'
+import { X, ZoomIn, ZoomOut, Maximize, RotateCcw, Download, SplitSquareHorizontal, Image as ImageIcon, Sparkles } from 'lucide-react'
+
+export interface ViewerImage {
+  url: string
+  originalUrl?: string
+}
 
 interface ImageViewerProps {
-  images: string[]
+  images: ViewerImage[]
   initialIndex?: number
   onClose: () => void
 }
@@ -12,12 +17,17 @@ interface ImageViewerProps {
 export function ImageViewer({ images, initialIndex = 0, onClose }: ImageViewerProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex)
   const [zoom, setZoom] = useState(1)
+  const [viewMode, setViewMode] = useState<'result' | 'original' | 'split'>('result')
+  
+  const [isDragging, setIsDragging] = useState(false)
+  const [position, setPosition] = useState({ x: 0, y: 0 })
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
 
   const handleNext = (e: React.MouseEvent) => {
     e.stopPropagation()
     if (currentIndex < images.length - 1) {
       setCurrentIndex(prev => prev + 1)
-      setZoom(1)
+      resetView()
     }
   }
 
@@ -25,24 +35,53 @@ export function ImageViewer({ images, initialIndex = 0, onClose }: ImageViewerPr
     e.stopPropagation()
     if (currentIndex > 0) {
       setCurrentIndex(prev => prev - 1)
-      setZoom(1)
+      resetView()
     }
+  }
+  
+  const resetView = () => {
+    setZoom(1)
+    setPosition({ x: 0, y: 0 })
+    setViewMode('result')
   }
 
   const handleZoomIn = (e: React.MouseEvent) => {
     e.stopPropagation()
-    setZoom(prev => Math.min(prev + 0.5, 3))
+    setZoom(prev => Math.min(prev + 0.1, 3))
   }
 
   const handleZoomOut = (e: React.MouseEvent) => {
     e.stopPropagation()
-    setZoom(prev => Math.max(prev - 0.5, 1))
+    setZoom(prev => {
+      const newZoom = Math.max(prev - 0.1, 1)
+      if (newZoom === 1) setPosition({ x: 0, y: 0 })
+      return newZoom
+    })
   }
 
   const handleReset = (e: React.MouseEvent) => {
     e.stopPropagation()
-    setZoom(1)
+    resetView()
   }
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (zoom > 1) {
+      setIsDragging(true)
+      setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y })
+    }
+  }
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isDragging && zoom > 1) {
+      setPosition({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y })
+    }
+  }
+
+  const handleMouseUp = () => {
+    setIsDragging(false)
+  }
+
+  const currentImage = images[currentIndex]
 
   return (
     <div 
@@ -51,20 +90,50 @@ export function ImageViewer({ images, initialIndex = 0, onClose }: ImageViewerPr
     >
       {/* Toolbar */}
       <div 
-        className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 p-2 bg-background/20 backdrop-blur-md border border-white/10 rounded-full"
+        className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-4 p-2 bg-background/40 backdrop-blur-md border border-white/10 rounded-full z-50"
         onClick={e => e.stopPropagation()}
       >
-        <button onClick={handleZoomOut} className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors">
-          <ZoomOut className="w-5 h-5" />
-        </button>
-        <span className="text-white/90 text-sm font-medium w-12 text-center">{Math.round(zoom * 100)}%</span>
-        <button onClick={handleZoomIn} className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors">
-          <ZoomIn className="w-5 h-5" />
-        </button>
-        <div className="w-px h-6 bg-white/20 mx-1" />
-        <button onClick={handleReset} className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors">
-          <Maximize className="w-5 h-5" />
-        </button>
+        {/* Zoom Controls */}
+        <div className="flex items-center gap-1">
+          <button onClick={handleZoomOut} className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors">
+            <ZoomOut className="w-5 h-5" />
+          </button>
+          <span className="text-white/90 text-sm font-medium w-14 text-center">{Math.round(zoom * 100)}%</span>
+          <button onClick={handleZoomIn} className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors">
+            <ZoomIn className="w-5 h-5" />
+          </button>
+          <button onClick={handleReset} className="p-2 ml-1 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors">
+            <Maximize className="w-4 h-4" />
+          </button>
+        </div>
+
+        {currentImage.originalUrl && (
+          <>
+            <div className="w-px h-6 bg-white/20 mx-1" />
+            {/* View Mode Controls */}
+            <div className="flex items-center gap-1">
+              <button 
+                onClick={() => setViewMode('original')} 
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${viewMode === 'original' ? 'bg-white text-black' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}
+              >
+                <ImageIcon className="w-4 h-4" /> Original
+              </button>
+              <button 
+                onClick={() => setViewMode('result')} 
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${viewMode === 'result' ? 'bg-white text-black' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}
+              >
+                <Sparkles className="w-4 h-4" /> Resultado
+              </button>
+              <button 
+                onClick={() => setViewMode('split')} 
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${viewMode === 'split' ? 'bg-white text-black' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}
+                title="Comparar lado a lado"
+              >
+                <SplitSquareHorizontal className="w-4 h-4" /> Comparar
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Close Button */}
@@ -96,18 +165,36 @@ export function ImageViewer({ images, initialIndex = 0, onClose }: ImageViewerPr
 
       {/* Image Container */}
       <div 
-        className="relative w-full max-w-5xl h-full max-h-[85vh] flex items-center justify-center p-12 overflow-hidden"
+        className={`relative w-full h-full max-h-[100vh] flex items-center justify-center p-12 overflow-hidden ${zoom > 1 ? 'cursor-grab active:cursor-grabbing' : ''}`}
         onClick={e => e.stopPropagation()}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
       >
         <div 
-          className="relative transition-transform duration-200 ease-out flex items-center justify-center"
-          style={{ transform: `scale(${zoom})` }}
+          className="relative transition-transform duration-75 ease-out flex items-center justify-center gap-8 w-full h-full"
+          style={{ transform: `scale(${zoom}) translate(${position.x / zoom}px, ${position.y / zoom}px)` }}
         >
-          <img 
-            src={images[currentIndex]} 
-            alt={`View ${currentIndex + 1}`}
-            className="max-w-full max-h-[85vh] object-contain rounded-sm shadow-2xl"
-          />
+          {viewMode === 'split' ? (
+            <div className="flex w-full h-full justify-center items-center gap-4 max-w-[90vw]">
+              <div className="flex-1 flex flex-col items-center gap-2 max-h-full">
+                <span className="text-white/70 text-xs font-medium uppercase tracking-wider bg-black/50 px-3 py-1 rounded-full backdrop-blur-md absolute top-4">Original</span>
+                <img src={currentImage.originalUrl} alt="Original" className="max-w-full max-h-[85vh] object-contain rounded-sm shadow-2xl" />
+              </div>
+              <div className="flex-1 flex flex-col items-center gap-2 max-h-full">
+                <span className="text-emerald-400 text-xs font-medium uppercase tracking-wider bg-black/50 px-3 py-1 rounded-full backdrop-blur-md absolute top-4">Resultado</span>
+                <img src={currentImage.url} alt="Result" className="max-w-full max-h-[85vh] object-contain rounded-sm shadow-2xl" />
+              </div>
+            </div>
+          ) : (
+            <img 
+              src={viewMode === 'original' && currentImage.originalUrl ? currentImage.originalUrl : currentImage.url} 
+              alt="View"
+              className="max-w-full max-h-[90vh] object-contain rounded-sm shadow-2xl"
+              draggable={false}
+            />
+          )}
         </div>
       </div>
 
