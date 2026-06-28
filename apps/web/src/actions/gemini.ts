@@ -103,7 +103,7 @@ export async function processVirtualTryOn(
       generationConfig: {
         responseFormat: {
           image: {
-            aspectRatio: "3:4"
+            aspectRatio: "ASPECT_RATIO_3_4"
           }
         }
       }

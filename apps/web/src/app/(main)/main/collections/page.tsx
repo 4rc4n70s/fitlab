@@ -229,7 +229,7 @@ export default function CollectionsPage() {
               <div key={collection.id} className="flex flex-col gap-4">
                 {/* Collection Header */}
                 <div className="flex items-center gap-4 border-b border-border pb-2">
-                  <h2 className="text-lg font-medium text-foreground">Colección: {collection.id}</h2>
+                  <h2 className="text-lg font-medium text-foreground">Colección: {collection.id.split('-')[0].toUpperCase()}</h2>
                   <span className="text-sm text-muted flex items-center gap-1">
                     <Calendar className="w-4 h-4" />
                     {new Date(collection.date).toLocaleString()}

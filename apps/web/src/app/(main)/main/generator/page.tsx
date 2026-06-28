@@ -104,59 +104,67 @@ export default function GeneratorPage() {
     try {
       // 1. Upload input images to Supabase first so they are public URLs
       const clothesUrls = await Promise.all(clothesB64s.map(c => uploadImageToSupabase(c, 'inputs')))
+      const modelUrls = await Promise.all(modelsToProcess.map(m => uploadImageToSupabase(m.url, 'inputs')))
       
-      // We will create one collection per model, containing the generations for that model + clothes
-      for (let i = 0; i < modelsToProcess.length; i++) {
-        const modelUrl = await uploadImageToSupabase(modelsToProcess[i].url, 'inputs')
-        
-        // Initial generation state (pending). One image per model.
-        const generations = [{
-          id: `gen-${Date.now()}`,
-          status: 'pending' as const,
-          originalModelUrl: modelUrl,
-          originalClothesUrls: clothesUrls
-        }]
+      // 2. Initial generation state (pending). One image per model.
+      let generations = modelUrls.map((modelUrl, idx) => ({
+        id: `gen-${Date.now()}-${idx}`,
+        status: 'pending' as const,
+        originalModelUrl: modelUrl,
+        originalClothesUrls: clothesUrls
+      }))
 
-        // Create collection in DB
-        const newCollection = await db.collections.createCollection({
-          prompt: masterPrompt,
-          clothes: clothesUrls,
-          model_image: modelUrl,
-          generations
-        })
+      // 3. Create a SINGLE collection for this batch in DB
+      const newCollection = await db.collections.createCollection({
+        prompt: masterPrompt,
+        clothes: clothesUrls,
+        model_image: modelUrls[0], // fallback for old schema
+        generations
+      })
 
-        // Dispatch so UI updates instantly
-        window.dispatchEvent(new Event('fitlab_collections_updated'))
+      // Dispatch so UI updates instantly
+      window.dispatchEvent(new Event('fitlab_collections_updated'))
 
-        // Process generation
+      // 4. Process each generation sequentially
+      for (let i = 0; i < modelUrls.length; i++) {
         try {
-          const response = await processVirtualTryOn(masterPrompt, modelsToProcess[i].url, clothesB64s)
+          const response = await processVirtualTryOn(masterPrompt, modelUrls[i], clothesB64s)
           
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          let finalGens: any[] = [...generations]
           if (response.success && response.base64) {
             try {
               const publicUrl = await uploadImageToSupabase(`data:${response.mimeType};base64,${response.base64}`, 'generations')
-              finalGens = generations.map(g => ({ ...g, status: 'success', image: publicUrl }))
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              generations = generations.map((g: any, idx: number) => 
+                idx === i ? { ...g, status: 'success', image: publicUrl } : g
+              )
             } catch {
-              finalGens = generations.map(g => ({ ...g, status: 'error', errorMsg: 'Error al subir la imagen generada a Supabase' }))
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              generations = generations.map((g: any, idx: number) => 
+                idx === i ? { ...g, status: 'error', errorMsg: 'Error al subir la imagen generada a Supabase' } : g
+              )
             }
           } else {
-            finalGens = generations.map(g => ({ ...g, status: 'error', errorMsg: response.error || 'API Error' }))
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            generations = generations.map((g: any, idx: number) => 
+              idx === i ? { ...g, status: 'error', errorMsg: response.error || 'API Error' } : g
+            )
           }
 
-          await db.collections.updateCollection(newCollection.id, { generations: finalGens })
+          await db.collections.updateCollection(newCollection.id, { generations })
           window.dispatchEvent(new Event('fitlab_collections_updated'))
 
         } catch (err: unknown) {
           console.error('Error generating image', err)
           const errorMessage = err instanceof Error ? err.message : 'Error de red inesperado.'
-          const finalGens = generations.map(g => ({ ...g, status: 'error', errorMsg: errorMessage }))
-          await db.collections.updateCollection(newCollection.id, { generations: finalGens })
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          generations = generations.map((g: any, idx: number) => 
+            idx === i ? { ...g, status: 'error', errorMsg: errorMessage } : g
+          )
+          await db.collections.updateCollection(newCollection.id, { generations })
           window.dispatchEvent(new Event('fitlab_collections_updated'))
         }
 
-        if (i < modelsToProcess.length - 1) {
+        if (i < modelUrls.length - 1) {
           await new Promise(r => setTimeout(r, 1500))
         }
       }
