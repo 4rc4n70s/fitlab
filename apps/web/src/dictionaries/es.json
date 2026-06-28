@@ -254,6 +254,60 @@
     },
     "settings": {
       "title": "Configuración"
+    },
+    "billing": {
+      "messages": {
+        "syncing": "Sincronizando créditos con Mercado Pago...",
+        "success": "¡Créditos acreditados con éxito!",
+        "success_async": "Tu pago fue aprobado, pero se acreditará de forma asíncrona mediante el webhook en unos segundos.",
+        "failure": "El pago fue cancelado o no pudo ser completado.",
+        "auth_required": "Debes iniciar sesión para comprar créditos.",
+        "checkout_error": "Error al iniciar checkout: {error}",
+        "checkout_error_default": "Intenta nuevamente.",
+        "connection_error": "Error al conectar con Mercado Pago.",
+        "sync_manual_loading": "Buscando pagos históricos pendientes...",
+        "sync_error": "Error al sincronizar.",
+        "connection_error_short": "Error de conexión."
+      },
+      "header": {
+        "title": "Facturación y Créditos",
+        "description": "Administra tu cuenta, adquiere créditos y consulta tu historial de pagos.",
+        "sync_button": "Sincronizar Saldo"
+      },
+      "balance": {
+        "title": "Créditos Disponibles",
+        "unlimited": "Ilimitados",
+        "disclaimer": "Se consume 1 crédito por cada imagen generada."
+      },
+      "plans": {
+        "popular_badge": "Más popular",
+        "discount_badge": "99% OFF (Test)",
+        "credits_suffix": "créditos Fitlab",
+        "instant_delivery": "Acreditación instantánea",
+        "buy_button": "Comprar",
+        "basic": {
+          "name": "Paquete Básico"
+        },
+        "standard": {
+          "name": "Paquete Estándar"
+        },
+        "pro": {
+          "name": "Paquete Pro"
+        }
+      },
+      "history": {
+        "title": "Historial de Compras",
+        "columns": {
+          "date": "Fecha",
+          "detail": "Detalle",
+          "amount": "Monto",
+          "status": "Estado"
+        },
+        "status": {
+          "approved": "Aprobado"
+        },
+        "mock_detail": "Paquete Estándar (100 créditos)"
+      }
     }
   }
 }

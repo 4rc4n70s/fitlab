@@ -5,6 +5,8 @@ import Script from 'next/script'
 import { useUser } from '@/hooks/use-user'
 import { useUI } from '@/hooks/use-ui'
 import { CreditCard, Sparkles, RefreshCw, CheckCircle2, ShieldCheck, Loader2 } from 'lucide-react'
+import esDict from '@/dictionaries/es.json'
+import enDict from '@/dictionaries/en.json'
 
 interface UserProfile {
   boilerplate_credits?: number;
@@ -13,6 +15,7 @@ interface UserProfile {
 export default function BillingPage() {
   const { user, profile, isLoading: isUserLoading } = useUser()
   const { language } = useUI()
+  const dict = language === 'es' ? esDict : enDict
   
   const [localCredits, setLocalCredits] = useState<number | null>(null)
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false)
@@ -34,20 +37,17 @@ export default function BillingPage() {
 
     if ((paymentStatus === 'success' || paymentStatus === 'approved') && paymentId) {
       setIsSyncing(true)
-      setStatusMessage(language === 'es' ? 'Sincronizando créditos con Mercado Pago...' : 'Syncing credits with Mercado Pago...')
+      setStatusMessage(dict.billing.messages.syncing)
 
       fetch(`/api/sync-credits?payment_id=${paymentId}`)
         .then(async (res) => {
           const data = await res.json()
           if (res.ok && data.success) {
             setLocalCredits(data.credits)
-            alert(data.message || (language === 'es' ? '¡Créditos acreditados con éxito!' : 'Credits synced successfully!'))
+            alert(data.message || dict.billing.messages.success)
           } else {
             console.error('Error al sincronizar:', data.error)
-            alert(language === 'es' 
-              ? 'Tu pago fue aprobado, pero se acreditará de forma asíncrona mediante el webhook en unos segundos.' 
-              : 'Your payment was approved, but it will be credited asynchronously via webhook in a few seconds.'
-            )
+            alert(dict.billing.messages.success_async)
           }
         })
         .catch((err) => {
@@ -61,10 +61,7 @@ export default function BillingPage() {
           window.history.replaceState({}, document.title, newUrl)
         })
     } else if (paymentStatus === 'failure' || paymentStatus === 'rejected' || paymentStatus === 'pending') {
-      alert(language === 'es' 
-        ? 'El pago fue cancelado o no pudo ser completado.' 
-        : 'Payment was canceled or could not be completed.'
-      )
+      alert(dict.billing.messages.failure)
       const newUrl = window.location.pathname
       window.history.replaceState({}, document.title, newUrl)
     }
@@ -73,7 +70,7 @@ export default function BillingPage() {
   // Ejecutar checkout
   const handleBuyCredits = async (planId: string) => {
     if (!user) {
-      alert(language === 'es' ? 'Debes iniciar sesión para comprar créditos.' : 'You must sign in to buy credits.')
+      alert(dict.billing.messages.auth_required)
       return
     }
     
@@ -121,15 +118,12 @@ export default function BillingPage() {
           }
         }
       } else {
-        alert(language === 'es' 
-          ? `Error al iniciar checkout: ${data.error || 'Intenta nuevamente.'}` 
-          : `Checkout error: ${data.error || 'Try again.'}`
-        )
+        alert(dict.billing.messages.checkout_error.replace('{error}', data.error || dict.billing.messages.checkout_error_default))
         setIsCheckoutLoading(false)
       }
     } catch (err) {
       console.error('Checkout connection error:', err)
-      alert(language === 'es' ? 'Error al conectar con Mercado Pago.' : 'Connection error with Mercado Pago.')
+      alert(dict.billing.messages.connection_error)
       setIsCheckoutLoading(false)
     }
   }
@@ -137,7 +131,7 @@ export default function BillingPage() {
   // Sincronización manual histórica
   const handleManualSync = async () => {
     setIsSyncing(true)
-    setStatusMessage(language === 'es' ? 'Buscando pagos históricos pendientes...' : 'Searching for pending historical payments...')
+    setStatusMessage(dict.billing.messages.sync_manual_loading)
     try {
       const res = await fetch('/api/sync-credits')
       const data = await res.json()
@@ -145,11 +139,11 @@ export default function BillingPage() {
         setLocalCredits(data.credits)
         alert(data.message)
       } else {
-        alert(data.error || 'Error al sincronizar.')
+        alert(data.error || dict.billing.messages.sync_error)
       }
     } catch (err) {
       console.error(err)
-      alert('Error de conexión.')
+      alert(dict.billing.messages.connection_error_short)
     } finally {
       setIsSyncing(false)
       setStatusMessage(null)
@@ -167,12 +161,10 @@ export default function BillingPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h1 className="text-3xl font-bold tracking-tight font-heading bg-gradient-to-r from-foreground via-foreground/90 to-muted-foreground bg-clip-text">
-            {language === 'es' ? 'Facturación y Créditos' : 'Billing & Credits'}
+            {dict.billing.header.title}
           </h1>
           <p className="text-muted-foreground text-sm md:text-base">
-            {language === 'es' 
-              ? 'Administra tu cuenta, adquiere créditos y consulta tu historial de pagos.' 
-              : 'Manage your account, purchase credits, and view your payment history.'}
+            {dict.billing.header.description}
           </p>
         </div>
 
@@ -183,7 +175,7 @@ export default function BillingPage() {
           className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full bg-surface-soft border border-border hover:bg-surface hover:text-foreground transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-muted-foreground"
         >
           <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-          {language === 'es' ? 'Sincronizar Saldo' : 'Sync Balance'}
+          {dict.billing.header.sync_button}
         </button>
       </div>
 
@@ -207,14 +199,14 @@ export default function BillingPage() {
             </div>
             <div>
               <h3 className="text-sm font-medium text-muted-foreground">
-                {language === 'es' ? 'Créditos Disponibles' : 'Available Credits'}
+                {dict.billing.balance.title}
               </h3>
               <p className="text-5xl font-extrabold tracking-tight mt-1 text-foreground">
                 {isUserLoading ? (
                   <span className="inline-block w-16 h-10 bg-surface-soft rounded-lg animate-pulse" />
                 ) : (
                   creditsToShow === 999999 
-                    ? (language === 'es' ? 'Ilimitados' : 'Unlimited') 
+                    ? dict.billing.balance.unlimited 
                     : creditsToShow
                 )}
               </p>
@@ -222,9 +214,7 @@ export default function BillingPage() {
           </div>
           
           <div className="mt-8 pt-4 border-t border-border/60 text-xs text-muted-foreground relative z-10">
-            {language === 'es' 
-              ? 'Se consume 1 crédito por cada imagen generada.' 
-              : '1 credit is consumed per generated image.'}
+            {dict.billing.balance.disclaimer}
           </div>
         </div>
 
@@ -233,7 +223,7 @@ export default function BillingPage() {
           {[
             {
               id: 'basic',
-              name: language === 'es' ? 'Paquete Básico' : 'Basic Pack',
+              name: dict.billing.plans.basic.name,
               credits: 10,
               originalPrice: 9900,
               price: 99,
@@ -241,7 +231,7 @@ export default function BillingPage() {
             },
             {
               id: 'standard',
-              name: language === 'es' ? 'Paquete Estándar' : 'Standard Pack',
+              name: dict.billing.plans.standard.name,
               credits: 30,
               originalPrice: 23900,
               price: 239,
@@ -249,7 +239,7 @@ export default function BillingPage() {
             },
             {
               id: 'pro',
-              name: language === 'es' ? 'Paquete Pro' : 'Pro Pack',
+              name: dict.billing.plans.pro.name,
               credits: 100,
               originalPrice: 59900,
               price: 599,
@@ -259,7 +249,7 @@ export default function BillingPage() {
             <div key={plan.id} className={`rounded-2xl border ${plan.popular ? 'border-primary shadow-primary/20 shadow-2xl relative' : 'border-border shadow-xl'} bg-gradient-to-b from-surface-card to-background p-6 flex flex-col justify-between gap-6 overflow-hidden`}>
               {plan.popular && (
                 <div className="absolute top-0 right-0 bg-primary text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider">
-                  {language === 'es' ? 'Más popular' : 'Most popular'}
+                  {dict.billing.plans.popular_badge}
                 </div>
               )}
               <div className="flex flex-col gap-2">
@@ -270,18 +260,18 @@ export default function BillingPage() {
                 </div>
                 <div className="flex items-center gap-2 text-xs font-semibold">
                   <span className="line-through text-muted-foreground">${plan.originalPrice.toLocaleString('es-AR')}</span>
-                  <span className="text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">99% OFF (Test)</span>
+                  <span className="text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">{dict.billing.plans.discount_badge}</span>
                 </div>
               </div>
 
               <div className="flex flex-col gap-3 flex-1 mt-4">
                 <div className="flex items-center gap-2 text-sm">
                   <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
-                  <span>{plan.credits} {language === 'es' ? 'créditos Fitlab' : 'Fitlab credits'}</span>
+                  <span>{plan.credits} {dict.billing.plans.credits_suffix}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <ShieldCheck className="w-4 h-4 shrink-0" />
-                  <span>{language === 'es' ? 'Acreditación instantánea' : 'Instant delivery'}</span>
+                  <span>{dict.billing.plans.instant_delivery}</span>
                 </div>
               </div>
 
@@ -295,7 +285,7 @@ export default function BillingPage() {
                 ) : (
                   <CreditCard className="w-4 h-4" />
                 )}
-                {language === 'es' ? 'Comprar' : 'Buy'}
+                {dict.billing.plans.buy_button}
               </button>
             </div>
           ))}
@@ -305,16 +295,16 @@ export default function BillingPage() {
       {/* Historial de compras (Mock) */}
       <div className="mt-8 flex flex-col gap-4">
         <h2 className="text-xl font-bold text-foreground font-heading">
-          {language === 'es' ? 'Historial de Compras' : 'Purchase History'}
+          {dict.billing.history.title}
         </h2>
         <div className="rounded-2xl border border-border bg-surface-card overflow-hidden">
           <table className="w-full text-sm text-left">
             <thead className="bg-surface-soft text-muted-foreground uppercase text-xs">
               <tr>
-                <th className="px-6 py-4 font-medium">{language === 'es' ? 'Fecha' : 'Date'}</th>
-                <th className="px-6 py-4 font-medium">{language === 'es' ? 'Detalle' : 'Detail'}</th>
-                <th className="px-6 py-4 font-medium">{language === 'es' ? 'Monto' : 'Amount'}</th>
-                <th className="px-6 py-4 font-medium">{language === 'es' ? 'Estado' : 'Status'}</th>
+                <th className="px-6 py-4 font-medium">{dict.billing.history.columns.date}</th>
+                <th className="px-6 py-4 font-medium">{dict.billing.history.columns.detail}</th>
+                <th className="px-6 py-4 font-medium">{dict.billing.history.columns.amount}</th>
+                <th className="px-6 py-4 font-medium">{dict.billing.history.columns.status}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -324,7 +314,7 @@ export default function BillingPage() {
                   {new Date().toLocaleDateString()}
                 </td>
                 <td className="px-6 py-4 text-muted-foreground">
-                  {language === 'es' ? 'Paquete Estándar (100 créditos)' : 'Standard Pack (100 credits)'}
+                  {dict.billing.history.mock_detail}
                 </td>
                 <td className="px-6 py-4 text-foreground font-medium">
                   $100 ARS
@@ -332,7 +322,7 @@ export default function BillingPage() {
                 <td className="px-6 py-4">
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-xs font-medium">
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    {language === 'es' ? 'Aprobado' : 'Approved'}
+                    {dict.billing.history.status.approved}
                   </span>
                 </td>
               </tr>

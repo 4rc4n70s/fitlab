@@ -254,6 +254,60 @@
     },
     "settings": {
       "title": "Settings"
+    },
+    "billing": {
+      "messages": {
+        "syncing": "Syncing credits with Mercado Pago...",
+        "success": "Credits synced successfully!",
+        "success_async": "Your payment was approved, but it will be credited asynchronously via webhook in a few seconds.",
+        "failure": "Payment was canceled or could not be completed.",
+        "auth_required": "You must sign in to buy credits.",
+        "checkout_error": "Checkout error: {error}",
+        "checkout_error_default": "Try again.",
+        "connection_error": "Connection error with Mercado Pago.",
+        "sync_manual_loading": "Searching for pending historical payments...",
+        "sync_error": "Sync error.",
+        "connection_error_short": "Connection error."
+      },
+      "header": {
+        "title": "Billing & Credits",
+        "description": "Manage your account, purchase credits, and view your payment history.",
+        "sync_button": "Sync Balance"
+      },
+      "balance": {
+        "title": "Available Credits",
+        "unlimited": "Unlimited",
+        "disclaimer": "1 credit is consumed per generated image."
+      },
+      "plans": {
+        "popular_badge": "Most popular",
+        "discount_badge": "99% OFF (Test)",
+        "credits_suffix": "Fitlab credits",
+        "instant_delivery": "Instant delivery",
+        "buy_button": "Buy",
+        "basic": {
+          "name": "Basic Pack"
+        },
+        "standard": {
+          "name": "Standard Pack"
+        },
+        "pro": {
+          "name": "Pro Pack"
+        }
+      },
+      "history": {
+        "title": "Purchase History",
+        "columns": {
+          "date": "Date",
+          "detail": "Detail",
+          "amount": "Amount",
+          "status": "Status"
+        },
+        "status": {
+          "approved": "Approved"
+        },
+        "mock_detail": "Standard Pack (100 credits)"
+      }
     }
   }
 }
