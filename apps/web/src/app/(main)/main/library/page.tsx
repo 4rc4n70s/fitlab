@@ -275,8 +275,9 @@ export default function LibraryPage() {
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
       {/* Header & Toolbar */}
-      <div className="flex flex-col gap-6 p-6 md:px-10 md:py-8 border-b border-border bg-background/95 backdrop-blur z-10 sticky top-0">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="border-b border-border bg-background/95 backdrop-blur z-10 sticky top-0">
+        <div className="flex flex-col gap-6 p-6 md:px-10 md:py-8 max-w-6xl mx-auto w-full">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex flex-col gap-1">
             <h1 className="text-3xl font-heading font-semibold text-foreground">Library</h1>
             <p className="text-muted text-sm">Gestiona tus prendas y modelos de referencia.</p>
@@ -353,7 +354,8 @@ export default function LibraryPage() {
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 md:p-10 flex flex-col gap-8">
+      <div className="flex-1 overflow-y-auto">
+        <div className="flex flex-col gap-8 p-6 md:p-10 max-w-6xl mx-auto w-full">
         
         {/* Folders Section (Only show if not inside a folder) */}
         {!currentFolder && !searchQuery && folders.length > 0 && (
@@ -557,6 +559,7 @@ export default function LibraryPage() {
             </div>
           )}
         </div>
+      </div>
 
       </div>
 
