@@ -14,14 +14,9 @@ export async function uploadImageToSupabase(base64Str: string, folder: string): 
   const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg'
   const base64Data = base64Str.replace(/^data:image\/\w+;base64,/, '')
   
-  // Convert base64 to Blob
-  const byteCharacters = atob(base64Data)
-  const byteNumbers = new Array(byteCharacters.length)
-  for (let i = 0; i < byteCharacters.length; i++) {
-    byteNumbers[i] = byteCharacters.charCodeAt(i)
-  }
-  const byteArray = new Uint8Array(byteNumbers)
-  const blob = new Blob([byteArray], { type: mime })
+  // Convert base64 to Blob rapidly using native fetch API
+  const fetchResponse = await fetch(`data:${mime};base64,${base64Data}`)
+  const blob = await fetchResponse.blob()
 
   const ext = mime.split('/')[1] || 'jpg'
   const fileName = `${folder}/${Math.random().toString(36).substring(2) + Date.now().toString(36)}.${ext}`
