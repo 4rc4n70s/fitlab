@@ -197,10 +197,19 @@ export default function LibraryPage() {
 
   const handleSaveEdit = async () => {
     if (!editItem) return
-    const updated = items.map(i => i.id === editItem.id ? editItem : i)
-    setItems(updated)
-    updateFolderCounts(updated)
-    setEditItem(null)
+    try {
+      await dbClient.library.updateItem(editItem.id, {
+        name: editItem.name,
+        type: editItem.type,
+        folder_id: editItem.folderId || null
+      })
+      const updated = items.map(i => i.id === editItem.id ? editItem : i)
+      setItems(updated)
+      updateFolderCounts(updated)
+      setEditItem(null)
+    } catch (err) {
+      console.error("Error updating item in DB:", err)
+    }
   }
 
   const handleCreateFolder = () => {
@@ -234,14 +243,28 @@ export default function LibraryPage() {
     setShowBulkEditModal(true)
   }
 
-  const submitBulkEdit = () => {
-    const updated = items.map(item => {
-      const edited = bulkEditItems.find(b => b.id === item.id)
-      return edited || item
-    })
-    setItems(updated)
-    updateFolderCounts(updated)
-    setShowBulkEditModal(false)
+  const submitBulkEdit = async () => {
+    try {
+      // First update in DB
+      for (const item of bulkEditItems) {
+        await dbClient.library.updateItem(item.id, {
+          name: item.name,
+          type: item.type,
+          folder_id: item.folderId || null
+        })
+      }
+      
+      // Then update local state
+      const updated = items.map(item => {
+        const edited = bulkEditItems.find(b => b.id === item.id)
+        return edited || item
+      })
+      setItems(updated)
+      updateFolderCounts(updated)
+      setShowBulkEditModal(false)
+    } catch (err) {
+      console.error("Error updating items in DB:", err)
+    }
   }
 
   const handleDeleteConfirm = async () => {

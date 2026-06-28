@@ -35,6 +35,12 @@ export const dbClient = {
       if (error) throw error;
       return newItem;
     },
+    async updateItem(itemId: string, data: Record<string, unknown>) {
+      const client = createClient();
+      const { data: updated, error } = await client.from('library_items').update(data).eq('id', itemId).select().single();
+      if (error) throw error;
+      return updated;
+    },
     async deleteItem(itemId: string) {
       const client = createClient();
       const { error } = await client.from('library_items').delete().eq('id', itemId);
