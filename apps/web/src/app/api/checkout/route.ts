@@ -19,19 +19,33 @@ export async function POST(request: Request) {
 
     const origin = request.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
-    const amount = 100; // $100 ARS de prueba
-    const creditsToAssign = 100; // 100 créditos de boilerplate
+    const body = await request.json().catch(() => ({}));
+    const planId = body.planId || 'standard';
+
+    let amount = 19120; // Default standard plan price (20% off from 23900)
+    let creditsToAssign = 30;
+
+    if (planId === 'basic') {
+      amount = 7920; // 20% off from 9900
+      creditsToAssign = 10;
+    } else if (planId === 'standard') {
+      amount = 19120; // 20% off from 23900
+      creditsToAssign = 30;
+    } else if (planId === 'pro') {
+      amount = 47920; // 20% off from 59900
+      creditsToAssign = 100;
+    }
 
     // Generar la preferencia de Mercado Pago
     const preferenceData = {
       items: [
         {
-          id: 'boilerplate-credits-100',
-          title: `${creditsToAssign} Créditos para Boilerplate`,
+          id: `fitlab-credits-${creditsToAssign}`,
+          title: `${creditsToAssign} Créditos Fitlab`,
           quantity: 1,
           unit_price: amount,
           currency_id: 'ARS',
-          description: 'Créditos para uso en el Boilerplate',
+          description: 'Créditos para probar ropa virtual en Fitlab',
         }
       ],
       // Asociamos el ID del usuario como external_reference

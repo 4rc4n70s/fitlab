@@ -71,7 +71,7 @@ export default function BillingPage() {
   }, [language])
 
   // Ejecutar checkout
-  const handleBuyCredits = async () => {
+  const handleBuyCredits = async (planId: string) => {
     if (!user) {
       alert(language === 'es' ? 'Debes iniciar sesión para comprar créditos.' : 'You must sign in to buy credits.')
       return
@@ -79,7 +79,11 @@ export default function BillingPage() {
     
     setIsCheckoutLoading(true)
     try {
-      const res = await fetch('/api/checkout', { method: 'POST' })
+      const res = await fetch('/api/checkout', { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planId })
+      })
       const data = await res.json()
       if (res.ok && data.preference_id) {
         // Detectar si es dispositivo móvil
@@ -190,10 +194,10 @@ export default function BillingPage() {
       )}
 
       {/* Panel Principal */}
-      <div className="grid gap-8 md:grid-cols-3">
+      <div className="flex flex-col gap-8">
         
-        {/* Card Saldo Actual (Izquierda) */}
-        <div className="md:col-span-1 rounded-2xl border border-border bg-gradient-to-b from-surface-card to-background p-6 flex flex-col justify-between shadow-xl relative overflow-hidden group">
+        {/* Card Saldo Actual */}
+        <div className="rounded-2xl border border-border bg-gradient-to-b from-surface-card to-background p-6 flex flex-col justify-between shadow-xl relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl group-hover:bg-primary/20 transition-all duration-500" />
           <div className="flex flex-col gap-4 relative z-10">
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
@@ -222,68 +226,77 @@ export default function BillingPage() {
           </div>
         </div>
 
-        {/* Card Oferta / Paquete de Compra (Derecha) */}
-        <div className="md:col-span-2 rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/5 via-transparent to-transparent p-8 flex flex-col md:flex-row justify-between gap-8 shadow-2xl relative overflow-hidden">
-          <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/20 rounded-full blur-3xl" />
-          
-          {/* Detalles del paquete */}
-          <div className="flex flex-col justify-between gap-6 flex-1">
-            <div className="flex flex-col gap-2">
-              <h2 className="text-2xl font-bold text-foreground">
-                {language === 'es' ? 'Paquete Estándar' : 'Standard Pack'}
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {language === 'es' 
-                  ? 'Añade créditos de forma inmediata y segura a tu cuenta.' 
-                  : 'Add credits immediately and securely to your account.'}
-              </p>
-            </div>
-
-            {/* Lista de características */}
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                <span>{language === 'es' ? '100 créditos para Boilerplate' : '100 credits for Boilerplate'}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                <span>{language === 'es' ? 'Acreditación instantánea y segura' : 'Instant & secure delivery'}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <ShieldCheck className="w-4 h-4 text-primary shrink-0" />
-                <span>{language === 'es' ? 'Garantía por doble pago de Mercado Pago' : 'Anti-reentrancy transaction protection'}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Precio y Botón de Pago */}
-          <div className="flex flex-col justify-between items-center md:items-end gap-6 min-w-[200px] shrink-0 border-t md:border-t-0 md:border-l border-border/60 pt-6 md:pt-0 md:pl-8">
-            <div className="text-center md:text-right">
-              <span className="text-xs text-muted-foreground uppercase tracking-widest block">
-                {language === 'es' ? 'Precio Final' : 'Final Price'}
-              </span>
-              <span className="text-4xl font-extrabold text-foreground tracking-tight">$100</span>
-              <span className="text-sm font-semibold text-muted-foreground ml-1">ARS</span>
-            </div>
-
-            <button
-              onClick={handleBuyCredits}
-              disabled={isCheckoutLoading || isSyncing}
-              className="w-full py-3 px-6 rounded-xl bg-gradient-to-r from-primary to-violet-600 hover:from-primary-hover hover:to-violet-500 text-white font-semibold text-sm shadow-lg hover:shadow-primary/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-95 transform"
-            >
-              {isCheckoutLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  {language === 'es' ? 'Iniciando Pago...' : 'Starting Payment...'}
-                </>
-              ) : (
-                <>
-                  <CreditCard className="w-4 h-4" />
-                  {language === 'es' ? 'Pagar con Mercado Pago' : 'Pay with Mercado Pago'}
-                </>
+        {/* Planes de Compra */}
+        <div className="grid gap-6 md:grid-cols-3">
+          {[
+            {
+              id: 'basic',
+              name: language === 'es' ? 'Paquete Básico' : 'Basic Pack',
+              credits: 10,
+              originalPrice: 9900,
+              price: 7920,
+              popular: false
+            },
+            {
+              id: 'standard',
+              name: language === 'es' ? 'Paquete Estándar' : 'Standard Pack',
+              credits: 30,
+              originalPrice: 23900,
+              price: 19120,
+              popular: true
+            },
+            {
+              id: 'pro',
+              name: language === 'es' ? 'Paquete Pro' : 'Pro Pack',
+              credits: 100,
+              originalPrice: 59900,
+              price: 47920,
+              popular: false
+            }
+          ].map((plan) => (
+            <div key={plan.id} className={`rounded-2xl border ${plan.popular ? 'border-primary shadow-primary/20 shadow-2xl relative' : 'border-border shadow-xl'} bg-gradient-to-b from-surface-card to-background p-6 flex flex-col justify-between gap-6 overflow-hidden`}>
+              {plan.popular && (
+                <div className="absolute top-0 right-0 bg-primary text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider">
+                  {language === 'es' ? 'Más popular' : 'Most popular'}
+                </div>
               )}
-            </button>
-          </div>
+              <div className="flex flex-col gap-2">
+                <h2 className="text-xl font-bold text-foreground">{plan.name}</h2>
+                <div className="flex items-center gap-2">
+                  <span className="text-3xl font-extrabold text-foreground tracking-tight">${plan.price.toLocaleString('es-AR')}</span>
+                  <span className="text-sm font-semibold text-muted-foreground">ARS</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs font-semibold">
+                  <span className="line-through text-muted-foreground">${plan.originalPrice.toLocaleString('es-AR')}</span>
+                  <span className="text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">20% OFF</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3 flex-1 mt-4">
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+                  <span>{plan.credits} {language === 'es' ? 'créditos Fitlab' : 'Fitlab credits'}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <ShieldCheck className="w-4 h-4 shrink-0" />
+                  <span>{language === 'es' ? 'Acreditación instantánea' : 'Instant delivery'}</span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => handleBuyCredits(plan.id)}
+                disabled={isCheckoutLoading || isSyncing}
+                className={`w-full py-2.5 px-4 rounded-xl font-semibold text-sm shadow-md transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-95 transform ${plan.popular ? 'bg-primary hover:bg-primary-hover text-white hover:shadow-primary/20' : 'bg-surface-soft hover:bg-surface border border-border text-foreground'}`}
+              >
+                {isCheckoutLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <CreditCard className="w-4 h-4" />
+                )}
+                {language === 'es' ? 'Comprar' : 'Buy'}
+              </button>
+            </div>
+          ))}
         </div>
       </div>
 
