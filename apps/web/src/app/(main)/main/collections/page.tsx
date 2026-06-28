@@ -101,7 +101,7 @@ export default function CollectionsPage() {
     try {
       const { processVirtualTryOn } = await import('@/actions/gemini')
       
-      const response = await processVirtualTryOn(currentCollection.prompt, currentCollection.modelImage!, currentCollection.clothes)
+      const response = await processVirtualTryOn(currentCollection.prompt, currentCollection.modelImage!, currentCollection.clothes, '3:4')
       
       let finalGens: Generation[] = []
       if (response.success && response.base64) {

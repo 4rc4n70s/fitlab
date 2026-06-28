@@ -130,7 +130,7 @@ export default function GeneratorPage() {
       const runGenerationsInBackground = async () => {
         for (let i = 0; i < modelUrls.length; i++) {
           try {
-            const response = await processVirtualTryOn(masterPrompt, modelUrls[i], clothesB64s)
+            const response = await processVirtualTryOn(masterPrompt, modelUrls[i], clothesB64s, selectedRatio)
           
           if (response.success && response.base64) {
             try {

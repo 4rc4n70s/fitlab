@@ -34,7 +34,8 @@ async function fetchImageAsBase64(url: string): Promise<{ mimeType: string, base
 export async function processVirtualTryOn(
   prompt: string, 
   modelImageUrl: string, 
-  clothesImageUrls: string[]
+  clothesImageUrls: string[],
+  aspectRatio: string = '1:1'
 ): Promise<GenerationResponse> {
   let userId: string | null = null;
   let creditsDecremented = false;
@@ -69,7 +70,7 @@ export async function processVirtualTryOn(
     
     // Construct the mandatory prompt
     const userPrompt = prompt
-    const contextPrompt = "MANDATORY INSTRUCTION: You are an expert virtual try-on and clothing applicator AI. Your ONLY task is to dress the person in the Target Model Image using the exact clothing provided in the Anchor Images. CRITICAL: You MUST strictly preserve the ORIGINAL BACKGROUND, ORIGINAL CROP, and ORIGINAL PROPORTIONS of the Target Model Image. DO NOT use the background from the Anchor (clothing) images. The final image must look exactly like the Target Model Image in its environment, model's pose, and face, but wearing the new clothes. " + (userPrompt ? "Additional User Instructions: " + userPrompt : "")
+    const contextPrompt = "MANDATORY INSTRUCTION: You are an expert virtual try-on and clothing applicator AI. Your ONLY task is to dress the person in the Target Model Image using the exact clothing provided in the Anchor Images. CRITICAL: You MUST strictly preserve the ORIGINAL BACKGROUND, ORIGINAL CROP, and ORIGINAL PROPORTIONS of the Target Model Image. DO NOT use the background from the Anchor (clothing) images. The final image must look exactly like the Target Model Image in its environment, model's pose, and face, but wearing the new clothes. The final image must have a strict aspect ratio of " + aspectRatio + ". " + (userPrompt ? "Additional User Instructions: " + userPrompt : "")
 
     interface Part {
       text?: string
