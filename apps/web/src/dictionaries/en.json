@@ -250,7 +250,10 @@
     },
     "descriptions": {
       "title": "Descriptions",
-      "description": "Select your images and automatically generate persuasive descriptions using AI (Coming soon)."
+      "description": "Select your images and automatically generate persuasive descriptions using AI (Coming soon).",
+      "coming_soon": "Coming Soon",
+      "in_development_message": "This section is under development. You will soon be able to select images from your library and automatically generate persuasive texts for your social media or online store.",
+      "in_development_badge": "Under Development"
     },
     "settings": {
       "title": "Settings"

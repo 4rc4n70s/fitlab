@@ -24,13 +24,13 @@ export default function DescriptionsPage() {
           <Sparkles className="w-6 h-6 text-yellow-500 absolute -top-2 -right-2 animate-pulse" />
         </div>
         <div className="flex flex-col gap-2 max-w-md">
-          <h2 className="text-2xl font-semibold text-foreground">Próximamente</h2>
+          <h2 className="text-2xl font-semibold text-foreground">{dict.pages.descriptions.coming_soon}</h2>
           <p className="text-muted">
-            Esta sección está en desarrollo. Muy pronto podrás seleccionar imágenes de tu librería y generar automáticamente textos persuasivos para tus redes sociales o tienda online.
+            {dict.pages.descriptions.in_development_message}
           </p>
         </div>
         <button className="px-6 py-2.5 mt-4 rounded-xl border border-border bg-transparent text-muted cursor-not-allowed font-medium">
-          En Desarrollo
+          {dict.pages.descriptions.in_development_badge}
         </button>
       </div>
     </div>

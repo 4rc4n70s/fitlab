@@ -249,8 +249,11 @@
       }
     },
     "descriptions": {
-      "title": "Descriptions",
-      "description": "Selecciona tus imágenes y genera descripciones persuasivas automáticamente usando IA (Próximamente)."
+      "title": "Descripciones",
+      "description": "Selecciona tus imágenes y genera descripciones persuasivas automáticamente usando IA (Próximamente).",
+      "coming_soon": "Próximamente",
+      "in_development_message": "Esta sección está en desarrollo. Muy pronto podrás seleccionar imágenes de tu librería y generar automáticamente textos persuasivos para tus redes sociales o tienda online.",
+      "in_development_badge": "En Desarrollo"
     },
     "settings": {
       "title": "Configuración"
