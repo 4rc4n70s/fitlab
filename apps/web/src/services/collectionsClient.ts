@@ -18,8 +18,9 @@ export const dbClient = {
     },
     async deleteFolder(folderId: string) {
       const client = createClient();
-      const { error } = await client.from('library_folders').delete().eq('id', folderId);
+      const { data, error } = await client.from('library_folders').delete().eq('id', folderId).select();
       if (error) throw error;
+      if (!data || data.length === 0) throw new Error("No se pudo eliminar la carpeta de la base de datos.");
     },
     async getItems() {
       const client = createClient();
@@ -43,8 +44,9 @@ export const dbClient = {
     },
     async deleteItem(itemId: string) {
       const client = createClient();
-      const { error } = await client.from('library_items').delete().eq('id', itemId);
+      const { data, error } = await client.from('library_items').delete().eq('id', itemId).select();
       if (error) throw error;
+      if (!data || data.length === 0) throw new Error("No se pudo eliminar la imagen de la base de datos.");
     }
   },
   collections: {
