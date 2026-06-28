@@ -13,14 +13,15 @@ import fs from 'fs'
 import path from 'path'
 
 async function fetchImageAsBase64(url: string): Promise<{ mimeType: string, base64: string }> {
+  // En Vercel, fs.readFile para la carpeta public a veces falla dependiendo del build.
+  // Es más seguro fetchear la URL directamente.
   if (url.startsWith('/')) {
-    const filePath = path.join(process.cwd(), 'public', url)
-    const buffer = await fs.promises.readFile(filePath)
-    const base64 = buffer.toString('base64')
-    const ext = path.extname(url).toLowerCase()
-    const mimeType = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg'
-    return { mimeType, base64 }
+    const origin = process.env.NEXT_PUBLIC_SITE_URL || 'https://fitlab-beta.vercel.app' // Asegúrate de tener el dominio correcto o config
+    // Fallback a Vercel URL
+    const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : origin
+    url = `${baseUrl}${url}`
   }
+
   if (url.startsWith('data:')) {
     const [header, data] = url.split(',')
     const mimeType = header.replace('data:', '').replace(';base64', '')

@@ -64,28 +64,34 @@ export default function LibraryPage() {
         setLibraryError(null)
         const dbFolders = await dbClient.library.getFolders()
         const dbItems = await dbClient.library.getItems()
-        
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        setFolders(dbFolders.map((f: any) => ({...f, itemCount: 0})))
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        setItems(dbItems.map((i: any) => ({
-          id: i.id,
-          name: i.name,
-          type: i.type,
-          url: i.url,
-          date: i.created_at,
-          folderId: i.folder_id
-        })))
-        
-        // Update folder counts
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const newFolders = dbFolders.map((f: any) => ({
-          id: f.id,
-          name: f.name,
+        // Auto-seed stock photos if library is empty and hasn't been seeded yet
+        const hasSeeded = localStorage.getItem('fitlab_seeded_stock')
+        if (dbFolders.length === 0 && dbItems.length === 0 && !hasSeeded) {
+          await loadStockPhotosData()
+          localStorage.setItem('fitlab_seeded_stock', 'true')
+        } else {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          itemCount: dbItems.filter((i: any) => i.folder_id === f.id).length
-        }))
-        setFolders(newFolders)
+          setFolders(dbFolders.map((f: any) => ({...f, itemCount: 0})))
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          setItems(dbItems.map((i: any) => ({
+            id: i.id,
+            name: i.name,
+            type: i.type,
+            url: i.url,
+            date: i.created_at,
+            folderId: i.folder_id
+          })))
+          
+          // Update folder counts
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const newFolders = dbFolders.map((f: any) => ({
+            id: f.id,
+            name: f.name,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            itemCount: dbItems.filter((i: any) => i.folder_id === f.id).length
+          }))
+          setFolders(newFolders)
+        }
       } catch (err) {
         console.error('Error fetching library from Supabase:', err)
         setLibraryError(err instanceof Error ? err.message : 'Error desconocido al cargar la librería.')
@@ -96,9 +102,14 @@ export default function LibraryPage() {
     init()
   }, [])
 
-  const handleLoadStockPhotos = async () => {
-    setIsLoadingStock(true)
+  const loadStockPhotosData = async () => {
     try {
+      // 1. Create Stock Photos folder
+      const newFolder = await dbClient.library.createFolder({
+        name: 'Stock Photos',
+        type: 'mixed'
+      })
+      
       const stockItems = [
         { name: 'Prenda 1', type: 'clothes' as const, url: '/clothes/pexels-cottonbro-7716960.jpg' },
         { name: 'Prenda 2', type: 'clothes' as const, url: '/clothes/pexels-enginakyurt-19995460.jpg' },
@@ -129,7 +140,7 @@ export default function LibraryPage() {
           name: item.name,
           type: item.type,
           url: item.url,
-          folder_id: null
+          folder_id: newFolder.id
         })
       ))
 
@@ -142,7 +153,19 @@ export default function LibraryPage() {
         folderId: i.folder_id || undefined
       }))
 
+      setFolders(prev => [...prev, { id: newFolder.id, name: newFolder.name, itemCount: formatted.length }])
       setItems(prev => [...formatted, ...prev])
+    } catch (err) {
+      console.error(err)
+      throw err
+    }
+  }
+
+  const handleLoadStockPhotos = async () => {
+    setIsLoadingStock(true)
+    try {
+      await loadStockPhotosData()
+      localStorage.setItem('fitlab_seeded_stock', 'true')
     } catch (err) {
       console.error(err)
       alert('Error cargando imágenes de stock.')
