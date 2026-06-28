@@ -120,7 +120,7 @@ export default function LibraryPage() {
         const reader = new FileReader()
         const base64 = await new Promise<string>((resolve, reject) => {
           reader.onload = (e) => resolve(e.target?.result as string)
-          reader.onerror = (e) => reject(new Error("Error leyendo el archivo"))
+          reader.onerror = () => reject(new Error("Error leyendo el archivo"))
           try {
             reader.readAsDataURL(uf.file!)
           } catch(e) {
@@ -145,10 +145,11 @@ export default function LibraryPage() {
             date: newItem.created_at,
             folderId: newItem.folder_id || undefined
           })
-        } catch (err: any) {
+        } catch (err: unknown) {
           console.error('Error uploading file:', err)
           hasError = true
-          lastError = err?.message || String(err)
+          const errorMsg = err instanceof Error ? err.message : String(err)
+          lastError = errorMsg
         }
       }
 
@@ -160,9 +161,10 @@ export default function LibraryPage() {
       setItems(updated)
       updateFolderCounts(updated)
       setShowUploadModal(false)
-    } catch (globalErr: any) {
+    } catch (globalErr: unknown) {
       console.error('Global error in upload:', globalErr)
-      alert("Error crítico durante la subida: " + (globalErr?.message || String(globalErr)))
+      const errorMsg = globalErr instanceof Error ? globalErr.message : String(globalErr)
+      alert("Error crítico durante la subida: " + errorMsg)
     } finally {
       setIsUploading(false)
     }
