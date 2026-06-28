@@ -35,6 +35,7 @@ export default function LibraryPage() {
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [uploadFiles, setUploadFiles] = useState<{id: string, file?: File, url: string, name: string, type: 'clothes'|'model'}[]>([])
   const [isUploading, setIsUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
   const [editItem, setEditItem] = useState<ItemType | null>(null)
   const [showFolderModal, setShowFolderModal] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
@@ -109,18 +110,23 @@ export default function LibraryPage() {
 
   const handleBulkUploadSubmit = async () => {
     setIsUploading(true)
+    setUploadError(null)
+    console.log("Starting bulk upload...")
     try {
       const newItems: ItemType[] = []
       let hasError = false
       let lastError = ""
       
-      for (const uf of uploadFiles) {
+      for (let i = 0; i < uploadFiles.length; i++) {
+        const uf = uploadFiles[i]
         if (!uf.file) continue
+        
+        console.log(`Processing file ${i + 1}/${uploadFiles.length}: ${uf.name}`)
         
         const reader = new FileReader()
         const base64 = await new Promise<string>((resolve, reject) => {
           reader.onload = (e) => resolve(e.target?.result as string)
-          reader.onerror = () => reject(new Error("Error leyendo el archivo"))
+          reader.onerror = () => reject(new Error("Error leyendo el archivo localmente"))
           try {
             reader.readAsDataURL(uf.file!)
           } catch(e) {
@@ -128,14 +134,20 @@ export default function LibraryPage() {
           }
         })
         
+        console.log("File read to base64 successfully. Uploading to Supabase Storage...")
+        
         try {
           const publicUrl = await uploadImageToSupabase(base64, uf.type)
+          console.log("Uploaded to storage. URL:", publicUrl)
+          
+          console.log("Creating database record...")
           const newItem = await dbClient.library.createItem({
             name: uf.name,
             type: uf.type,
             url: publicUrl,
             folder_id: currentFolder || null
           })
+          console.log("Database record created:", newItem.id)
           
           newItems.push({
             id: newItem.id,
@@ -146,7 +158,7 @@ export default function LibraryPage() {
             folderId: newItem.folder_id || undefined
           })
         } catch (err: unknown) {
-          console.error('Error uploading file:', err)
+          console.error('Error uploading file to Supabase:', err)
           hasError = true
           const errorMsg = err instanceof Error ? err.message : String(err)
           lastError = errorMsg
@@ -154,18 +166,23 @@ export default function LibraryPage() {
       }
 
       if (hasError) {
-        alert("Hubo un error subiendo una o más imágenes: " + lastError + ". Asegúrate de los permisos de Supabase.")
+        console.warn("Upload finished with errors.")
+        setUploadError("Hubo un error subiendo una o más imágenes: " + lastError + ". Revisa la consola para más detalles.")
       }
 
+      console.log("Updating UI state with new items...")
       const updated = [...newItems, ...items]
       setItems(updated)
       updateFolderCounts(updated)
-      setShowUploadModal(false)
+      if (!hasError) {
+        setShowUploadModal(false)
+      }
     } catch (globalErr: unknown) {
       console.error('Global error in upload:', globalErr)
       const errorMsg = globalErr instanceof Error ? globalErr.message : String(globalErr)
-      alert("Error crítico durante la subida: " + errorMsg)
+      setUploadError("Error crítico: " + errorMsg)
     } finally {
+      console.log("Upload process finished.")
       setIsUploading(false)
     }
   }
@@ -613,11 +630,16 @@ export default function LibraryPage() {
               )}
             </div>
 
-            <div className="flex justify-end pt-4 border-t border-border">
+            <div className="flex justify-end pt-4 border-t border-border gap-4 items-center">
+              {uploadError && (
+                <div className="text-red-500 text-sm font-medium flex-1">
+                  {uploadError}
+                </div>
+              )}
               <button 
                 disabled={uploadFiles.length === 0 || isUploading}
                 onClick={handleBulkUploadSubmit} 
-                className="px-6 py-2.5 rounded-xl bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium disabled:opacity-50 flex items-center gap-2"
+                className="px-6 py-2.5 rounded-xl bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium disabled:opacity-50 flex items-center gap-2 shrink-0"
               >
                 {isUploading ? (
                   <>
