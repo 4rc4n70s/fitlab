@@ -106,7 +106,22 @@ export default function LibraryPage() {
     const files = e.target.files
     if (!files) return
 
-    const newUploads = Array.from(files).map(file => ({
+    const currentTotal = items.length + uploadFiles.length
+    const availableSlots = 50 - currentTotal
+
+    if (availableSlots <= 0) {
+      alert("Has alcanzado el límite máximo de 50 imágenes en tu librería.")
+      e.target.value = ''
+      return
+    }
+
+    let filesToProcess = Array.from(files)
+    if (filesToProcess.length > availableSlots) {
+      alert(`Solo puedes subir ${availableSlots} imágenes más (límite de 50). Se han ignorado las imágenes sobrantes.`)
+      filesToProcess = filesToProcess.slice(0, availableSlots)
+    }
+
+    const newUploads = filesToProcess.map(file => ({
       id: Math.random().toString(36).substr(2, 9),
       file,
       url: URL.createObjectURL(file),
