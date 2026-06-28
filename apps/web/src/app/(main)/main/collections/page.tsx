@@ -12,7 +12,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface Generation {
   id: string
-  status: 'success' | 'error' | 'processing'
+  status: 'success' | 'error' | 'processing' | 'pending'
   date: string
   modelUrl?: string
   originalModelUrl?: string
@@ -280,7 +280,7 @@ export default function CollectionsPage() {
                               <span className="flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full">
                                 <CheckCircle2 className="w-3 h-3" /> Completado
                               </span>
-                            ) : gen.status === 'processing' ? (
+                            ) : (gen.status === 'processing' || gen.status === 'pending') ? (
                               <span className="flex items-center gap-1 text-xs font-medium text-blue-600 bg-blue-500/10 px-2 py-0.5 rounded-full animate-pulse">
                                 <RefreshCw className="w-3 h-3 animate-spin" /> Procesando...
                               </span>
