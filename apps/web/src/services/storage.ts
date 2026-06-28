@@ -8,14 +8,11 @@ export async function uploadFileToSupabase(file: File, folder: string): Promise<
   const ext = file.name.split('.').pop() || 'jpg'
   const fileName = `${folder}/${Math.random().toString(36).substring(2) + Date.now().toString(36)}.${ext}`
 
-  console.log(`Reading file asynchronously into ArrayBuffer (${file.size} bytes)...`)
-  const arrayBuffer = await file.arrayBuffer()
-  
   console.log("Starting Supabase storage upload...")
   try {
     const { data, error } = await supabase.storage
       .from('fitlab-images')
-      .upload(fileName, arrayBuffer, {
+      .upload(fileName, file, {
         contentType: file.type,
         cacheControl: '3600',
         upsert: false
