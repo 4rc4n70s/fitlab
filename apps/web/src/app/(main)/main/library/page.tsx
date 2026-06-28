@@ -1,7 +1,7 @@
 'use client'
 
 import { dbClient } from '@/services/collectionsClient'
-import { uploadImageToSupabase } from '@/services/storage'
+import { uploadImageToSupabase, uploadFileToSupabase } from '@/services/storage'
 
 import React, { useState, useEffect } from 'react'
 import { Search, Grid, List, Folder, Upload, Edit2, Download, Trash2, ChevronRight, FolderPlus, X, Eye } from 'lucide-react'
@@ -123,21 +123,10 @@ export default function LibraryPage() {
         
         console.log(`Processing file ${i + 1}/${uploadFiles.length}: ${uf.name}`)
         
-        const reader = new FileReader()
-        const base64 = await new Promise<string>((resolve, reject) => {
-          reader.onload = (e) => resolve(e.target?.result as string)
-          reader.onerror = () => reject(new Error("Error leyendo el archivo localmente"))
-          try {
-            reader.readAsDataURL(uf.file!)
-          } catch(e) {
-            reject(e)
-          }
-        })
-        
-        console.log("File read to base64 successfully. Uploading to Supabase Storage...")
+        console.log("Uploading file directly to Supabase Storage...")
         
         try {
-          const publicUrl = await uploadImageToSupabase(base64, uf.type)
+          const publicUrl = await uploadFileToSupabase(uf.file, uf.type)
           console.log("Uploaded to storage. URL:", publicUrl)
           
           console.log("Creating database record...")
