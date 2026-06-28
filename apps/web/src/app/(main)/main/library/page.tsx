@@ -4,7 +4,7 @@ import { dbClient } from '@/services/collectionsClient'
 import { uploadFileToSupabase } from '@/services/storage'
 
 import React, { useState, useEffect } from 'react'
-import { Search, Grid, List, Folder, Upload, Edit2, Download, Trash2, ChevronRight, FolderPlus, X, Eye } from 'lucide-react'
+import { Search, Grid, List, Folder, Upload, Edit2, Download, Trash2, ChevronRight, ChevronLeft, FolderPlus, X, Eye } from 'lucide-react'
 import { ImageViewer } from '@/components/shared/image-viewer'
 
 interface FolderType {
@@ -45,6 +45,13 @@ export default function LibraryPage() {
   const [showViewer, setShowViewer] = useState(false)
   const [viewerIndex, setViewerIndex] = useState(0)
 
+  const [currentPage, setCurrentPage] = useState(1)
+  const ITEMS_PER_PAGE = 12
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery, filterType, currentFolder])
+
   // Load from localStorage on mount
   useEffect(() => {
     const init = async () => {
@@ -81,11 +88,14 @@ export default function LibraryPage() {
   }, [])
 
   const filteredItems = items.filter(item => {
-    const matchFolder = currentFolder ? item.folderId === currentFolder : !item.folderId
+    const matchFolder = currentFolder ? item.folderId === currentFolder : true
     const matchType = filterType === 'all' ? true : item.type === filterType
     const matchSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase())
     return matchFolder && matchType && matchSearch
   })
+
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / ITEMS_PER_PAGE))
+  const paginatedItems = filteredItems.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
 
   const handleOpenUpload = () => {
     setUploadFiles([])
@@ -400,9 +410,10 @@ export default function LibraryPage() {
             </div>
           ) : viewMode === 'grid' ? (
             // Grid View
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-              {filteredItems.map(item => (
-                <div key={item.id} className="group flex flex-col gap-2 relative">
+            <div className="flex flex-col gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                {paginatedItems.map((item, index) => (
+                  <div key={item.id} className="group flex flex-col gap-2 relative">
                   <div className="relative aspect-square overflow-hidden border border-border bg-surface-card">
                     <img src={item.url} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                     
@@ -417,7 +428,7 @@ export default function LibraryPage() {
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 z-10">
                       <button 
                         onClick={() => {
-                          setViewerIndex(filteredItems.findIndex(i => i.id === item.id))
+                          setViewerIndex((currentPage - 1) * ITEMS_PER_PAGE + index)
                           setShowViewer(true)
                         }}
                         className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-colors" 
@@ -445,14 +456,38 @@ export default function LibraryPage() {
                     <span className="text-sm font-medium text-foreground truncate" title={item.name}>{item.name}</span>
                     <span className="text-xs text-muted">{new Date(item.date).toLocaleDateString()}</span>
                   </div>
+                  </div>
+                ))}
+              </div>
+              
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-4 mt-4">
+                  <button 
+                    disabled={currentPage === 1} 
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    className="p-2 rounded-lg border border-border bg-surface-card hover:bg-surface-soft disabled:opacity-50 transition-colors"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <span className="text-sm font-medium text-foreground">
+                    Página {currentPage} de {totalPages}
+                  </span>
+                  <button 
+                    disabled={currentPage === totalPages} 
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    className="p-2 rounded-lg border border-border bg-surface-card hover:bg-surface-soft disabled:opacity-50 transition-colors"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
                 </div>
-              ))}
+              )}
             </div>
           ) : (
             // List View
-            <div className="flex flex-col gap-2">
-              {filteredItems.map(item => (
-                <div key={item.id} className="flex items-center justify-between p-3 rounded-xl border border-border bg-surface-card hover:bg-surface-soft transition-colors group">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                {paginatedItems.map(item => (
+                  <div key={item.id} className="flex items-center justify-between p-3 rounded-xl border border-border bg-surface-card hover:bg-surface-soft transition-colors group">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-lg overflow-hidden border border-border shrink-0">
                       <img src={item.url} alt={item.name} className="w-full h-full object-cover" />
@@ -496,6 +531,29 @@ export default function LibraryPage() {
                   </div>
                 </div>
               ))}
+              </div>
+              
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-4 mt-4">
+                  <button 
+                    disabled={currentPage === 1} 
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    className="p-2 rounded-lg border border-border bg-surface-card hover:bg-surface-soft disabled:opacity-50 transition-colors"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <span className="text-sm font-medium text-foreground">
+                    Página {currentPage} de {totalPages}
+                  </span>
+                  <button 
+                    disabled={currentPage === totalPages} 
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    className="p-2 rounded-lg border border-border bg-surface-card hover:bg-surface-soft disabled:opacity-50 transition-colors"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

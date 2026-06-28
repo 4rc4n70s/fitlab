@@ -3,10 +3,9 @@ import { dbClient as db } from '@/services/collectionsClient'
 import { uploadImageToSupabase } from '@/services/storage'
 
 import React, { useState, useEffect } from 'react'
-import { Save, RefreshCw, Upload, Image as ImageIcon, X, Sparkles, Trash2, Folder, ChevronRight, Check } from 'lucide-react'
+import { Save, RefreshCw, Upload, Image as ImageIcon, X, Sparkles, Trash2, Folder, ChevronRight, ChevronLeft, Check } from 'lucide-react'
 import { processVirtualTryOn } from '@/actions/gemini'
 import { getSavedPrompts, savePrompt, deletePrompt } from '@/actions/prompts'
-import { get } from 'idb-keyval'
 
 const ASPECT_RATIOS = [
   { label: '1:1', icon: 'Square' },
@@ -44,6 +43,8 @@ export default function GeneratorPage() {
   const [libraryItems, setLibraryItems] = useState<LibraryItem[]>([])
   const [libraryFolders, setLibraryFolders] = useState<{id: string, name: string}[]>([])
   const [currentFolder, setCurrentFolder] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const ITEMS_PER_PAGE = 12
 
   useEffect(() => {
     const init = async () => {
@@ -57,19 +58,26 @@ export default function GeneratorPage() {
   React.useEffect(() => {
     if (showLibraryModal) {
       const load = async () => {
-        const savedItems = await get('fitlab_library_items')
-        const savedFolders = await get('fitlab_library_folders')
-        if (savedItems) {
-          try { setLibraryItems(typeof savedItems === 'string' ? JSON.parse(savedItems) : savedItems) } catch (error: unknown) {
-  console.error(error); }
-        }
-        if (savedFolders) {
-          try { setLibraryFolders(typeof savedFolders === 'string' ? JSON.parse(savedFolders) : savedFolders) } catch (error: unknown) {
-  console.error(error); }
+        try {
+          const dbFolders = await db.library.getFolders()
+          const dbItems = await db.library.getItems()
+          
+          setLibraryFolders(dbFolders.map((f: any) => ({ id: f.id, name: f.name })))
+          setLibraryItems(dbItems.map((i: any) => ({
+            id: i.id,
+            name: i.name,
+            type: i.type as 'clothes' | 'model',
+            url: i.url,
+            date: i.created_at,
+            folderId: i.folder_id || undefined
+          })))
+        } catch (error) {
+          console.error("Error loading library from Supabase:", error)
         }
       }
       load()
       setCurrentFolder(null)
+      setCurrentPage(1)
     }
   }, [showLibraryModal])
 
@@ -472,7 +480,7 @@ export default function GeneratorPage() {
                     {libraryFolders.map(folder => (
                       <div 
                         key={folder.id}
-                        onClick={() => setCurrentFolder(folder.id)}
+                        onClick={() => { setCurrentFolder(folder.id); setCurrentPage(1); }}
                         className="flex items-center gap-3 p-3 rounded-xl border border-border bg-surface-card hover:border-foreground/30 cursor-pointer transition-colors"
                       >
                         <Folder className="w-5 h-5 text-muted shrink-0" />
@@ -486,49 +494,82 @@ export default function GeneratorPage() {
               {/* Items */}
               <div className="flex flex-col gap-4">
                 <h4 className="text-sm font-medium text-foreground uppercase tracking-wider">
-                  {currentFolder ? 'Contenido de la carpeta' : 'Archivos'}
+                  {currentFolder ? 'Contenido de la carpeta' : 'Todos los archivos'}
                 </h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                  {libraryItems
-                    .filter(item => item.type === showLibraryModal)
-                    .filter(item => currentFolder ? item.folderId === currentFolder : !item.folderId)
-                    .map(item => {
-                      const isSelected = showLibraryModal === 'clothes' 
-                        ? selectedClothes.some(i => i.id === item.id) 
-                        : selectedModels.some(i => i.id === item.id)
+                  {(() => {
+                    const filteredLibraryItems = libraryItems
+                      .filter(item => item.type === showLibraryModal)
+                      .filter(item => currentFolder ? item.folderId === currentFolder : true)
+                    
+                    const totalPages = Math.max(1, Math.ceil(filteredLibraryItems.length / ITEMS_PER_PAGE))
+                    const paginatedItems = filteredLibraryItems.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+                    
+                    return (
+                      <>
+                        {paginatedItems.map(item => {
+                          const isSelected = showLibraryModal === 'clothes' 
+                            ? selectedClothes.some(i => i.id === item.id) 
+                            : selectedModels.some(i => i.id === item.id)
 
-                      return (
-                        <div 
-                          key={item.id} 
-                          className="group cursor-pointer flex flex-col gap-2 relative"
-                          onClick={() => {
-                            if (showLibraryModal === 'clothes') {
-                              if (isSelected) setSelectedClothes(prev => prev.filter(i => i.id !== item.id))
-                              else setSelectedClothes(prev => [...prev, item])
-                            } else {
-                              if (isSelected) setSelectedModels(prev => prev.filter(i => i.id !== item.id))
-                              else setSelectedModels(prev => [...prev, item])
-                            }
-                          }}
-                        >
-                          <div className={`relative aspect-square overflow-hidden border-2 transition-all ${isSelected ? 'border-foreground shadow-sm' : 'border-border group-hover:border-foreground/50'}`}>
-                            <img src={item.url} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                            {isSelected && (
-                              <div className="absolute top-2 right-2 bg-foreground text-background p-1.5 rounded-full shadow-md animate-in zoom-in">
-                                <Check className="w-3 h-3 stroke-[3]" />
+                          return (
+                            <div 
+                              key={item.id} 
+                              className="group cursor-pointer flex flex-col gap-2 relative"
+                              onClick={() => {
+                                if (showLibraryModal === 'clothes') {
+                                  if (isSelected) setSelectedClothes(prev => prev.filter(i => i.id !== item.id))
+                                  else setSelectedClothes(prev => [...prev, item])
+                                } else {
+                                  if (isSelected) setSelectedModels(prev => prev.filter(i => i.id !== item.id))
+                                  else setSelectedModels(prev => [...prev, item])
+                                }
+                              }}
+                            >
+                              <div className={`relative aspect-square overflow-hidden border-2 transition-all ${isSelected ? 'border-foreground shadow-sm' : 'border-border group-hover:border-foreground/50'}`}>
+                                <img src={item.url} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                {isSelected && (
+                                  <div className="absolute top-2 right-2 bg-foreground text-background p-1.5 rounded-full shadow-md animate-in zoom-in">
+                                    <Check className="w-3 h-3 stroke-[3]" />
+                                  </div>
+                                )}
                               </div>
-                            )}
+                              <span className="text-sm font-medium text-foreground truncate px-1">{item.name}</span>
+                            </div>
+                          )
+                        })}
+                        
+                        {filteredLibraryItems.length === 0 && (
+                          <div className="col-span-full py-8 text-center text-muted">
+                            No tienes {showLibraryModal === 'clothes' ? 'prendas' : 'modelos'} en tu librería.
                           </div>
-                          <span className="text-sm font-medium text-foreground truncate px-1">{item.name}</span>
-                        </div>
-                      )
-                  })}
+                        )}
+
+                        {totalPages > 1 && (
+                          <div className="col-span-full flex justify-center items-center gap-4 mt-4">
+                            <button 
+                              disabled={currentPage === 1} 
+                              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                              className="p-2 rounded-lg border border-border bg-surface-card hover:bg-surface-soft disabled:opacity-50 transition-colors"
+                            >
+                              <ChevronLeft className="w-5 h-5" />
+                            </button>
+                            <span className="text-sm font-medium text-foreground">
+                              Página {currentPage} de {totalPages}
+                            </span>
+                            <button 
+                              disabled={currentPage === totalPages} 
+                              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                              className="p-2 rounded-lg border border-border bg-surface-card hover:bg-surface-soft disabled:opacity-50 transition-colors"
+                            >
+                              <ChevronRight className="w-5 h-5" />
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    )
+                  })()}
                 </div>
-                {libraryItems.filter(item => item.type === showLibraryModal).length === 0 && (
-                  <div className="p-12 text-center text-muted">
-                    No tienes {showLibraryModal === 'clothes' ? 'prendas' : 'modelos'} en tu librería.
-                  </div>
-                )}
               </div>
             </div>
             
