@@ -125,10 +125,11 @@ export default function GeneratorPage() {
       // Dispatch so UI updates instantly
       window.dispatchEvent(new Event('fitlab_collections_updated'))
 
-      // 4. Process each generation sequentially
-      for (let i = 0; i < modelUrls.length; i++) {
-        try {
-          const response = await processVirtualTryOn(masterPrompt, modelUrls[i], clothesB64s)
+      // 4. Process each generation sequentially in the background (fire and forget)
+      const runGenerationsInBackground = async () => {
+        for (let i = 0; i < modelUrls.length; i++) {
+          try {
+            const response = await processVirtualTryOn(masterPrompt, modelUrls[i], clothesB64s)
           
           if (response.success && response.base64) {
             try {
@@ -164,10 +165,13 @@ export default function GeneratorPage() {
           window.dispatchEvent(new Event('fitlab_collections_updated'))
         }
 
-        if (i < modelUrls.length - 1) {
-          await new Promise(r => setTimeout(r, 1500))
+          if (i < modelUrls.length - 1) {
+            await new Promise(r => setTimeout(r, 1500))
+          }
         }
       }
+
+      runGenerationsInBackground()
     } catch(err) {
       console.error(err)
       alert("Hubo un error al preparar la generación")
