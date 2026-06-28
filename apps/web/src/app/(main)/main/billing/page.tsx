@@ -13,6 +13,13 @@ interface UserProfile {
   boilerplate_credits?: number;
 }
 
+interface BillingHistoryItem {
+  payment_id: string;
+  created_at: string;
+  credits_added: number;
+  amount: number | string;
+}
+
 export default function BillingPage() {
   const { user, profile, isLoading: isUserLoading } = useUser()
   const { language } = useUI()
@@ -22,7 +29,7 @@ export default function BillingPage() {
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
-  const [billingHistory, setBillingHistory] = useState<any[]>([])
+  const [billingHistory, setBillingHistory] = useState<BillingHistoryItem[]>([])
 
   // Sincronizar el saldo local con el perfil cargado de Supabase y cargar el historial
   useEffect(() => {
