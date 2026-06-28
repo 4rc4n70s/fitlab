@@ -26,6 +26,9 @@ export async function processVirtualTryOn(
   modelImageUrl: string, 
   clothesImageUrls: string[]
 ): Promise<GenerationResponse> {
+  let userId: string | null = null;
+  let creditsDecremented = false;
+
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -33,10 +36,12 @@ export async function processVirtualTryOn(
     if (!user) {
       return { success: false, error: 'Usuario no autenticado.' }
     }
+    userId = user.id;
 
     // Decrement credits before generating
     try {
       await db.profiles.decrementCredits(user.id, 1)
+      creditsDecremented = true;
     } catch (e: unknown) {
       const err = e as Error
       return { success: false, error: err.message || 'Saldo de créditos insuficiente.' }
@@ -130,6 +135,13 @@ export async function processVirtualTryOn(
     }
 
   } catch (error: unknown) {
+    if (creditsDecremented && userId) {
+      try {
+        await db.profiles.incrementCredits(userId, 1);
+      } catch (refundError) {
+        console.error("Critical: Failed to refund credits after error", refundError);
+      }
+    }
     const err = error as Error
     return { success: false, error: err.message || 'Unknown error occurred during generation' }
   }
