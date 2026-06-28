@@ -5,6 +5,7 @@ import Script from 'next/script'
 import { useUser } from '@/hooks/use-user'
 import { useUI } from '@/hooks/use-ui'
 import { CreditCard, Sparkles, RefreshCw, CheckCircle2, ShieldCheck, Loader2 } from 'lucide-react'
+import { getBillingHistory } from '@/actions/billing'
 import esDict from '@/dictionaries/es.json'
 import enDict from '@/dictionaries/en.json'
 
@@ -21,11 +22,18 @@ export default function BillingPage() {
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
+  const [billingHistory, setBillingHistory] = useState<any[]>([])
 
-  // Sincronizar el saldo local con el perfil cargado de Supabase
+  // Sincronizar el saldo local con el perfil cargado de Supabase y cargar el historial
   useEffect(() => {
     if (profile) {
       setLocalCredits((profile as unknown as UserProfile).boilerplate_credits ?? 5)
+      // Cargar historial
+      getBillingHistory().then(res => {
+        if (res.success && res.data) {
+          setBillingHistory(res.data)
+        }
+      })
     }
   }, [profile])
 
@@ -309,24 +317,33 @@ export default function BillingPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {/* Ejemplo mockeado */}
-              <tr className="hover:bg-surface-soft/50 transition-colors">
-                <td className="px-6 py-4 text-foreground whitespace-nowrap">
-                  {new Date().toLocaleDateString()}
-                </td>
-                <td className="px-6 py-4 text-muted-foreground">
-                  {dict.pages.billing.history.mock_detail}
-                </td>
-                <td className="px-6 py-4 text-foreground font-medium">
-                  $100 ARS
-                </td>
-                <td className="px-6 py-4">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-xs font-medium">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    {dict.pages.billing.history.status.approved}
-                  </span>
-                </td>
-              </tr>
+              {billingHistory.length > 0 ? (
+                billingHistory.map((item) => (
+                  <tr key={item.payment_id} className="hover:bg-surface-soft/50 transition-colors">
+                    <td className="px-6 py-4 text-foreground whitespace-nowrap">
+                      {new Date(item.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 text-muted-foreground">
+                      Compra de {item.credits_added} créditos
+                    </td>
+                    <td className="px-6 py-4 text-foreground font-medium">
+                      ${Number(item.amount).toLocaleString('es-AR')} ARS
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-xs font-medium">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        {dict.pages.billing.history.status.approved}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={4} className="px-6 py-4 text-center text-muted-foreground">
+                    No hay compras registradas
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

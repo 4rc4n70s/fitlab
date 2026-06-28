@@ -65,7 +65,6 @@ export async function processVirtualTryOn(
   aspectRatio: string = '1:1'
 ): Promise<GenerationResponse> {
   let userId: string | null = null;
-  let creditsDecremented = false;
 
   try {
     const supabase = await createClient()
@@ -76,18 +75,18 @@ export async function processVirtualTryOn(
     }
     userId = user.id;
 
-    // Decrement credits before generating
-    try {
-      await db.profiles.decrementCredits(user.id, 1)
-      creditsDecremented = true;
-    } catch (e: unknown) {
-      const err = e as Error
-      return { success: false, error: err.message || 'Saldo de créditos insuficiente.' }
+    // Check credits before generating
+    const profile = await db.profiles.findUnique(userId);
+    if (!profile) {
+      return { success: false, error: 'Perfil no encontrado.' };
+    }
+    const currentCredits = profile.boilerplate_credits || 0;
+    if (profile.email !== 'zanardi.ag@gmail.com' && currentCredits < 1) {
+      return { success: false, error: 'Saldo de créditos insuficiente.' };
     }
 
     const apiKey = process.env.GEMINI_API_KEY
     if (!apiKey) {
-      await db.profiles.incrementCredits(user.id, 1)
       return { success: false, error: 'GEMINI_API_KEY is not configured in the environment.' }
     }
 
@@ -142,40 +141,37 @@ export async function processVirtualTryOn(
     const json = await response.json()
     
     if (!response.ok) {
-      await db.profiles.incrementCredits(user.id, 1)
       return { success: false, error: json.error ? json.error.message : 'Model execution error.' }
     }
     
     const candidate = json.candidates && json.candidates[0]
     if (!candidate || !candidate.content || !candidate.content.parts) {
-      await db.profiles.incrementCredits(user.id, 1)
       return { success: false, error: "No response found from AI." }
     }
 
     const outputPart = candidate.content.parts[0]
     
     if (outputPart.inlineData && outputPart.inlineData.data) {
+      // Image generated successfully, decrement credits
+      try {
+        await db.profiles.decrementCredits(userId, 1);
+      } catch (e: unknown) {
+        console.error("Critical: Failed to decrement credits after generation", e);
+        return { success: false, error: 'Error al actualizar el saldo de créditos.' };
+      }
+
       return { 
         success: true, 
         base64: outputPart.inlineData.data, 
         mimeType: outputPart.inlineData.mimeType || 'image/jpeg' 
       }
     } else if (outputPart.text) {
-      await db.profiles.incrementCredits(user.id, 1)
       return { success: false, error: `El modelo devolvió texto en lugar de una imagen. Respuesta del modelo: "${outputPart.text}"` }
     } else {
-      await db.profiles.incrementCredits(user.id, 1)
       return { success: false, error: "Response did not contain image data." }
     }
 
   } catch (error: unknown) {
-    if (creditsDecremented && userId) {
-      try {
-        await db.profiles.incrementCredits(userId, 1);
-      } catch (refundError) {
-        console.error("Critical: Failed to refund credits after error", refundError);
-      }
-    }
     const err = error as Error
     return { success: false, error: err.message || 'Unknown error occurred during generation' }
   }
