@@ -15,6 +15,7 @@ interface Generation {
   status: 'success' | 'error' | 'processing'
   date: string
   modelUrl?: string
+  originalModelUrl?: string
   image?: string
   errorMsg?: string
 }
@@ -77,7 +78,7 @@ export default function CollectionsPage() {
   const openViewer = (generations: Generation[], index: number) => {
     const formatted = generations.map(g => ({
       url: g.image as string,
-      originalUrl: g.modelUrl
+      originalUrl: g.originalModelUrl || g.modelUrl
     }))
     setViewerImages(formatted)
     setViewerIndex(index)
@@ -154,11 +155,17 @@ export default function CollectionsPage() {
     const successGens = collection.generations.filter(g => g.status === 'success' && g.image)
     if (successGens.length === 0) return
     
-    successGens.forEach((gen, index) => {
-      if (!gen.image) return
-      const base64Data = gen.image.split(',')[1]
-      zip.file(`generacion_${index + 1}.jpg`, base64Data, { base64: true })
-    })
+    for (let index = 0; index < successGens.length; index++) {
+      const gen = successGens[index]
+      if (!gen.image) continue
+      try {
+        const res = await fetch(gen.image)
+        const blob = await res.blob()
+        zip.file(`generacion_${index + 1}.jpg`, blob)
+      } catch (err) {
+        console.error('Error downloading image for ZIP', err)
+      }
+    }
     
     const content = await zip.generateAsync({ type: 'blob' })
     saveAs(content, `coleccion_${collection.id}.zip`)
@@ -273,7 +280,7 @@ export default function CollectionsPage() {
                               </span>
                             )}
                           </div>
-                          <span className="text-xs text-muted">{new Date(gen.date).toLocaleString()}</span>
+                          <span className="text-xs text-muted">{new Date(gen.date || collection.date).toLocaleString()}</span>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
@@ -421,9 +428,9 @@ export default function CollectionsPage() {
                 <div className="flex gap-4">
                   <label className={`flex-1 flex flex-col items-center gap-2 p-3 border rounded-xl cursor-pointer transition-colors ${regenBase === 'original' ? 'border-foreground bg-surface-soft' : 'border-border'}`}>
                     <input type="radio" className="hidden" checked={regenBase === 'original'} onChange={() => setRegenBase('original')} />
-                    {regenModal.generation.modelUrl && (
+                    {(regenModal.generation.originalModelUrl || regenModal.generation.modelUrl) && (
                       <div className="w-full aspect-square bg-surface-card overflow-hidden">
-                        <img src={regenModal.generation.modelUrl} className="w-full h-full object-cover" alt="Original" />
+                        <img src={(regenModal.generation.originalModelUrl || regenModal.generation.modelUrl)!} className="w-full h-full object-cover" alt="Original" />
                       </div>
                     )}
                     <span className="text-sm font-medium">Foto Original</span>

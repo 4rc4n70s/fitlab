@@ -110,6 +110,7 @@ export default function GeneratorPage() {
       let generations = modelUrls.map((modelUrl, idx) => ({
         id: `gen-${Date.now()}-${idx}`,
         status: 'pending' as const,
+        date: new Date().toISOString(),
         originalModelUrl: modelUrl,
         originalClothesUrls: clothesUrls
       }))
