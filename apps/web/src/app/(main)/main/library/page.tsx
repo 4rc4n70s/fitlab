@@ -109,50 +109,63 @@ export default function LibraryPage() {
 
   const handleBulkUploadSubmit = async () => {
     setIsUploading(true)
-    const newItems: ItemType[] = []
-    let hasError = false
-    
-    for (const uf of uploadFiles) {
-      if (!uf.file) continue
+    try {
+      const newItems: ItemType[] = []
+      let hasError = false
+      let lastError = ""
       
-      const reader = new FileReader()
-      const base64 = await new Promise<string>((resolve) => {
-        reader.onload = (e) => resolve(e.target?.result as string)
-        reader.readAsDataURL(uf.file!)
-      })
-      
-      try {
-        const publicUrl = await uploadImageToSupabase(base64, uf.type)
-        const newItem = await dbClient.library.createItem({
-          name: uf.name,
-          type: uf.type,
-          url: publicUrl,
-          folder_id: currentFolder || null
+      for (const uf of uploadFiles) {
+        if (!uf.file) continue
+        
+        const reader = new FileReader()
+        const base64 = await new Promise<string>((resolve, reject) => {
+          reader.onload = (e) => resolve(e.target?.result as string)
+          reader.onerror = (e) => reject(new Error("Error leyendo el archivo"))
+          try {
+            reader.readAsDataURL(uf.file!)
+          } catch(e) {
+            reject(e)
+          }
         })
         
-        newItems.push({
-          id: newItem.id,
-          name: newItem.name,
-          type: newItem.type,
-          url: newItem.url,
-          date: newItem.created_at,
-          folderId: newItem.folder_id || undefined
-        })
-      } catch (err) {
-        console.error('Error uploading file:', err)
-        hasError = true
+        try {
+          const publicUrl = await uploadImageToSupabase(base64, uf.type)
+          const newItem = await dbClient.library.createItem({
+            name: uf.name,
+            type: uf.type,
+            url: publicUrl,
+            folder_id: currentFolder || null
+          })
+          
+          newItems.push({
+            id: newItem.id,
+            name: newItem.name,
+            type: newItem.type,
+            url: newItem.url,
+            date: newItem.created_at,
+            folderId: newItem.folder_id || undefined
+          })
+        } catch (err: any) {
+          console.error('Error uploading file:', err)
+          hasError = true
+          lastError = err?.message || String(err)
+        }
       }
-    }
 
-    if (hasError) {
-      alert("Hubo un error subiendo una o más imágenes. Asegúrate de haber ejecutado el código SQL en Supabase para crear el contenedor (bucket) 'fitlab-images' y sus permisos.")
-    }
+      if (hasError) {
+        alert("Hubo un error subiendo una o más imágenes: " + lastError + ". Asegúrate de los permisos de Supabase.")
+      }
 
-    const updated = [...newItems, ...items]
-    setItems(updated)
-    updateFolderCounts(updated)
-    setIsUploading(false)
-    setShowUploadModal(false)
+      const updated = [...newItems, ...items]
+      setItems(updated)
+      updateFolderCounts(updated)
+      setShowUploadModal(false)
+    } catch (globalErr: any) {
+      console.error('Global error in upload:', globalErr)
+      alert("Error crítico durante la subida: " + (globalErr?.message || String(globalErr)))
+    } finally {
+      setIsUploading(false)
+    }
   }
 
   const updateFolderCounts = (currentItems: ItemType[]) => {
