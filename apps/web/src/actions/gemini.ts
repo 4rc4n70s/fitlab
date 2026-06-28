@@ -9,8 +9,7 @@ interface GenerationResponse {
 
 import { createClient } from '@/lib/supabase/server'
 import { db } from '@/services/db'
-import fs from 'fs'
-import path from 'path'
+
 
 async function fetchImageAsBase64(url: string): Promise<{ mimeType: string, base64: string }> {
   // En Vercel, fs.readFile para la carpeta public a veces falla dependiendo del build.
