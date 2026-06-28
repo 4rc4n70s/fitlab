@@ -154,7 +154,7 @@ export default function LibraryPage() {
   const filteredItems = items.filter(item => {
     const matchFolder = currentFolder ? item.folderId === currentFolder : true
     const matchType = filterType === 'all' ? true : item.type === filterType
-    const matchSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchSearch = (item.name || '').toLowerCase().includes((searchQuery || '').toLowerCase())
     return matchFolder && matchType && matchSearch
   })
 
