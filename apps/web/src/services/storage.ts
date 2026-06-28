@@ -2,29 +2,41 @@ import { createClient } from '@/lib/supabase/client'
 
 
 export async function uploadFileToSupabase(file: File, folder: string): Promise<string> {
+  console.log("Initializing Supabase client...")
   const supabase = createClient()
   
   const ext = file.name.split('.').pop() || 'jpg'
   const fileName = `${folder}/${Math.random().toString(36).substring(2) + Date.now().toString(36)}.${ext}`
 
-  const { error } = await supabase.storage
-    .from('fitlab-images')
-    .upload(fileName, file, {
-      contentType: file.type,
-      cacheControl: '3600',
-      upsert: false
-    })
+  console.log(`Reading file asynchronously into ArrayBuffer (${file.size} bytes)...`)
+  const arrayBuffer = await file.arrayBuffer()
+  
+  console.log("Starting Supabase storage upload...")
+  try {
+    const { data, error } = await supabase.storage
+      .from('fitlab-images')
+      .upload(fileName, arrayBuffer, {
+        contentType: file.type,
+        cacheControl: '3600',
+        upsert: false
+      })
+      
+    console.log("Supabase upload returned.", { data, error })
 
-  if (error) {
-    console.error('Error uploading file to Supabase:', error)
-    throw new Error('Error al subir la imagen a la nube')
+    if (error) {
+      console.error('Error uploading file to Supabase:', error)
+      throw new Error(error.message || 'Error al subir la imagen a la nube')
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from('fitlab-images')
+      .getPublicUrl(fileName)
+
+    return publicUrlData.publicUrl
+  } catch (err) {
+    console.error("Exception thrown during supabase upload:", err)
+    throw err
   }
-
-  const { data: publicUrlData } = supabase.storage
-    .from('fitlab-images')
-    .getPublicUrl(fileName)
-
-  return publicUrlData.publicUrl
 }
 
 export async function uploadImageToSupabase(base64Str: string, folder: string): Promise<string> {
