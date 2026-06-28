@@ -475,7 +475,7 @@ export default function GeneratorPage() {
               )}
 
               {/* Folders (only in root) */}
-              {!currentFolder && libraryFolders.length > 0 && (
+              {!currentFolder && (
                 <div className="flex flex-col gap-4">
                   <h4 className="text-sm font-medium text-foreground uppercase tracking-wider">Carpetas</h4>
                   <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -502,7 +502,7 @@ export default function GeneratorPage() {
                   {(() => {
                     const filteredLibraryItems = libraryItems
                       .filter(item => item.type === showLibraryModal)
-                      .filter(item => currentFolder ? item.folderId === currentFolder : true)
+                      .filter(item => currentFolder ? item.folderId === currentFolder : !item.folderId)
                     
                     const totalPages = Math.max(1, Math.ceil(filteredLibraryItems.length / ITEMS_PER_PAGE))
                     const paginatedItems = filteredLibraryItems.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
