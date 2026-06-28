@@ -82,8 +82,8 @@ export default function GeneratorPage() {
   }, [showLibraryModal])
 
     const handleGenerate = async () => {
-    if (selectedClothes.length === 0 || selectedModels.length === 0 || masterPrompt.trim() === '') {
-      alert('Por favor selecciona al menos una prenda, un modelo y escribe un prompt.')
+    if (selectedClothes.length === 0 || selectedModels.length === 0) {
+      alert('Por favor selecciona al menos una prenda y un modelo.')
       return
     }
 
