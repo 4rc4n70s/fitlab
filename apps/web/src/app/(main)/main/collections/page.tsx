@@ -101,7 +101,8 @@ export default function CollectionsPage() {
     try {
       const { processVirtualTryOn } = await import('@/actions/gemini')
       
-      const response = await processVirtualTryOn(currentCollection.prompt, currentCollection.modelImage!, currentCollection.clothes, '3:4')
+      const targetModelImage = gen.originalModelUrl || gen.modelUrl || currentCollection.modelImage!
+      const response = await processVirtualTryOn(currentCollection.prompt, targetModelImage, currentCollection.clothes, '3:4')
       
       let finalGens: Generation[] = []
       if (response.success && response.base64) {
@@ -159,9 +160,18 @@ export default function CollectionsPage() {
       const gen = successGens[index]
       if (!gen.image) continue
       try {
-        const res = await fetch(gen.image)
-        const blob = await res.blob()
-        zip.file(`generacion_${index + 1}.jpg`, blob)
+        const url = gen.image!
+        let blob;
+        try {
+          // Use proxy to avoid CORS issues when fetching images for the ZIP
+          const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(url)}`
+          const response = await fetch(proxyUrl)
+          blob = await response.blob()
+        } catch (e) {
+          console.warn("Proxy fetch failed, might be CORS.", e)
+          return;
+        }
+        zip.file(`generation-${index + 1}.jpg`, blob)
       } catch (err) {
         console.error('Error downloading image for ZIP', err)
       }
@@ -280,7 +290,9 @@ export default function CollectionsPage() {
                               </span>
                             )}
                           </div>
-                          <span className="text-xs text-muted">{new Date(gen.date || collection.date).toLocaleString()}</span>
+                          <span className="text-[10px] text-muted">
+                            {gen.date ? new Date(gen.date).toLocaleTimeString() : new Date(collection.date).toLocaleTimeString()}
+                          </span>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
@@ -428,9 +440,9 @@ export default function CollectionsPage() {
                 <div className="flex gap-4">
                   <label className={`flex-1 flex flex-col items-center gap-2 p-3 border rounded-xl cursor-pointer transition-colors ${regenBase === 'original' ? 'border-foreground bg-surface-soft' : 'border-border'}`}>
                     <input type="radio" className="hidden" checked={regenBase === 'original'} onChange={() => setRegenBase('original')} />
-                    {(regenModal.generation.originalModelUrl || regenModal.generation.modelUrl) && (
+                    {(regenModal.generation.originalModelUrl || regenModal.generation.modelUrl || currentCollection?.modelImage) && (
                       <div className="w-full aspect-square bg-surface-card overflow-hidden">
-                        <img src={(regenModal.generation.originalModelUrl || regenModal.generation.modelUrl)!} className="w-full h-full object-cover" alt="Original" />
+                        <img src={(regenModal.generation.originalModelUrl || regenModal.generation.modelUrl || currentCollection?.modelImage)!} className="w-full h-full object-cover" alt="Original" />
                       </div>
                     )}
                     <span className="text-sm font-medium">Foto Original</span>
