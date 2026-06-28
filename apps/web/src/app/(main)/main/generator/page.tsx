@@ -1,11 +1,12 @@
 'use client'
-import { get, set } from 'idb-keyval'
+import { dbClient as db } from '@/services/collectionsClient'
+import { uploadImageToSupabase } from '@/services/storage'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Save, RefreshCw, Upload, Image as ImageIcon, X, Sparkles, Trash2, Folder, ChevronRight, Check } from 'lucide-react'
-import { getAvailableModels, processVirtualTryOn } from '@/actions/gemini'
+import { processVirtualTryOn } from '@/actions/gemini'
 import { getSavedPrompts, savePrompt, deletePrompt } from '@/actions/prompts'
-import { useRouter } from 'next/navigation'
+import { get } from 'idb-keyval'
 
 const ASPECT_RATIOS = [
   { label: '1:1', icon: 'Square' },
@@ -18,7 +19,7 @@ const ASPECT_RATIOS = [
 export default function GeneratorPage() {
   const [masterPrompt, setMasterPrompt] = useState('')
   const [selectedRatio, setSelectedRatio] = useState('3:4')
-  const router = useRouter()
+  
   const [showGenerateModal, setShowGenerateModal] = useState(false)
   const [showPromptsModal, setShowPromptsModal] = useState(false)
   const [savedPrompts, setSavedPrompts] = useState<string[]>([])
@@ -26,10 +27,7 @@ export default function GeneratorPage() {
   const [showLibraryModal, setShowLibraryModal] = useState<'clothes' | 'model' | null>(null)
   
   // Model state
-  const [availableModels, setAvailableModels] = useState<{id: string, name: string}[]>([])
-  const [selectedModel, setSelectedModel] = useState<string>('')
-  const [isLoadingModels, setIsLoadingModels] = useState(true)
-  
+        
   interface LibraryItem {
     id: string
     name: string
@@ -39,22 +37,8 @@ export default function GeneratorPage() {
     folderId?: string
   }
 
-  interface Generation {
-    id: string
-    status: 'success' | 'error' | 'processing'
-    date: string
-    image?: string
-    errorMsg?: string
-  }
-  
-  interface Collection {
-    id: string
-    date: string
-    prompt: string
-    clothes: string[]
-    generations: Generation[]
-  }
-  
+    
+    
   const [selectedClothes, setSelectedClothes] = useState<LibraryItem[]>([])
   const [selectedModels, setSelectedModels] = useState<LibraryItem[]>([])
   const [libraryItems, setLibraryItems] = useState<LibraryItem[]>([])
@@ -66,21 +50,6 @@ export default function GeneratorPage() {
       // Load saved prompts
       const prompts = await getSavedPrompts()
       setSavedPrompts(prompts)
-
-      // Fetch models
-      try {
-        const models = await getAvailableModels()
-        setAvailableModels(models)
-        
-        // Auto select Nano Banana if exists, or first model
-        const nano = models.find(m => m.name.toLowerCase().includes('nano banana'))
-        if (nano) setSelectedModel(nano.id)
-        else if (models.length > 0) setSelectedModel(models[0].id)
-      } catch (err) {
-        console.error('Failed to load models:', err)
-      } finally {
-        setIsLoadingModels(false)
-      }
     }
     init()
   }, [])
@@ -91,10 +60,12 @@ export default function GeneratorPage() {
         const savedItems = await get('fitlab_library_items')
         const savedFolders = await get('fitlab_library_folders')
         if (savedItems) {
-          try { setLibraryItems(typeof savedItems === 'string' ? JSON.parse(savedItems) : savedItems) } catch (e) { console.error(e) }
+          try { setLibraryItems(typeof savedItems === 'string' ? JSON.parse(savedItems) : savedItems) } catch (error: unknown) {
+  console.error(error); }
         }
         if (savedFolders) {
-          try { setLibraryFolders(typeof savedFolders === 'string' ? JSON.parse(savedFolders) : savedFolders) } catch (e) { console.error(e) }
+          try { setLibraryFolders(typeof savedFolders === 'string' ? JSON.parse(savedFolders) : savedFolders) } catch (error: unknown) {
+  console.error(error); }
         }
       }
       load()
@@ -102,98 +73,86 @@ export default function GeneratorPage() {
     }
   }, [showLibraryModal])
 
-  const urlToBase64 = async (url: string) => {
-    if (url.startsWith('data:')) return url
-    const res = await fetch(url)
-    const blob = await res.blob()
-    return new Promise<string>((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onloadend = () => resolve(reader.result as string)
-      reader.onerror = reject
-      reader.readAsDataURL(blob)
-    })
-  }
+    const handleGenerate = async () => {
+    if (selectedClothes.length === 0 || selectedModels.length === 0 || masterPrompt.trim() === '') {
+      alert('Por favor selecciona al menos una prenda, un modelo y escribe un prompt.')
+      return
+    }
 
-  const handleGenerate = async () => {
     setIsGenerating(true)
-    
-    const clothesUrls = selectedClothes.length > 0 ? selectedClothes.map(c => c.url) : ['/clothes/pexels-cottonbro-7716960.jpg']
-    
-    // Support generating for multiple models if selected
-    const modelsToProcess = selectedModels.length > 0 
-      ? selectedModels 
-      : [{ id: 'default', name: 'Default', type: 'model', url: '/models/mens-fashion-loose-cotton-shirt.jpg', date: '' } as LibraryItem]
 
-    const batchId = `batch-${Math.floor(1000 + Math.random() * 9000)}`
+    // Calculate combinations (all clothes x all models)
+    const modelsToProcess = []
+    const clothesB64s = selectedClothes.map(c => c.url)
     
-    const initialGenerations = modelsToProcess.map((model, i) => ({
-      id: `gen-${batchId}-${i}`,
-      status: 'processing',
-      date: new Date().toISOString(),
-      modelUrl: model.url
-    }))
-
-    const newCollection = {
-      id: batchId,
-      date: new Date().toISOString(),
-      prompt: masterPrompt,
-      clothes: clothesUrls,
-      generations: initialGenerations
+    for (const model of selectedModels) {
+      modelsToProcess.push(model)
     }
 
     try {
-      const existing = JSON.parse(localStorage.getItem('fitlab_collections') || '[]')
-      set('fitlab_collections', [newCollection, ...existing])
-    } catch (e) {
-      console.error(e)
-    }
-
-    // Redirect IMMEDIATELY to collections page!
-    setShowGenerateModal(false)
-    router.push('/main/collections')
-    
-    // Start background processing
-    const clothesBase64s = await Promise.all(clothesUrls.map(url => urlToBase64(url)))
-    
-    for (let i = 0; i < modelsToProcess.length; i++) {
-      try {
-        const modelBase64 = await urlToBase64(modelsToProcess[i].url)
-        const response = await processVirtualTryOn(masterPrompt, modelBase64, clothesBase64s, selectedModel)
+      // 1. Upload input images to Supabase first so they are public URLs
+      const clothesUrls = await Promise.all(clothesB64s.map(c => uploadImageToSupabase(c, 'inputs')))
+      
+      // We will create one collection per model, containing the generations for that model + clothes
+      for (let i = 0; i < modelsToProcess.length; i++) {
+        const modelUrl = await uploadImageToSupabase(modelsToProcess[i].url, 'inputs')
         
-        // Update specific generation inside the collection
-        const currentCols = (await get('fitlab_collections') || []) as Collection[]
-        const targetCol = currentCols.find((c: Collection) => c.id === batchId)
-        if (targetCol && targetCol.generations[i]) {
-          targetCol.generations[i] = {
-            ...targetCol.generations[i],
-            status: response.success ? 'success' : 'error',
-            image: response.success ? `data:${response.mimeType};base64,${response.base64}` : undefined,
-            errorMsg: response.error
+        // Initial generations state (pending)
+        const generations = clothesUrls.map((_, idx) => ({
+          id: `gen-${Date.now()}-${idx}`,
+          status: 'pending' as const,
+          originalModelUrl: modelUrl,
+          originalClothesUrls: clothesUrls
+        }))
+
+        // Create collection in DB
+        const newCollection = await db.collections.createCollection({
+          prompt: masterPrompt,
+          clothes: clothesUrls,
+          model_image: modelUrl,
+          generations
+        })
+
+        // Dispatch so UI updates instantly
+        window.dispatchEvent(new Event('fitlab_collections_updated'))
+
+        // Process generation
+        try {
+          const response = await processVirtualTryOn(masterPrompt, modelsToProcess[i].url, clothesB64s)
+          
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          let finalGens: any[] = [...generations]
+          if (response.success && response.base64) {
+            try {
+              const publicUrl = await uploadImageToSupabase(`data:${response.mimeType};base64,${response.base64}`, 'generations')
+              finalGens = generations.map(g => ({ ...g, status: 'success', image: publicUrl }))
+            } catch {
+              finalGens = generations.map(g => ({ ...g, status: 'error', errorMsg: 'Error al subir la imagen generada a Supabase' }))
+            }
+          } else {
+            finalGens = generations.map(g => ({ ...g, status: 'error', errorMsg: response.error || 'API Error' }))
           }
-          set('fitlab_collections', currentCols)
+
+          await db.collections.updateCollection(newCollection.id, { generations: finalGens })
+          window.dispatchEvent(new Event('fitlab_collections_updated'))
+
+        } catch (err: unknown) {
+          console.error('Error generating image', err)
+          const errorMessage = err instanceof Error ? err.message : 'Error de red inesperado.'
+          const finalGens = generations.map(g => ({ ...g, status: 'error', errorMsg: errorMessage }))
+          await db.collections.updateCollection(newCollection.id, { generations: finalGens })
           window.dispatchEvent(new Event('fitlab_collections_updated'))
         }
-        
-        // Pequeño delay para no saturar la API
+
         if (i < modelsToProcess.length - 1) {
           await new Promise(r => setTimeout(r, 1500))
         }
-      } catch (err: unknown) {
-        console.error('Error generating image', err)
-        const errorMessage = err instanceof Error ? err.message : 'Error de red inesperado.'
-        const currentCols = (await get('fitlab_collections') || []) as Collection[]
-        const targetCol = currentCols.find((c: Collection) => c.id === batchId)
-        if (targetCol && targetCol.generations[i]) {
-          targetCol.generations[i] = {
-            ...targetCol.generations[i],
-            status: 'error',
-            errorMsg: errorMessage
-          }
-          set('fitlab_collections', currentCols)
-          window.dispatchEvent(new Event('fitlab_collections_updated'))
-        }
       }
+    } catch(err) {
+      console.error(err)
+      alert("Hubo un error al preparar la generación")
     }
+
     setIsGenerating(false)
   }
 
@@ -254,32 +213,6 @@ export default function GeneratorPage() {
           <p className="text-muted text-base">Configura tu prompt y selecciona las prendas y modelos para generar nuevas imágenes.</p>
         </div>
 
-        {/* 0. AI Model */}
-        <section className="flex flex-col gap-4 border-b border-border pb-10">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-medium text-foreground">AI Model</h2>
-          </div>
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-foreground">Selecciona el modelo generativo</label>
-            <select 
-              className="w-full md:w-1/2 p-3 rounded-xl border border-border bg-surface-card text-foreground focus:outline-none focus:border-foreground/50 appearance-none cursor-pointer"
-              value={selectedModel}
-              onChange={(e) => setSelectedModel(e.target.value)}
-              disabled={isLoadingModels || availableModels.length === 0}
-            >
-              {isLoadingModels ? (
-                <option>Cargando modelos...</option>
-              ) : availableModels.length === 0 ? (
-                <option>No se pudieron cargar modelos</option>
-              ) : (
-                availableModels.map(m => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
-                ))
-              )}
-            </select>
-          </div>
-        </section>
-
         {/* 1. Prompt Engineering */}
         <section className="flex flex-col gap-4 border-b border-border pb-10">
           <div className="flex items-center justify-between">
@@ -329,7 +262,7 @@ export default function GeneratorPage() {
               <button
                 key={ratio.label}
                 onClick={() => setSelectedRatio(ratio.label)}
-                className={`flex flex-col items-center justify-center gap-2 w-full h-24 rounded-xl border transition-all ${
+                className={`flex flex-col items-center justify-center gap-2 w-full aspect-square border transition-all ${
                   selectedRatio === ratio.label 
                     ? 'border-foreground bg-surface-soft text-foreground shadow-sm' 
                     : 'border-border bg-surface-card text-muted hover:border-foreground/30'
@@ -363,7 +296,7 @@ export default function GeneratorPage() {
           <p className="text-sm text-muted">Todas las prendas seleccionadas se aplicarán a los modelos.</p>
           
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            <label className="col-span-full h-48 rounded-xl border-2 border-dashed border-border bg-surface-card flex flex-col items-center justify-center gap-3 text-muted hover:border-foreground/30 hover:text-foreground cursor-pointer transition-colors relative">
+            <label className="col-span-full h-48 border-2 border-dashed border-border bg-surface-card flex flex-col items-center justify-center gap-3 text-muted hover:border-foreground/30 hover:text-foreground cursor-pointer transition-colors relative">
               <input type="file" accept="image/png, image/jpeg, image/webp" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleFileUpload(e, 'clothes')} />
               <Upload className="w-8 h-8 text-muted-foreground" />
               <div className="flex flex-col items-center gap-1">
@@ -396,7 +329,7 @@ export default function GeneratorPage() {
           <p className="text-sm text-muted">Se generará una foto por cada modelo cargado, utilizando las prendas anteriores.</p>
           
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            <label className="col-span-full h-48 rounded-xl border-2 border-dashed border-border bg-surface-card flex flex-col items-center justify-center gap-3 text-muted hover:border-foreground/30 hover:text-foreground cursor-pointer transition-colors relative">
+            <label className="col-span-full h-48 border-2 border-dashed border-border bg-surface-card flex flex-col items-center justify-center gap-3 text-muted hover:border-foreground/30 hover:text-foreground cursor-pointer transition-colors relative">
               <input type="file" accept="image/png, image/jpeg, image/webp" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleFileUpload(e, 'model')} />
               <Upload className="w-8 h-8 text-muted-foreground" />
               <div className="flex flex-col items-center gap-1">

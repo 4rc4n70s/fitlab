@@ -1,5 +1,6 @@
 'use client'
-import { get, set } from 'idb-keyval'
+import { dbClient as db } from '@/services/collectionsClient'
+import { uploadImageToSupabase } from '@/services/storage'
 
 import React, { useState, useEffect } from 'react'
 import { Calendar, RefreshCw, AlertCircle, CheckCircle2, Images, Trash, Trash2, Download } from 'lucide-react'
@@ -7,20 +8,7 @@ import { ImageViewer } from '@/components/shared/image-viewer'
 import Link from 'next/link'
 import JSZip from 'jszip'
 import { saveAs } from 'file-saver'
-import { processVirtualTryOn } from '@/actions/gemini'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-
-const urlToBase64 = async (url: string) => {
-  if (url.startsWith('data:')) return url
-  const res = await fetch(url)
-  const blob = await res.blob()
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onloadend = () => resolve(reader.result as string)
-    reader.onerror = reject
-    reader.readAsDataURL(blob)
-  })
-}
 
 interface Generation {
   id: string
@@ -36,11 +24,13 @@ interface Collection {
   date: string
   prompt: string
   clothes: string[]
+  modelImage?: string
   generations: Generation[]
 }
 
 export default function CollectionsPage() {
-const [collections, setCollections] = useState<Collection[]>([])
+  const [collections, setCollections] = useState<Collection[]>([])
+  const [currentCollection, setCurrentCollection] = useState<Collection | null>(null)
   const [page, setCurrentPage] = useState(1)
   const ITEMS_PER_PAGE = 10
   const [viewerImages, setViewerImages] = useState<{url: string, originalUrl?: string}[]>([])
@@ -57,13 +47,19 @@ const [collections, setCollections] = useState<Collection[]>([])
   // Load from localStorage on mount and listen to updates
   useEffect(() => {
     const loadCols = async () => {
-      const saved = await get('fitlab_collections')
-      if (saved) {
-        try {
-          setCollections(typeof saved === 'string' ? JSON.parse(saved) : saved)
-        } catch (e) {
-          console.error('Error parsing collections from localStorage', e)
-        }
+      try {
+        const dbCols = await db.collections.getCollections()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setCollections(dbCols.map((c: any) => ({
+          id: c.id,
+          prompt: c.prompt,
+          date: c.created_at,
+          clothes: c.clothes,
+          modelImage: c.model_image,
+          generations: c.generations
+        })))
+      } catch (err) {
+        console.error('Error fetching collections:', err)
       }
     }
     
@@ -89,62 +85,54 @@ const [collections, setCollections] = useState<Collection[]>([])
   }
 
   const handleRegenerateSubmit = async () => {
-    if (!regenModal) return
+    if (!regenModal || !currentCollection) return
     setIsRegenerating(true)
     
+    const gen = regenModal.generation
+    
+    // Set to processing first
+    const processingGens = currentCollection.generations.map(g => 
+      g.id === gen.id ? { ...g, status: 'processing' as const, errorMsg: undefined } : g
+    )
+    setCurrentCollection({ ...currentCollection, generations: processingGens })
+    setCollections(prev => prev.map(c => c.id === currentCollection.id ? { ...c, generations: processingGens } : c))
+
     try {
-      const { collectionId, genId, generation, prompt } = regenModal
-      const collection = collections.find(c => c.id === collectionId)
-      if (!collection) return
+      const { processVirtualTryOn } = await import('@/actions/gemini')
       
-      const clothesBase64s = await Promise.all(collection.clothes.map(url => urlToBase64(url)))
-      const modelBase64 = await urlToBase64(regenBase === 'original' ? (generation.modelUrl || '') : (generation.image || ''))
+      const response = await processVirtualTryOn(currentCollection.prompt, currentCollection.modelImage!, currentCollection.clothes)
       
-      const currentCols = (await get('fitlab_collections') || []) as Collection[]
-      const targetCol = currentCols.find((c: Collection) => c.id === collectionId)
-      if (targetCol) {
-        const targetGenIndex = targetCol.generations.findIndex((g: Generation) => g.id === genId)
-        if (targetGenIndex >= 0) {
-          targetCol.generations[targetGenIndex].status = 'processing'
-          set('fitlab_collections', currentCols)
-          setCollections(currentCols)
+      let finalGens: Generation[] = []
+      if (response.success && response.base64) {
+        try {
+          const publicUrl = await uploadImageToSupabase(`data:${response.mimeType};base64,${response.base64}`, 'generations')
+          finalGens = processingGens.map(g => 
+            g.id === gen.id ? { ...g, status: 'success' as const, image: publicUrl } : g
+          )
+        } catch {
+          finalGens = processingGens.map(g => 
+            g.id === gen.id ? { ...g, status: 'error' as const, errorMsg: 'Error al subir la imagen' } : g
+          )
         }
+      } else {
+        finalGens = processingGens.map(g => 
+          g.id === gen.id ? { ...g, status: 'error' as const, errorMsg: response.error || 'Failed to generate image' } : g
+        )
       }
       
-      const response = await processVirtualTryOn(prompt, modelBase64, clothesBase64s)
+      await db.collections.updateCollection(currentCollection.id, { generations: finalGens })
+      setCurrentCollection(prev => prev ? { ...prev, generations: finalGens } : null)
+      setCollections(prev => prev.map(c => c.id === currentCollection.id ? { ...c, generations: finalGens } : c))
       
-      const updatedCols = (await get('fitlab_collections') || []) as Collection[]
-      const uCol = updatedCols.find((c: Collection) => c.id === collectionId)
-      if (uCol) {
-        const uGenIndex = uCol.generations.findIndex((g: Generation) => g.id === genId)
-        if (uGenIndex >= 0) {
-          uCol.generations[uGenIndex] = {
-            ...uCol.generations[uGenIndex],
-            status: response.success ? 'success' : 'error',
-            image: response.success ? `data:${response.mimeType};base64,${response.base64}` : undefined,
-            errorMsg: response.error
-          }
-          set('fitlab_collections', updatedCols)
-          setCollections(updatedCols)
-        }
-      }
-    } catch (e: unknown) {
-      console.error(e)
-      const errorMessage = e instanceof Error ? e.message : 'Error desconocido'
-      const updatedCols = (await get('fitlab_collections') || []) as Collection[]
-      const uCol = updatedCols.find((c: Collection) => c.id === regenModal.collectionId)
-      if (uCol) {
-        const uGenIndex = uCol.generations.findIndex((g: Generation) => g.id === regenModal.genId)
-        if (uGenIndex >= 0) {
-          uCol.generations[uGenIndex] = {
-            ...uCol.generations[uGenIndex],
-            status: 'error',
-            errorMsg: 'Error al regenerar: ' + errorMessage
-          }
-          set('fitlab_collections', updatedCols)
-          setCollections(updatedCols)
-        }
-      }
+    } catch (err: unknown) {
+      console.error('Error during regeneration', err)
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error'
+      const finalGens = processingGens.map(g => 
+        g.id === gen.id ? { ...g, status: 'error' as const, errorMsg } : g
+      )
+      await db.collections.updateCollection(currentCollection.id, { generations: finalGens })
+      setCurrentCollection(prev => prev ? { ...prev, generations: finalGens } : null)
+      setCollections(prev => prev.map(c => c.id === currentCollection.id ? { ...c, generations: finalGens } : c))
     } finally {
       setIsRegenerating(false)
       setRegenModal(null)
@@ -156,8 +144,8 @@ const [collections, setCollections] = useState<Collection[]>([])
       const res = await fetch(base64Url)
       const blob = await res.blob()
       saveAs(blob, name)
-    } catch (e) {
-      console.error(e)
+    } catch (error: unknown) {
+      console.error(error)
     }
   }
 
@@ -176,24 +164,41 @@ const [collections, setCollections] = useState<Collection[]>([])
     saveAs(content, `coleccion_${collection.id}.zip`)
   }
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (!deleteModal) return
-    if (deleteModal.type === 'collection') {
-      const updated = collections.filter(c => c.id !== deleteModal.collectionId)
-      setCollections(updated)
-      set('fitlab_collections', updated)
-    } else if (deleteModal.type === 'photo' && deleteModal.genId) {
-      const updated = collections.map(c => {
-        if (c.id === deleteModal.collectionId) {
-          return {
-            ...c,
-            generations: c.generations.filter((g) => g.id !== deleteModal.genId)
+    try {
+      if (deleteModal.type === 'collection') {
+        await db.collections.deleteCollection(deleteModal.collectionId)
+      } else if (deleteModal.type === 'photo' && deleteModal.genId) {
+        const col = collections.find(c => c.id === deleteModal.collectionId)
+        if (col) {
+          const updatedGens = col.generations.filter((g) => g.id !== deleteModal.genId)
+          if (updatedGens.length === 0) {
+            await db.collections.deleteCollection(deleteModal.collectionId)
+          } else {
+            await db.collections.updateCollection(col.id, { generations: updatedGens })
           }
         }
-        return c
-      }).filter(c => c.generations.length > 0)
-      setCollections(updated)
-      set('fitlab_collections', updated)
+      }
+      
+      const dbCols = await db.collections.getCollections()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setCollections(dbCols.map((c: any) => ({
+        id: c.id,
+        prompt: c.prompt,
+        date: c.created_at,
+        clothes: c.clothes,
+        modelImage: c.model_image,
+        generations: c.generations
+      })))
+      
+      if (deleteModal.type === 'collection' && currentCollection?.id === deleteModal.collectionId) {
+        setCurrentCollection(null)
+      } else if (currentCollection?.id === deleteModal.collectionId) {
+        setCurrentCollection(prev => prev ? {...prev, generations: prev.generations.filter(g => g.id !== deleteModal.genId)} : null)
+      }
+    } catch(err) {
+      console.error(err)
     }
     setDeleteModal(null)
   }
@@ -279,7 +284,7 @@ const [collections, setCollections] = useState<Collection[]>([])
                             <span className="text-xs font-medium text-muted uppercase tracking-wider">Prendas Usadas</span>
                             <div className="flex gap-2">
                               {collection.clothes.map((cUrl, i) => (
-                                <div key={i} className="w-10 h-10 rounded-md bg-surface-soft border border-border overflow-hidden">
+                                <div key={i} className="w-10 h-10 bg-surface-soft border border-border overflow-hidden">
                                   <img src={cUrl} alt={`Prenda ${i}`} className="w-full h-full object-cover" />
                                 </div>
                               ))}

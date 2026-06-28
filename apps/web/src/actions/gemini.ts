@@ -19,36 +19,7 @@ async function fetchImageAsBase64(url: string): Promise<{ mimeType: string, base
   throw new Error(`Expected base64 image data URL, but received: ${url.substring(0, 50)}...`)
 }
 
-export async function getAvailableModels(): Promise<{ id: string, name: string }[]> {
-  const apiKey = process.env.GEMINI_API_KEY
-  if (!apiKey) return []
-  
-  try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`)
-    const data = await res.json()
-    
-    const tunedRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/tunedModels?key=${apiKey}`)
-    const tunedData = await tunedRes.json()
 
-    const models = []
-    
-    interface GeminiModel {
-      name: string
-      displayName?: string
-    }
-
-    if (data.models) {
-      models.push(...data.models.map((m: GeminiModel) => ({ id: m.name, name: m.displayName || m.name.replace('models/', '') })))
-    }
-    if (tunedData.tunedModels) {
-      models.push(...tunedData.tunedModels.map((m: GeminiModel) => ({ id: m.name, name: m.displayName || m.name.replace('tunedModels/', '') })))
-    }
-    return models
-  } catch (e) {
-    console.error('Error fetching models', e)
-    return []
-  }
-}
 
 export async function processVirtualTryOn(
   prompt: string, 
@@ -77,9 +48,7 @@ export async function processVirtualTryOn(
       return { success: false, error: 'GEMINI_API_KEY is not configured in the environment.' }
     }
 
-    const allModels = await getAvailableModels()
-    const nanoModel = allModels.find(m => m.name.toLowerCase().includes('nano banana') || m.name.toLowerCase().includes('nano banano pro'))
-    const finalModelName = nanoModel ? nanoModel.id : 'models/gemini-3-pro-image'
+    const finalModelName = 'models/gemini-1.5-pro-latest'
 
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/${finalModelName.includes('/') ? finalModelName : `models/${finalModelName}`}:generateContent?key=${apiKey}`
     

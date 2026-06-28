@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/client'
-import { v4 as uuidv4 } from 'uuid'
+
 
 export async function uploadImageToSupabase(base64Str: string, folder: string): Promise<string> {
   const supabase = createClient()
@@ -24,7 +24,7 @@ export async function uploadImageToSupabase(base64Str: string, folder: string): 
   const blob = new Blob([byteArray], { type: mime })
 
   const ext = mime.split('/')[1] || 'jpg'
-  const fileName = `${folder}/${uuidv4()}.${ext}`
+  const fileName = `${folder}/${Math.random().toString(36).substring(2) + Date.now().toString(36)}.${ext}`
 
   const { error } = await supabase.storage
     .from('fitlab-images')
