@@ -1,5 +1,5 @@
 'use client'
-import { db } from '@/services/db'
+
 import { dbClient } from '@/services/collectionsClient'
 import { uploadImageToSupabase } from '@/services/storage'
 
