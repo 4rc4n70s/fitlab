@@ -62,7 +62,9 @@ export default function GeneratorPage() {
           const dbFolders = await db.library.getFolders()
           const dbItems = await db.library.getItems()
           
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           setLibraryFolders(dbFolders.map((f: any) => ({ id: f.id, name: f.name })))
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           setLibraryItems(dbItems.map((i: any) => ({
             id: i.id,
             name: i.name,
