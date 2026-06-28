@@ -48,7 +48,7 @@ export async function processVirtualTryOn(
       return { success: false, error: 'GEMINI_API_KEY is not configured in the environment.' }
     }
 
-    const finalModelName = 'models/gemini-1.5-pro-latest'
+    const finalModelName = 'models/gemini-3-pro-image'
 
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/${finalModelName.includes('/') ? finalModelName : `models/${finalModelName}`}:generateContent?key=${apiKey}`
     
@@ -84,7 +84,14 @@ export async function processVirtualTryOn(
       },
       contents: [
         { role: "user", parts: parts }
-      ]
+      ],
+      generationConfig: {
+        responseFormat: {
+          image: {
+            aspectRatio: "3:4"
+          }
+        }
+      }
     }
 
     const response = await fetch(apiUrl, {
