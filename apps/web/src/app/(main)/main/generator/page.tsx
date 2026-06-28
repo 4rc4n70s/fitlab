@@ -3,6 +3,7 @@ import { dbClient as db } from '@/services/collectionsClient'
 import { uploadImageToSupabase } from '@/services/storage'
 
 import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Save, RefreshCw, Upload, Image as ImageIcon, X, Sparkles, Trash2, Folder, ChevronRight, ChevronLeft, Check } from 'lucide-react'
 import { processVirtualTryOn } from '@/actions/gemini'
 import { getSavedPrompts, savePrompt, deletePrompt } from '@/actions/prompts'
@@ -18,6 +19,7 @@ const ASPECT_RATIOS = [
 export default function GeneratorPage() {
   const [masterPrompt, setMasterPrompt] = useState('')
   const [selectedRatio, setSelectedRatio] = useState('3:4')
+  const router = useRouter()
   
   const [showGenerateModal, setShowGenerateModal] = useState(false)
   const [showPromptsModal, setShowPromptsModal] = useState(false)
@@ -107,13 +109,13 @@ export default function GeneratorPage() {
       for (let i = 0; i < modelsToProcess.length; i++) {
         const modelUrl = await uploadImageToSupabase(modelsToProcess[i].url, 'inputs')
         
-        // Initial generations state (pending)
-        const generations = clothesUrls.map((_, idx) => ({
-          id: `gen-${Date.now()}-${idx}`,
+        // Initial generation state (pending). One image per model.
+        const generations = [{
+          id: `gen-${Date.now()}`,
           status: 'pending' as const,
           originalModelUrl: modelUrl,
           originalClothesUrls: clothesUrls
-        }))
+        }]
 
         // Create collection in DB
         const newCollection = await db.collections.createCollection({
@@ -161,9 +163,12 @@ export default function GeneratorPage() {
     } catch(err) {
       console.error(err)
       alert("Hubo un error al preparar la generación")
+      setIsGenerating(false)
+      return
     }
 
     setIsGenerating(false)
+    router.push('/main/collections')
   }
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'clothes' | 'model') => {

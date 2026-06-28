@@ -16,7 +16,17 @@ async function fetchImageAsBase64(url: string): Promise<{ mimeType: string, base
     const mimeType = header.replace('data:', '').replace(';base64', '')
     return { mimeType, base64: data }
   }
-  throw new Error(`Expected base64 image data URL, but received: ${url.substring(0, 50)}...`)
+  
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    const response = await fetch(url)
+    if (!response.ok) throw new Error(`Failed to fetch image from URL: ${url}`)
+    const arrayBuffer = await response.arrayBuffer()
+    const base64 = Buffer.from(arrayBuffer).toString('base64')
+    const mimeType = response.headers.get('content-type') || 'image/jpeg'
+    return { mimeType, base64 }
+  }
+
+  throw new Error(`Expected base64 image data URL or HTTP URL, but received: ${url.substring(0, 50)}...`)
 }
 
 
