@@ -26,7 +26,68 @@
   "pages": {
     "generator": {
       "title": "Generator",
-      "description": "Configura tu prompt y selecciona las prendas y modelos para generar nuevas imágenes."
+      "description": "Configura tu prompt y selecciona las prendas y modelos para generar nuevas imágenes.",
+      "alerts": {
+        "select_items": "Por favor selecciona al menos una prenda y un modelo.",
+        "error_prepare": "Hubo un error al preparar la generación"
+      },
+      "sections": {
+        "prompt": {
+          "title": "Ingeniería de Prompt",
+          "saved_btn": "Prompts Guardados",
+          "label": "Prompt Maestro",
+          "save_btn": "Guardar Prompt",
+          "placeholder": "Describe la escena, iluminación y composición"
+        },
+        "ratio": {
+          "title": "Relación de Aspecto",
+          "reset_btn": "Restablecer por defecto",
+          "subtitle": "Selecciona las dimensiones de salida para tu generación."
+        },
+        "clothes": {
+          "title": "Selección de Prendas",
+          "select_btn": "Seleccionar de Librería",
+          "subtitle": "Todas las prendas seleccionadas se aplicarán a los modelos.",
+          "upload_title": "Subir o Arrastrar Prenda",
+          "upload_subtitle": "Soporta PNG, JPG de hasta 10MB"
+        },
+        "models": {
+          "title": "Selección de Modelos",
+          "select_btn": "Seleccionar de Librería",
+          "subtitle": "Se generará una foto por cada modelo cargado, utilizando las prendas anteriores.",
+          "upload_title": "Subir o Arrastrar Modelo",
+          "upload_subtitle": "Soporta PNG, JPG de hasta 10MB"
+        }
+      },
+      "footer": {
+        "discard": "Descartar",
+        "generate": "Generar"
+      },
+      "modals": {
+        "generate": {
+          "title": "Iniciando Generación",
+          "description": "Tu solicitud de generación ha sido encolada. Se procesarán las prendas y modelos seleccionados.",
+          "processing": "Procesando (Toma un momento)...",
+          "confirm": "Confirmar e Ir a Colecciones"
+        },
+        "prompts": {
+          "title": "Prompts Guardados",
+          "empty": "No tienes prompts guardados.",
+          "delete_title": "Eliminar Prompt"
+        },
+        "library": {
+          "title_clothes": "Selecciona Prenda desde tu Librería",
+          "title_model": "Selecciona Modelo desde tu Librería",
+          "breadcrumb_root": "Librería",
+          "folders_title": "Carpetas",
+          "items_folder": "Contenido de la carpeta",
+          "items_all": "Todos los archivos",
+          "empty_clothes": "No tienes prendas en tu librería.",
+          "empty_model": "No tienes modelos en tu librería.",
+          "page": "Página",
+          "of": "de"
+        }
+      }
     },
     "collections": {
       "title": "Collections",

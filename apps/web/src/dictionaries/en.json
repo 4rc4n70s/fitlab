@@ -26,7 +26,68 @@
   "pages": {
     "generator": {
       "title": "Generator",
-      "description": "Configure your prompt and select garments and models to generate new images."
+      "description": "Configure your prompt and select garments and models to generate new images.",
+      "alerts": {
+        "select_items": "Please select at least one garment and one model.",
+        "error_prepare": "There was an error preparing the generation"
+      },
+      "sections": {
+        "prompt": {
+          "title": "Prompt Engineering",
+          "saved_btn": "Saved Prompts",
+          "label": "Master Prompt",
+          "save_btn": "Save Prompt",
+          "placeholder": "Describe the scene, lighting, and composition"
+        },
+        "ratio": {
+          "title": "Aspect Ratio",
+          "reset_btn": "Reset to defaults",
+          "subtitle": "Select the output dimensions for your generation."
+        },
+        "clothes": {
+          "title": "Clothes Selection",
+          "select_btn": "Select from Library",
+          "subtitle": "All selected garments will be applied to the models.",
+          "upload_title": "Upload or Drag Garment",
+          "upload_subtitle": "Supports PNG, JPG up to 10MB"
+        },
+        "models": {
+          "title": "Model Selection",
+          "select_btn": "Select from Library",
+          "subtitle": "One photo will be generated for each uploaded model, using the previous garments.",
+          "upload_title": "Upload or Drag Model",
+          "upload_subtitle": "Supports PNG, JPG up to 10MB"
+        }
+      },
+      "footer": {
+        "discard": "Discard",
+        "generate": "Generate"
+      },
+      "modals": {
+        "generate": {
+          "title": "Starting Generation",
+          "description": "Your generation request has been queued. Selected garments and models will be processed.",
+          "processing": "Processing (Takes a moment)...",
+          "confirm": "Confirm & Go to Collections"
+        },
+        "prompts": {
+          "title": "Saved Prompts",
+          "empty": "You have no saved prompts.",
+          "delete_title": "Delete Prompt"
+        },
+        "library": {
+          "title_clothes": "Select Garment from Library",
+          "title_model": "Select Model from Library",
+          "breadcrumb_root": "Library",
+          "folders_title": "Folders",
+          "items_folder": "Folder content",
+          "items_all": "All files",
+          "empty_clothes": "You have no garments in your library.",
+          "empty_model": "You have no models in your library.",
+          "page": "Page",
+          "of": "of"
+        }
+      }
     },
     "collections": {
       "title": "Collections",

@@ -93,7 +93,7 @@ export default function GeneratorPage() {
 
     const handleGenerate = async () => {
     if (selectedClothes.length === 0 || selectedModels.length === 0) {
-      alert('Por favor selecciona al menos una prenda y un modelo.')
+      alert(dict.pages.generator.alerts.select_items)
       return
     }
 
@@ -181,7 +181,7 @@ export default function GeneratorPage() {
       runGenerationsInBackground()
     } catch(err) {
       console.error(err)
-      alert("Hubo un error al preparar la generación")
+      alert(dict.pages.generator.alerts.error_prepare)
       setIsGenerating(false)
       return
     }
@@ -250,28 +250,28 @@ export default function GeneratorPage() {
         {/* 1. Prompt Engineering */}
         <section className="flex flex-col gap-4 border-b border-border pb-10">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-medium text-foreground">Prompt Engineering</h2>
+            <h2 className="text-xl font-medium text-foreground">{dict.pages.generator.sections.prompt.title}</h2>
             <button 
               onClick={() => setShowPromptsModal(true)}
               className="px-4 py-2 text-sm border border-border rounded-lg bg-surface-card text-foreground hover:bg-surface-soft transition-colors font-medium"
             >
-              Saved Prompts ({savedPrompts.length})
+              {dict.pages.generator.sections.prompt.saved_btn} ({savedPrompts.length})
             </button>
           </div>
           
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-foreground">Master Prompt</label>
+              <label className="text-sm font-medium text-foreground">{dict.pages.generator.sections.prompt.label}</label>
               <button 
                 onClick={handleSavePrompt}
                 className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg bg-surface-soft hover:bg-border transition-colors text-foreground"
               >
-                <Save className="w-4 h-4" /> Save Prompt
+                <Save className="w-4 h-4" /> {dict.pages.generator.sections.prompt.save_btn}
               </button>
             </div>
             <textarea 
               className="w-full min-h-[120px] p-4 rounded-xl border border-border bg-surface-card text-foreground placeholder:text-muted focus:outline-none focus:border-foreground/50 resize-y"
-              placeholder="Describe the scene, lightning and composition"
+              placeholder={dict.pages.generator.sections.prompt.placeholder}
               value={masterPrompt}
               onChange={(e) => setMasterPrompt(e.target.value)}
             />
@@ -281,15 +281,15 @@ export default function GeneratorPage() {
         {/* 2. Aspect Ratio */}
         <section className="flex flex-col gap-4 border-b border-border pb-10">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-medium text-foreground">Aspect Ratio</h2>
+            <h2 className="text-xl font-medium text-foreground">{dict.pages.generator.sections.ratio.title}</h2>
             <button 
               onClick={() => setSelectedRatio('3:4')}
               className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg bg-surface-soft hover:bg-border transition-colors text-foreground"
             >
-              <RefreshCw className="w-4 h-4" /> Reset to defaults
+              <RefreshCw className="w-4 h-4" /> {dict.pages.generator.sections.ratio.reset_btn}
             </button>
           </div>
-          <p className="text-sm text-muted">Select the output dimensions for your generation.</p>
+          <p className="text-sm text-muted">{dict.pages.generator.sections.ratio.subtitle}</p>
           
           <div className="grid grid-cols-5 gap-2 md:gap-4 w-full">
             {ASPECT_RATIOS.map((ratio) => (
@@ -319,23 +319,23 @@ export default function GeneratorPage() {
         {/* 3. Clothes Selections */}
         <section className="flex flex-col gap-4 border-b border-border pb-10">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-medium text-foreground">Clothes Selections</h2>
+            <h2 className="text-xl font-medium text-foreground">{dict.pages.generator.sections.clothes.title}</h2>
             <button 
               onClick={() => setShowLibraryModal('clothes')}
               className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg bg-surface-soft hover:bg-border transition-colors text-foreground"
             >
-              <ImageIcon className="w-4 h-4" /> Select from Library
+              <ImageIcon className="w-4 h-4" /> {dict.pages.generator.sections.clothes.select_btn}
             </button>
           </div>
-          <p className="text-sm text-muted">Todas las prendas seleccionadas se aplicarán a los modelos.</p>
+          <p className="text-sm text-muted">{dict.pages.generator.sections.clothes.subtitle}</p>
           
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
             <label className="col-span-full h-48 border-2 border-dashed border-border bg-surface-card flex flex-col items-center justify-center gap-3 text-muted hover:border-foreground/30 hover:text-foreground cursor-pointer transition-colors relative">
               <input type="file" accept="image/png, image/jpeg, image/webp" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleFileUpload(e, 'clothes')} />
               <Upload className="w-8 h-8 text-muted-foreground" />
               <div className="flex flex-col items-center gap-1">
-                <span className="text-sm font-medium text-center px-4">Subir o Arrastrar Prenda</span>
-                <span className="text-xs text-muted-foreground">Soporta PNG, JPG de hasta 10MB</span>
+                <span className="text-sm font-medium text-center px-4">{dict.pages.generator.sections.clothes.upload_title}</span>
+                <span className="text-xs text-muted-foreground">{dict.pages.generator.sections.clothes.upload_subtitle}</span>
               </div>
             </label>
             {selectedClothes.map(item => (
@@ -352,23 +352,23 @@ export default function GeneratorPage() {
         {/* 4. Model Selections */}
         <section className="flex flex-col gap-4 pb-10">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-medium text-foreground">Model Selections</h2>
+            <h2 className="text-xl font-medium text-foreground">{dict.pages.generator.sections.models.title}</h2>
             <button 
               onClick={() => setShowLibraryModal('model')}
               className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg bg-surface-soft hover:bg-border transition-colors text-foreground"
             >
-              <ImageIcon className="w-4 h-4" /> Select from Library
+              <ImageIcon className="w-4 h-4" /> {dict.pages.generator.sections.models.select_btn}
             </button>
           </div>
-          <p className="text-sm text-muted">Se generará una foto por cada modelo cargado, utilizando las prendas anteriores.</p>
+          <p className="text-sm text-muted">{dict.pages.generator.sections.models.subtitle}</p>
           
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
             <label className="col-span-full h-48 border-2 border-dashed border-border bg-surface-card flex flex-col items-center justify-center gap-3 text-muted hover:border-foreground/30 hover:text-foreground cursor-pointer transition-colors relative">
               <input type="file" accept="image/png, image/jpeg, image/webp" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleFileUpload(e, 'model')} />
               <Upload className="w-8 h-8 text-muted-foreground" />
               <div className="flex flex-col items-center gap-1">
-                <span className="text-sm font-medium text-center px-4">Subir o Arrastrar Modelo</span>
-                <span className="text-xs text-muted-foreground">Soporta PNG, JPG de hasta 10MB</span>
+                <span className="text-sm font-medium text-center px-4">{dict.pages.generator.sections.models.upload_title}</span>
+                <span className="text-xs text-muted-foreground">{dict.pages.generator.sections.models.upload_subtitle}</span>
               </div>
             </label>
             {selectedModels.map(item => (
@@ -387,14 +387,14 @@ export default function GeneratorPage() {
       {/* 5. Fixed Footer */}
       <div className="fixed bottom-0 left-0 md:left-64 right-0 border-t border-border bg-surface-card/80 backdrop-blur-md p-4 px-6 md:px-10 z-10 flex justify-end gap-4">
         <button className="px-6 py-2.5 rounded-xl border border-border bg-transparent text-foreground hover:bg-surface-soft transition-colors font-medium">
-          Discard
+          {dict.pages.generator.footer.discard}
         </button>
         <button 
           onClick={() => setShowGenerateModal(true)}
           className="px-6 py-2.5 rounded-xl bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium flex items-center gap-2"
         >
           <Sparkles className="w-4 h-4" />
-          Generate
+          {dict.pages.generator.footer.generate}
         </button>
       </div>
 
@@ -403,7 +403,7 @@ export default function GeneratorPage() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
           <div className="bg-surface-card border border-border rounded-2xl w-full max-w-md p-6 flex flex-col gap-6 shadow-xl animate-in zoom-in-95">
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-medium text-foreground">Starting Generation</h3>
+              <h3 className="text-xl font-medium text-foreground">{dict.pages.generator.modals.generate.title}</h3>
               <button 
                 onClick={() => setShowGenerateModal(false)}
                 className="p-1 rounded-lg hover:bg-surface-soft text-muted hover:text-foreground transition-colors"
@@ -412,7 +412,7 @@ export default function GeneratorPage() {
               </button>
             </div>
             <div className="flex flex-col gap-4">
-              <p className="text-muted text-sm">Tu solicitud de generación ha sido encolada. Se procesarán las prendas y modelos seleccionados.</p>
+              <p className="text-muted text-sm">{dict.pages.generator.modals.generate.description}</p>
               <div className="bg-surface-soft p-4 rounded-xl flex items-center justify-center">
                 <Sparkles className="w-8 h-8 text-foreground animate-pulse" />
               </div>
@@ -423,7 +423,7 @@ export default function GeneratorPage() {
                 disabled={isGenerating}
                 className="w-full px-6 py-2.5 rounded-xl bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium disabled:opacity-50"
               >
-                {isGenerating ? 'Procesando (Toma un momento)...' : 'Confirmar e Ir a Collections'}
+                {isGenerating ? dict.pages.generator.modals.generate.processing : dict.pages.generator.modals.generate.confirm}
               </button>
             </div>
           </div>
@@ -435,7 +435,7 @@ export default function GeneratorPage() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
           <div className="bg-surface-card border border-border rounded-2xl w-full max-w-lg p-6 flex flex-col gap-6 shadow-xl animate-in zoom-in-95 max-h-[80vh]">
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-medium text-foreground">Saved Prompts</h3>
+              <h3 className="text-xl font-medium text-foreground">{dict.pages.generator.modals.prompts.title}</h3>
               <button 
                 onClick={() => setShowPromptsModal(false)}
                 className="p-1 rounded-lg hover:bg-surface-soft text-muted hover:text-foreground transition-colors"
@@ -445,7 +445,7 @@ export default function GeneratorPage() {
             </div>
             <div className="flex-1 overflow-y-auto flex flex-col gap-3 pr-1">
               {savedPrompts.length === 0 ? (
-                <p className="text-muted text-sm text-center py-6">No tienes prompts guardados.</p>
+                <p className="text-muted text-sm text-center py-6">{dict.pages.generator.modals.prompts.empty}</p>
               ) : (
                 savedPrompts.map((prompt, i) => (
                   <div 
@@ -460,7 +460,7 @@ export default function GeneratorPage() {
                     <button 
                       onClick={(e) => handleDeletePrompt(e, prompt)}
                       className="p-1.5 rounded-lg text-muted hover:text-red-500 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100 focus:opacity-100"
-                      title="Eliminar Prompt"
+                      title={dict.pages.generator.modals.prompts.delete_title}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -478,7 +478,7 @@ export default function GeneratorPage() {
           <div className="bg-surface-card border border-border rounded-2xl w-full max-w-4xl p-6 flex flex-col gap-6 shadow-xl animate-in zoom-in-95 max-h-[80vh]">
             <div className="flex items-center justify-between border-b border-border pb-4">
               <h3 className="text-xl font-medium text-foreground">
-                Selecciona {showLibraryModal === 'clothes' ? 'Prenda' : 'Modelo'} desde tu Librería
+                {showLibraryModal === 'clothes' ? dict.pages.generator.modals.library.title_clothes : dict.pages.generator.modals.library.title_model}
               </h3>
               <button 
                 onClick={() => setShowLibraryModal(null)}
@@ -492,7 +492,7 @@ export default function GeneratorPage() {
               {/* Breadcrumbs */}
               {currentFolder && (
                 <div className="flex items-center gap-2 text-sm font-medium text-muted">
-                  <button onClick={() => setCurrentFolder(null)} className="hover:text-foreground transition-colors">Library</button>
+                  <button onClick={() => setCurrentFolder(null)} className="hover:text-foreground transition-colors">{dict.pages.generator.modals.library.breadcrumb_root}</button>
                   <ChevronRight className="w-4 h-4" />
                   <span className="text-foreground">{libraryFolders.find(f => f.id === currentFolder)?.name}</span>
                 </div>
@@ -501,7 +501,7 @@ export default function GeneratorPage() {
               {/* Folders (only in root) */}
               {!currentFolder && (
                 <div className="flex flex-col gap-4">
-                  <h4 className="text-sm font-medium text-foreground uppercase tracking-wider">Carpetas</h4>
+                  <h4 className="text-sm font-medium text-foreground uppercase tracking-wider">{dict.pages.generator.modals.library.folders_title}</h4>
                   <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                     {libraryFolders.map(folder => (
                       <div 
@@ -520,7 +520,7 @@ export default function GeneratorPage() {
               {/* Items */}
               <div className="flex flex-col gap-4">
                 <h4 className="text-sm font-medium text-foreground uppercase tracking-wider">
-                  {currentFolder ? 'Contenido de la carpeta' : 'Todos los archivos'}
+                  {currentFolder ? dict.pages.generator.modals.library.items_folder : dict.pages.generator.modals.library.items_all}
                 </h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                   {(() => {
@@ -567,7 +567,7 @@ export default function GeneratorPage() {
                         
                         {filteredLibraryItems.length === 0 && (
                           <div className="col-span-full py-8 text-center text-muted">
-                            No tienes {showLibraryModal === 'clothes' ? 'prendas' : 'modelos'} en tu librería.
+                            {showLibraryModal === 'clothes' ? dict.pages.generator.modals.library.empty_clothes : dict.pages.generator.modals.library.empty_model}
                           </div>
                         )}
 
@@ -581,7 +581,7 @@ export default function GeneratorPage() {
                               <ChevronLeft className="w-5 h-5" />
                             </button>
                             <span className="text-sm font-medium text-foreground">
-                              Página {currentPage} de {totalPages}
+                              {dict.pages.generator.modals.library.page} {currentPage} {dict.pages.generator.modals.library.of} {totalPages}
                             </span>
                             <button 
                               disabled={currentPage === totalPages} 
