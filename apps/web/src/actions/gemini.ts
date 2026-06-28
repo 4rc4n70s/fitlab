@@ -9,8 +9,18 @@ interface GenerationResponse {
 
 import { createClient } from '@/lib/supabase/server'
 import { db } from '@/services/db'
+import fs from 'fs'
+import path from 'path'
 
 async function fetchImageAsBase64(url: string): Promise<{ mimeType: string, base64: string }> {
+  if (url.startsWith('/')) {
+    const filePath = path.join(process.cwd(), 'public', url)
+    const buffer = await fs.promises.readFile(filePath)
+    const base64 = buffer.toString('base64')
+    const ext = path.extname(url).toLowerCase()
+    const mimeType = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg'
+    return { mimeType, base64 }
+  }
   if (url.startsWith('data:')) {
     const [header, data] = url.split(',')
     const mimeType = header.replace('data:', '').replace(';base64', '')

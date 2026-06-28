@@ -45,6 +45,10 @@ export default function LibraryPage() {
   const [showViewer, setShowViewer] = useState(false)
   const [viewerIndex, setViewerIndex] = useState(0)
 
+  const [isLoadingLibrary, setIsLoadingLibrary] = useState(true)
+  const [libraryError, setLibraryError] = useState<string | null>(null)
+  const [isLoadingStock, setIsLoadingStock] = useState(false)
+
   const [currentPage, setCurrentPage] = useState(1)
   const ITEMS_PER_PAGE = 12
 
@@ -52,10 +56,12 @@ export default function LibraryPage() {
     setCurrentPage(1)
   }, [searchQuery, filterType, currentFolder])
 
-  // Load from localStorage on mount
+  // Load from Supabase on mount
   useEffect(() => {
     const init = async () => {
       try {
+        setIsLoadingLibrary(true)
+        setLibraryError(null)
         const dbFolders = await dbClient.library.getFolders()
         const dbItems = await dbClient.library.getItems()
         
@@ -82,10 +88,68 @@ export default function LibraryPage() {
         setFolders(newFolders)
       } catch (err) {
         console.error('Error fetching library from Supabase:', err)
+        setLibraryError(err instanceof Error ? err.message : 'Error desconocido al cargar la librería.')
+      } finally {
+        setIsLoadingLibrary(false)
       }
     }
     init()
   }, [])
+
+  const handleLoadStockPhotos = async () => {
+    setIsLoadingStock(true)
+    try {
+      const stockItems = [
+        { name: 'Prenda 1', type: 'clothes' as const, url: '/clothes/pexels-cottonbro-7716960.jpg' },
+        { name: 'Prenda 2', type: 'clothes' as const, url: '/clothes/pexels-enginakyurt-19995460.jpg' },
+        { name: 'Prenda 3', type: 'clothes' as const, url: '/clothes/pexels-enginakyurt-4554337.jpg' },
+        { name: 'Prenda 4', type: 'clothes' as const, url: '/clothes/pexels-marceloverfe-19895977.jpg' },
+        { name: 'Prenda 5', type: 'clothes' as const, url: '/clothes/pexels-mart-production-9558265.jpg' },
+        { name: 'Prenda Mockup', type: 'clothes' as const, url: '/clothes/pexels-mockupbee-221716013-12039633.jpg' },
+        { name: 'Modelo Mens loose', type: 'model' as const, url: '/models/mens-fashion-loose-cotton-shirt.jpg' },
+        { name: 'Modelo Laughs', type: 'model' as const, url: '/models/model-laughs-barefoot.jpg' },
+        { name: 'Modelo Abaq', type: 'model' as const, url: '/models/pexels-abaq-studio-1957487599-29119345.jpg' },
+        { name: 'Modelo Eduardo', type: 'model' as const, url: '/models/pexels-eduardo-vite-211353151-24286256.jpg' },
+        { name: 'Modelo Er17', type: 'model' as const, url: '/models/pexels-er17-16962545.jpg' },
+        { name: 'Modelo Godisable', type: 'model' as const, url: '/models/pexels-godisable-jacob-226636-794063.jpg' },
+        { name: 'Modelo Gustavo', type: 'model' as const, url: '/models/pexels-gustavo-fring-5622840.jpg' },
+        { name: 'Modelo Krivitskiy', type: 'model' as const, url: '/models/pexels-krivitskiy-6971165.jpg' },
+        { name: 'Modelo Manzano', type: 'model' as const, url: '/models/pexels-manzano-16924901.jpg' },
+        { name: 'Modelo Belu', type: 'model' as const, url: '/models/pexels-ph-belu-jurado-615194884-17561664.jpg' },
+        { name: 'Modelo Rulomx', type: 'model' as const, url: '/models/pexels-rulomx-11722289.jpg' },
+        { name: 'Modelo Rulomx 2', type: 'model' as const, url: '/models/pexels-rulomx-11722296.jpg' },
+        { name: 'Modelo Rulomx 3', type: 'model' as const, url: '/models/pexels-rulomx-11882392.jpg' },
+        { name: 'Modelo Sergio', type: 'model' as const, url: '/models/pexels-sergiolalala-22717318.jpg' },
+        { name: 'Modelo Stephan', type: 'model' as const, url: '/models/pexels-stephanlouis-8414003.jpg' },
+        { name: 'Modelo Pink', type: 'model' as const, url: '/models/pink-summer-outfit.jpg' }
+      ]
+
+      const newDbItems = await Promise.all(stockItems.map(item => 
+        dbClient.library.createItem({
+          name: item.name,
+          type: item.type,
+          url: item.url,
+          folder_id: null
+        })
+      ))
+
+      const formatted = newDbItems.map(i => ({
+        id: i.id,
+        name: i.name,
+        type: i.type,
+        url: i.url,
+        date: i.created_at,
+        folderId: i.folder_id || undefined
+      }))
+
+      setItems(prev => [...formatted, ...prev])
+    } catch (err) {
+      console.error(err)
+      alert('Error cargando imágenes de stock.')
+    } finally {
+      setIsLoadingStock(false)
+    }
+  }
 
   const filteredItems = items.filter(item => {
     const matchFolder = currentFolder ? item.folderId === currentFolder : true
@@ -435,13 +499,36 @@ export default function LibraryPage() {
             {currentFolder ? 'Contenido de la carpeta' : 'Todos los archivos'}
           </h2>
           
-          {items.length === 0 ? (
+          {isLoadingLibrary ? (
+            <div className="p-12 text-center flex flex-col items-center justify-center gap-3 bg-surface-card border border-border rounded-xl border-dashed">
+              <div className="w-8 h-8 rounded-full border-2 border-foreground border-t-transparent animate-spin mb-2" />
+              <p className="text-foreground font-medium">Cargando librería...</p>
+            </div>
+          ) : libraryError ? (
+            <div className="p-12 text-center flex flex-col items-center justify-center gap-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+              <p className="text-red-500 font-medium">Error: {libraryError}</p>
+              <button 
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 mt-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors"
+              >
+                Reintentar
+              </button>
+            </div>
+          ) : items.length === 0 ? (
             <div className="p-12 text-center flex flex-col items-center justify-center gap-3 bg-surface-card border border-border rounded-xl border-dashed">
               <Folder className="w-10 h-10 text-muted" />
               <p className="text-foreground font-semibold">Tu librería está vacía</p>
-              <p className="text-sm text-muted max-w-sm">
+              <p className="text-sm text-muted max-w-sm mb-2">
                 Comienza subiendo imágenes de tus prendas o modelos de referencia utilizando el botón de &quot;Subir Imagen&quot; arriba.
               </p>
+              <button 
+                onClick={handleLoadStockPhotos}
+                disabled={isLoadingStock}
+                className="px-6 py-2.5 bg-foreground text-background rounded-xl text-sm font-medium hover:bg-foreground/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isLoadingStock ? <div className="w-4 h-4 rounded-full border-2 border-background border-t-transparent animate-spin" /> : null}
+                Cargar fotos de muestra (Stock Photos)
+              </button>
             </div>
           ) : filteredItems.length === 0 ? (
             <div className="p-10 text-center flex flex-col items-center justify-center gap-2 bg-surface-card border border-border rounded-xl border-dashed">
