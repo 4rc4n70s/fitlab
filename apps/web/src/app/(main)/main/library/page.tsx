@@ -34,6 +34,7 @@ export default function LibraryPage() {
   // Modal States
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [uploadFiles, setUploadFiles] = useState<{id: string, file?: File, url: string, name: string, type: 'clothes'|'model'}[]>([])
+  const [isUploading, setIsUploading] = useState(false)
   const [editItem, setEditItem] = useState<ItemType | null>(null)
   const [showFolderModal, setShowFolderModal] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
@@ -107,7 +108,9 @@ export default function LibraryPage() {
   }
 
   const handleBulkUploadSubmit = async () => {
+    setIsUploading(true)
     const newItems: ItemType[] = []
+    let hasError = false
     
     for (const uf of uploadFiles) {
       if (!uf.file) continue
@@ -137,12 +140,18 @@ export default function LibraryPage() {
         })
       } catch (err) {
         console.error('Error uploading file:', err)
+        hasError = true
       }
+    }
+
+    if (hasError) {
+      alert("Hubo un error subiendo una o más imágenes. Asegúrate de haber ejecutado el código SQL en Supabase para crear el contenedor (bucket) 'fitlab-images' y sus permisos.")
     }
 
     const updated = [...newItems, ...items]
     setItems(updated)
     updateFolderCounts(updated)
+    setIsUploading(false)
     setShowUploadModal(false)
   }
 
@@ -157,9 +166,6 @@ export default function LibraryPage() {
 
   const handleSaveEdit = async () => {
     if (!editItem) return
-    // Although dbClient.library.updateItem is missing, we will implement it or skip for now
-    // Actually wait, we just skip it for now and update state if there is no db method, but wait we need db update
-    // Let's assume we don't have dbClient.library.updateItem yet, we'll just not update db for now
     const updated = items.map(i => i.id === editItem.id ? editItem : i)
     setItems(updated)
     updateFolderCounts(updated)
@@ -594,11 +600,21 @@ export default function LibraryPage() {
 
             <div className="flex justify-end pt-4 border-t border-border">
               <button 
-                disabled={uploadFiles.length === 0}
+                disabled={uploadFiles.length === 0 || isUploading}
                 onClick={handleBulkUploadSubmit} 
                 className="px-6 py-2.5 rounded-xl bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium disabled:opacity-50 flex items-center gap-2"
               >
-                <Upload className="w-4 h-4" /> Subir y Guardar
+                {isUploading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-background/30 border-t-background rounded-full animate-spin" />
+                    Subiendo...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4" />
+                    Subir {uploadFiles.length} {uploadFiles.length === 1 ? 'archivo' : 'archivos'}
+                  </>
+                )}
               </button>
             </div>
           </div>
