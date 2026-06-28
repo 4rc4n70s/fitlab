@@ -158,7 +158,95 @@
     },
     "library": {
       "title": "Library",
-      "description": "Manage your garments and reference models."
+      "description": "Manage all your reference images. Upload your own photos or select from FitLab's shared library.",
+      "header": {
+        "new_folder": "New Folder",
+        "upload_image": "Upload Image",
+        "bulk_edit": "Bulk Edit",
+        "search_placeholder": "Search by name...",
+        "filter_all": "All types",
+        "filter_clothes": "Only Clothes",
+        "filter_models": "Only Models"
+      },
+      "folders": {
+        "title": "Folders",
+        "items_count": "items",
+        "delete_folder": "Delete Folder"
+      },
+      "items": {
+        "folder_content": "Folder Content",
+        "all_files": "All Files",
+        "loading": "Loading library...",
+        "error_prefix": "Error",
+        "retry": "Retry",
+        "empty_title": "Your library is empty",
+        "empty_desc": "Start by uploading images of your clothes or reference models using the \"Upload Image\" button above.",
+        "load_stock": "Load sample photos (Stock Photos)",
+        "no_results_title": "No results found",
+        "no_results_desc": "Try changing the filters or the search term."
+      },
+      "badges": {
+        "clothes": "Garment",
+        "model": "Model"
+      },
+      "actions": {
+        "view": "View Image",
+        "edit": "Edit",
+        "delete": "Delete"
+      },
+      "pagination": {
+        "page": "Page",
+        "of": "of"
+      },
+      "alerts": {
+        "stock_error": "Error loading stock images.",
+        "limit_reached": "You have reached the maximum limit of 50 images in your library.",
+        "limit_exceeded": "You can only upload {available} more images (limit of 50). The excess images have been ignored.",
+        "upload_error": "There was an error uploading one or more images: {error}. Check the console for more details.",
+        "upload_critical": "Critical error: {error}"
+      },
+      "modals": {
+        "edit": {
+          "title": "Edit Information",
+          "name": "Name",
+          "type": "Type",
+          "folder": "Folder",
+          "no_folder": "No folder (Root)",
+          "cancel": "Cancel",
+          "save": "Save"
+        },
+        "upload": {
+          "title": "Bulk Upload Images",
+          "drag_drop": "Click here to select multiple images",
+          "selected_files": "Selected Files",
+          "name_placeholder": "Name",
+          "uploading": "Uploading...",
+          "submit": "Upload",
+          "file": "file",
+          "files": "files"
+        },
+        "delete": {
+          "title": "Confirm deletion",
+          "folder_desc": "Are you sure you want to delete this folder? The images inside it will be orphaned but not deleted.",
+          "item_desc": "Are you sure you want to delete this file?",
+          "cancel": "Cancel",
+          "confirm": "Delete"
+        },
+        "create_folder": {
+          "title": "New Folder",
+          "name_label": "Folder Name",
+          "name_placeholder": "E.g. Summer Collection",
+          "cancel": "Cancel",
+          "submit": "Create"
+        },
+        "bulk_edit": {
+          "title": "Bulk Edit",
+          "elements": "items",
+          "no_folder": "No folder",
+          "cancel": "Cancel",
+          "save": "Save Changes"
+        }
+      }
     },
     "descriptions": {
       "title": "Descriptions",

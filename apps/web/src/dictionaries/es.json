@@ -158,7 +158,95 @@
     },
     "library": {
       "title": "Library",
-      "description": "Gestiona tus prendas y modelos de referencia."
+      "description": "Gestiona todas tus imágenes de referencia. Sube tus propias fotos o selecciona desde la librería compartida de FitLab.",
+      "header": {
+        "new_folder": "Nueva Carpeta",
+        "upload_image": "Subir Imagen",
+        "bulk_edit": "Edición Masiva",
+        "search_placeholder": "Buscar por nombre...",
+        "filter_all": "Todos los tipos",
+        "filter_clothes": "Solo Prendas",
+        "filter_models": "Solo Modelos"
+      },
+      "folders": {
+        "title": "Carpetas",
+        "items_count": "elementos",
+        "delete_folder": "Eliminar Carpeta"
+      },
+      "items": {
+        "folder_content": "Contenido de la carpeta",
+        "all_files": "Todos los archivos",
+        "loading": "Cargando librería...",
+        "error_prefix": "Error",
+        "retry": "Reintentar",
+        "empty_title": "Tu librería está vacía",
+        "empty_desc": "Comienza subiendo imágenes de tus prendas o modelos de referencia utilizando el botón de \"Subir Imagen\" arriba.",
+        "load_stock": "Cargar fotos de muestra (Stock Photos)",
+        "no_results_title": "No se encontraron resultados",
+        "no_results_desc": "Intenta cambiar los filtros o el término de búsqueda."
+      },
+      "badges": {
+        "clothes": "Prenda",
+        "model": "Modelo"
+      },
+      "actions": {
+        "view": "Ver Imagen",
+        "edit": "Editar",
+        "delete": "Eliminar"
+      },
+      "pagination": {
+        "page": "Página",
+        "of": "de"
+      },
+      "alerts": {
+        "stock_error": "Error cargando imágenes de stock.",
+        "limit_reached": "Has alcanzado el límite máximo de 50 imágenes en tu librería.",
+        "limit_exceeded": "Solo puedes subir {available} imágenes más (límite de 50). Se han ignorado las imágenes sobrantes.",
+        "upload_error": "Hubo un error subiendo una o más imágenes: {error}. Revisa la consola para más detalles.",
+        "upload_critical": "Error crítico: {error}"
+      },
+      "modals": {
+        "edit": {
+          "title": "Editar Información",
+          "name": "Nombre",
+          "type": "Tipo",
+          "folder": "Carpeta",
+          "no_folder": "Sin carpeta (Raíz)",
+          "cancel": "Cancelar",
+          "save": "Guardar"
+        },
+        "upload": {
+          "title": "Subir Imágenes en Cantidad",
+          "drag_drop": "Haz clic aquí para seleccionar múltiples imágenes",
+          "selected_files": "Archivos Seleccionados",
+          "name_placeholder": "Nombre",
+          "uploading": "Subiendo...",
+          "submit": "Subir",
+          "file": "archivo",
+          "files": "archivos"
+        },
+        "delete": {
+          "title": "Confirmar eliminación",
+          "folder_desc": "¿Estás seguro de que deseas eliminar esta carpeta? Las imágenes dentro de ella quedarán huérfanas pero no se eliminarán.",
+          "item_desc": "¿Estás seguro de que deseas eliminar este archivo?",
+          "cancel": "Cancelar",
+          "confirm": "Eliminar"
+        },
+        "create_folder": {
+          "title": "Nueva Carpeta",
+          "name_label": "Nombre de la carpeta",
+          "name_placeholder": "Ej. Colección Verano",
+          "cancel": "Cancelar",
+          "submit": "Crear"
+        },
+        "bulk_edit": {
+          "title": "Edición Masiva",
+          "elements": "elementos",
+          "no_folder": "Sin carpeta",
+          "cancel": "Cancelar",
+          "save": "Guardar Cambios"
+        }
+      }
     },
     "descriptions": {
       "title": "Descriptions",

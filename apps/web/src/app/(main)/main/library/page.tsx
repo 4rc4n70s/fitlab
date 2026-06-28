@@ -175,7 +175,7 @@ export default function LibraryPage() {
       localStorage.setItem('fitlab_seeded_stock_v2', 'true')
     } catch (err) {
       console.error(err)
-      alert('Error cargando imágenes de stock.')
+      alert(dict.pages.library.alerts.stock_error)
     } finally {
       setIsLoadingStock(false)
     }
@@ -204,14 +204,14 @@ export default function LibraryPage() {
     const availableSlots = 50 - currentTotal
 
     if (availableSlots <= 0) {
-      alert("Has alcanzado el límite máximo de 50 imágenes en tu librería.")
+      alert(dict.pages.library.alerts.limit_reached)
       e.target.value = ''
       return
     }
 
     let filesToProcess = Array.from(files)
     if (filesToProcess.length > availableSlots) {
-      alert(`Solo puedes subir ${availableSlots} imágenes más (límite de 50). Se han ignorado las imágenes sobrantes.`)
+      alert(dict.pages.library.alerts.limit_exceeded.replace('{available}', String(availableSlots)))
       filesToProcess = filesToProcess.slice(0, availableSlots)
     }
 
@@ -275,7 +275,7 @@ export default function LibraryPage() {
 
       if (hasError) {
         console.warn("Upload finished with errors.")
-        setUploadError("Hubo un error subiendo una o más imágenes: " + lastError + ". Revisa la consola para más detalles.")
+        setUploadError(dict.pages.library.alerts.upload_error.replace('{error}', lastError))
       }
 
       console.log("Updating UI state with new items...")
@@ -288,7 +288,7 @@ export default function LibraryPage() {
     } catch (globalErr: unknown) {
       console.error('Global error in upload:', globalErr)
       const errorMsg = globalErr instanceof Error ? globalErr.message : String(globalErr)
-      setUploadError("Error crítico: " + errorMsg)
+      setUploadError(dict.pages.library.alerts.upload_critical.replace('{error}', errorMsg))
     } finally {
       console.log("Upload process finished.")
       setIsUploading(false)
@@ -419,20 +419,20 @@ export default function LibraryPage() {
               onClick={handleCreateFolder}
               className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-surface-card hover:bg-surface-soft transition-colors font-medium text-sm"
             >
-              <FolderPlus className="w-4 h-4" /> Nueva Carpeta
+              <FolderPlus className="w-4 h-4" /> {dict.pages.library.header.new_folder}
             </button>
             <button 
               onClick={handleOpenUpload}
               className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium text-sm"
             >
-              <Upload className="w-4 h-4" /> Subir Imagen
+              <Upload className="w-4 h-4" /> {dict.pages.library.header.upload_image}
             </button>
             <button 
               onClick={handleOpenBulkEdit}
               disabled={filteredItems.length === 0}
               className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-surface-card hover:bg-surface-soft transition-colors font-medium text-sm disabled:opacity-50"
             >
-              <Edit2 className="w-4 h-4" /> Edición Masiva
+              <Edit2 className="w-4 h-4" /> {dict.pages.library.header.bulk_edit}
             </button>
           </div>
         </div>
@@ -443,7 +443,7 @@ export default function LibraryPage() {
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
               <input 
                 type="text" 
-                placeholder="Buscar por nombre..." 
+                placeholder={dict.pages.library.header.search_placeholder}
                 className="w-full pl-9 pr-4 py-2 text-sm bg-surface-card border border-border rounded-lg text-foreground focus:outline-none focus:border-foreground/50 transition-colors"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -454,9 +454,9 @@ export default function LibraryPage() {
               value={filterType}
               onChange={(e) => setFilterType(e.target.value as 'all' | 'clothes' | 'model')}
             >
-              <option value="all">Todos los tipos</option>
-              <option value="clothes">Solo Prendas</option>
-              <option value="model">Solo Modelos</option>
+              <option value="all">{dict.pages.library.header.filter_all}</option>
+              <option value="clothes">{dict.pages.library.header.filter_clothes}</option>
+              <option value="model">{dict.pages.library.header.filter_models}</option>
             </select>
           </div>
 
@@ -493,7 +493,7 @@ export default function LibraryPage() {
         {/* Folders Section (Only show if not inside a folder) */}
         {!currentFolder && !searchQuery && folders.length > 0 && (
           <div className="flex flex-col gap-4">
-            <h2 className="text-sm font-medium text-foreground uppercase tracking-wider">Carpetas</h2>
+            <h2 className="text-sm font-medium text-foreground uppercase tracking-wider">{dict.pages.library.folders.title}</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {folders.map(folder => (
                 <div 
@@ -507,13 +507,13 @@ export default function LibraryPage() {
                     </div>
                     <div className="flex flex-col overflow-hidden">
                       <span className="text-sm font-medium text-foreground truncate">{folder.name}</span>
-                      <span className="text-xs text-muted">{folder.itemCount} elementos</span>
+                      <span className="text-xs text-muted">{folder.itemCount} {dict.pages.library.folders.items_count}</span>
                     </div>
                   </div>
                   <button 
                     onClick={(e) => { e.stopPropagation(); setDeleteModal({ type: 'folder', id: folder.id }) }}
                     className="p-1 rounded text-muted hover:text-red-500 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
-                    title="Eliminar Carpeta"
+                    title={dict.pages.library.folders.delete_folder}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -526,30 +526,30 @@ export default function LibraryPage() {
         {/* Items Section */}
         <div className="flex flex-col gap-4">
           <h2 className="text-sm font-medium text-foreground uppercase tracking-wider">
-            {currentFolder ? 'Contenido de la carpeta' : 'Todos los archivos'}
+            {currentFolder ? dict.pages.library.items.folder_content : dict.pages.library.items.all_files}
           </h2>
           
           {isLoadingLibrary ? (
             <div className="p-12 text-center flex flex-col items-center justify-center gap-3 bg-surface-card border border-border rounded-xl border-dashed">
               <div className="w-8 h-8 rounded-full border-2 border-foreground border-t-transparent animate-spin mb-2" />
-              <p className="text-foreground font-medium">Cargando librería...</p>
+              <p className="text-foreground font-medium">{dict.pages.library.items.loading}</p>
             </div>
           ) : libraryError ? (
             <div className="p-12 text-center flex flex-col items-center justify-center gap-3 bg-red-500/10 border border-red-500/20 rounded-xl">
-              <p className="text-red-500 font-medium">Error: {libraryError}</p>
+              <p className="text-red-500 font-medium">{dict.pages.library.items.error_prefix}: {libraryError}</p>
               <button 
                 onClick={() => window.location.reload()}
                 className="px-4 py-2 mt-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors"
               >
-                Reintentar
+                {dict.pages.library.items.retry}
               </button>
             </div>
           ) : items.length === 0 ? (
             <div className="p-12 text-center flex flex-col items-center justify-center gap-3 bg-surface-card border border-border rounded-xl border-dashed">
               <Folder className="w-10 h-10 text-muted" />
-              <p className="text-foreground font-semibold">Tu librería está vacía</p>
+              <p className="text-foreground font-semibold">{dict.pages.library.items.empty_title}</p>
               <p className="text-sm text-muted max-w-sm mb-2">
-                Comienza subiendo imágenes de tus prendas o modelos de referencia utilizando el botón de &quot;Subir Imagen&quot; arriba.
+                {dict.pages.library.items.empty_desc}
               </p>
               <button 
                 onClick={handleLoadStockPhotos}
@@ -557,14 +557,14 @@ export default function LibraryPage() {
                 className="px-6 py-2.5 bg-foreground text-background rounded-xl text-sm font-medium hover:bg-foreground/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isLoadingStock ? <div className="w-4 h-4 rounded-full border-2 border-background border-t-transparent animate-spin" /> : null}
-                Cargar fotos de muestra (Stock Photos)
+                {dict.pages.library.items.load_stock}
               </button>
             </div>
           ) : filteredItems.length === 0 ? (
             <div className="p-10 text-center flex flex-col items-center justify-center gap-2 bg-surface-card border border-border rounded-xl border-dashed">
               <Search className="w-8 h-8 text-muted mb-2" />
-              <p className="text-foreground font-medium">No se encontraron resultados</p>
-              <p className="text-sm text-muted">Intenta cambiar los filtros o el término de búsqueda.</p>
+              <p className="text-foreground font-medium">{dict.pages.library.items.no_results_title}</p>
+              <p className="text-sm text-muted">{dict.pages.library.items.no_results_desc}</p>
             </div>
           ) : viewMode === 'grid' ? (
             // Grid View
@@ -578,7 +578,7 @@ export default function LibraryPage() {
                     {/* Badge */}
                     <div className="absolute top-2 left-2 px-2 py-1 bg-black/60 backdrop-blur-md rounded-md">
                       <span className="text-[10px] font-medium text-white uppercase tracking-wider">
-                        {item.type === 'clothes' ? 'Prenda' : 'Modelo'}
+                        {item.type === 'clothes' ? dict.pages.library.badges.clothes : dict.pages.library.badges.model}
                       </span>
                     </div>
 
@@ -590,21 +590,21 @@ export default function LibraryPage() {
                           setShowViewer(true)
                         }}
                         className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-colors" 
-                        title="Ver Imagen"
+                        title={dict.pages.library.actions.view}
                       >
                         <Eye className="w-4 h-4" />
                       </button>
                       <button 
                         onClick={() => setEditItem(item)}
                         className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-colors" 
-                        title="Editar"
+                        title={dict.pages.library.actions.edit}
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button 
                         onClick={(e) => { e.stopPropagation(); setDeleteModal({ type: 'item', id: item.id }) }}
                         className="p-2 bg-red-500/80 hover:bg-red-500 text-white rounded-full backdrop-blur-md transition-colors" 
-                        title="Eliminar"
+                        title={dict.pages.library.actions.delete}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -628,7 +628,7 @@ export default function LibraryPage() {
                     <ChevronLeft className="w-5 h-5" />
                   </button>
                   <span className="text-sm font-medium text-foreground">
-                    Página {currentPage} de {totalPages}
+                    {dict.pages.library.pagination.page} {currentPage} {dict.pages.library.pagination.of} {totalPages}
                   </span>
                   <button 
                     disabled={currentPage === totalPages} 
@@ -660,13 +660,14 @@ export default function LibraryPage() {
                     <span className={`px-2 py-1 rounded-md text-[10px] font-medium uppercase tracking-wider ${
                       item.type === 'clothes' ? 'bg-blue-500/10 text-blue-500' : 'bg-purple-500/10 text-purple-500'
                     }`}>
-                      {item.type === 'clothes' ? 'Prenda' : 'Modelo'}
+                      {item.type === 'clothes' ? dict.pages.library.badges.clothes : dict.pages.library.badges.model}
                     </span>
                     
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button 
                         onClick={() => setEditItem(item)}
                         className="p-2 text-muted hover:text-foreground rounded-lg hover:bg-border transition-colors"
+                        title={dict.pages.library.actions.edit}
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
@@ -682,6 +683,7 @@ export default function LibraryPage() {
                       <button 
                         onClick={(e) => { e.stopPropagation(); setDeleteModal({ type: 'item', id: item.id }) }}
                         className="p-2 text-red-500/70 hover:text-red-500 rounded-lg hover:bg-red-500/10 transition-colors"
+                        title={dict.pages.library.actions.delete}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -701,7 +703,7 @@ export default function LibraryPage() {
                     <ChevronLeft className="w-5 h-5" />
                   </button>
                   <span className="text-sm font-medium text-foreground">
-                    Página {currentPage} de {totalPages}
+                    {dict.pages.library.pagination.page} {currentPage} {dict.pages.library.pagination.of} {totalPages}
                   </span>
                   <button 
                     disabled={currentPage === totalPages} 
@@ -724,7 +726,7 @@ export default function LibraryPage() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
           <div className="bg-surface-card border border-border rounded-2xl w-full max-w-sm p-6 flex flex-col gap-6 shadow-xl animate-in zoom-in-95">
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-medium text-foreground">Editar Información</h3>
+              <h3 className="text-xl font-medium text-foreground">{dict.pages.library.modals.edit.title}</h3>
               <button onClick={() => setEditItem(null)} className="p-1 rounded-lg hover:bg-surface-soft text-muted hover:text-foreground transition-colors">
                 <X className="w-5 h-5" />
               </button>
@@ -734,7 +736,7 @@ export default function LibraryPage() {
                 <img src={editItem.url} alt={editItem.name} className="w-full h-full object-cover" />
               </div>
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-foreground">Nombre</label>
+                <label className="text-sm font-medium text-foreground">{dict.pages.library.modals.edit.name}</label>
                 <input 
                   type="text" 
                   value={editItem.name}
@@ -743,24 +745,24 @@ export default function LibraryPage() {
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-foreground">Tipo</label>
+                <label className="text-sm font-medium text-foreground">{dict.pages.library.modals.edit.type}</label>
                 <select 
                   value={editItem.type}
                   onChange={(e) => setEditItem({ ...editItem, type: e.target.value as 'clothes' | 'model' })}
                   className="px-3 py-2 text-sm bg-surface-card border border-border rounded-lg focus:outline-none focus:border-foreground/50 transition-colors"
                 >
-                  <option value="clothes">Prenda</option>
-                  <option value="model">Modelo</option>
+                  <option value="clothes">{dict.pages.library.badges.clothes}</option>
+                  <option value="model">{dict.pages.library.badges.model}</option>
                 </select>
               </div>
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-foreground">Carpeta</label>
+                <label className="text-sm font-medium text-foreground">{dict.pages.library.modals.edit.folder}</label>
                 <select 
                   value={editItem.folderId || ''}
                   onChange={(e) => setEditItem({ ...editItem, folderId: e.target.value || undefined })}
                   className="px-3 py-2 text-sm bg-surface-card border border-border rounded-lg focus:outline-none focus:border-foreground/50 transition-colors"
                 >
-                  <option value="">Sin carpeta (Raíz)</option>
+                  <option value="">{dict.pages.library.modals.edit.no_folder}</option>
                   {folders.map(f => (
                     <option key={f.id} value={f.id}>{f.name}</option>
                   ))}
@@ -769,10 +771,10 @@ export default function LibraryPage() {
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <button onClick={() => setEditItem(null)} className="px-4 py-2 rounded-lg border border-border text-foreground hover:bg-surface-soft transition-colors font-medium">
-                Cancelar
+                {dict.pages.library.modals.edit.cancel}
               </button>
               <button onClick={handleSaveEdit} className="px-4 py-2 rounded-lg bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium">
-                Guardar
+                {dict.pages.library.modals.edit.save}
               </button>
             </div>
           </div>
@@ -784,7 +786,7 @@ export default function LibraryPage() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
           <div className="bg-surface-card border border-border rounded-2xl w-full max-w-3xl p-6 flex flex-col gap-6 shadow-xl animate-in zoom-in-95 max-h-[85vh]">
             <div className="flex items-center justify-between border-b border-border pb-4">
-              <h3 className="text-xl font-medium text-foreground">Subir Imágenes en Cantidad</h3>
+              <h3 className="text-xl font-medium text-foreground">{dict.pages.library.modals.upload.title}</h3>
               <button onClick={() => setShowUploadModal(false)} className="p-1 rounded-lg hover:bg-surface-soft text-muted hover:text-foreground transition-colors">
                 <X className="w-5 h-5" />
               </button>
@@ -794,12 +796,12 @@ export default function LibraryPage() {
               <label className="w-full p-8 rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 hover:border-foreground/30 cursor-pointer transition-colors bg-surface-soft/50">
                 <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileSelect} />
                 <Upload className="w-8 h-8 text-muted" />
-                <span className="text-sm font-medium">Haz clic aquí para seleccionar múltiples imágenes</span>
+                <span className="text-sm font-medium">{dict.pages.library.modals.upload.drag_drop}</span>
               </label>
 
               {uploadFiles.length > 0 && (
                 <div className="flex flex-col gap-3">
-                  <h4 className="text-sm font-medium text-foreground">Archivos Seleccionados ({uploadFiles.length})</h4>
+                  <h4 className="text-sm font-medium text-foreground">{dict.pages.library.modals.upload.selected_files} ({uploadFiles.length})</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {uploadFiles.map(uf => (
                       <div key={uf.id} className="flex flex-col gap-2 p-3 border border-border rounded-xl bg-surface-card relative group">
@@ -817,15 +819,15 @@ export default function LibraryPage() {
                               value={uf.name}
                               onChange={(e) => setUploadFiles(prev => prev.map(p => p.id === uf.id ? { ...p, name: e.target.value } : p))}
                               className="w-full px-2 py-1 text-xs bg-surface-soft border border-border rounded focus:outline-none focus:border-foreground/50"
-                              placeholder="Nombre"
+                              placeholder={dict.pages.library.modals.upload.name_placeholder}
                             />
                             <select 
                               value={uf.type}
                               onChange={(e) => setUploadFiles(prev => prev.map(p => p.id === uf.id ? { ...p, type: e.target.value as 'clothes'|'model' } : p))}
                               className="w-full px-2 py-1 text-xs bg-surface-soft border border-border rounded focus:outline-none focus:border-foreground/50"
                             >
-                              <option value="clothes">Prenda</option>
-                              <option value="model">Modelo</option>
+                              <option value="clothes">{dict.pages.library.badges.clothes}</option>
+                              <option value="model">{dict.pages.library.badges.model}</option>
                             </select>
                           </div>
                         </div>
@@ -850,12 +852,12 @@ export default function LibraryPage() {
                 {isUploading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-background/30 border-t-background rounded-full animate-spin" />
-                    Subiendo...
+                    {dict.pages.library.modals.upload.uploading}
                   </>
                 ) : (
                   <>
                     <Upload className="w-4 h-4" />
-                    Subir {uploadFiles.length} {uploadFiles.length === 1 ? 'archivo' : 'archivos'}
+                    {dict.pages.library.modals.upload.submit} {uploadFiles.length} {uploadFiles.length === 1 ? dict.pages.library.modals.upload.file : dict.pages.library.modals.upload.files}
                   </>
                 )}
               </button>
@@ -879,11 +881,11 @@ export default function LibraryPage() {
           <div className="bg-surface-card border border-border rounded-2xl w-full max-w-sm p-6 flex flex-col gap-6 shadow-xl animate-in zoom-in-95 text-center">
             <Trash2 className="w-12 h-12 text-red-500 mx-auto" />
             <div className="flex flex-col gap-2">
-              <h3 className="text-xl font-medium text-foreground">Confirmar eliminación</h3>
+              <h3 className="text-xl font-medium text-foreground">{dict.pages.library.modals.delete.title}</h3>
               <p className="text-sm text-muted">
                 {deleteModal.type === 'folder' 
-                  ? '¿Estás seguro de que deseas eliminar esta carpeta? Las imágenes dentro de ella quedarán huérfanas pero no se eliminarán.' 
-                  : '¿Estás seguro de que deseas eliminar este archivo?'}
+                  ? dict.pages.library.modals.delete.folder_desc 
+                  : dict.pages.library.modals.delete.item_desc}
               </p>
             </div>
             <div className="flex justify-center gap-3 pt-2">
@@ -891,13 +893,13 @@ export default function LibraryPage() {
                 onClick={() => setDeleteModal(null)}
                 className="px-6 py-2 rounded-xl border border-border text-foreground hover:bg-surface-soft transition-colors font-medium"
               >
-                Cancelar
+                {dict.pages.library.modals.delete.cancel}
               </button>
               <button 
                 onClick={handleDeleteConfirm}
                 className="px-6 py-2 rounded-xl bg-red-500 text-white hover:bg-red-600 transition-colors font-medium"
               >
-                Eliminar
+                {dict.pages.library.modals.delete.confirm}
               </button>
             </div>
           </div>
@@ -909,27 +911,27 @@ export default function LibraryPage() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
           <div className="bg-surface-card border border-border rounded-2xl w-full max-w-sm p-6 flex flex-col gap-6 shadow-xl animate-in zoom-in-95">
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-medium text-foreground">Nueva Carpeta</h3>
+              <h3 className="text-xl font-medium text-foreground">{dict.pages.library.modals.create_folder.title}</h3>
               <button onClick={() => setShowFolderModal(false)} className="p-1 rounded-lg hover:bg-surface-soft text-muted hover:text-foreground transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-foreground">Nombre de la carpeta</label>
+              <label className="text-sm font-medium text-foreground">{dict.pages.library.modals.create_folder.name_label}</label>
               <input 
                 type="text" 
                 value={newFolderName}
                 onChange={(e) => setNewFolderName(e.target.value)}
-                placeholder="Ej. Colección Verano"
+                placeholder={dict.pages.library.modals.create_folder.name_placeholder}
                 className="w-full px-3 py-2 text-sm bg-surface-card border border-border rounded-lg focus:outline-none focus:border-foreground/50 transition-colors"
               />
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <button onClick={() => setShowFolderModal(false)} className="px-4 py-2 rounded-lg border border-border text-foreground hover:bg-surface-soft transition-colors font-medium">
-                Cancelar
+                {dict.pages.library.modals.create_folder.cancel}
               </button>
               <button onClick={submitCreateFolder} disabled={!newFolderName.trim()} className="px-4 py-2 rounded-lg bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium disabled:opacity-50">
-                Crear
+                {dict.pages.library.modals.create_folder.submit}
               </button>
             </div>
           </div>
@@ -941,7 +943,7 @@ export default function LibraryPage() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
           <div className="bg-surface-card border border-border rounded-2xl w-full max-w-4xl p-6 flex flex-col gap-6 shadow-xl animate-in zoom-in-95 max-h-[85vh]">
             <div className="flex items-center justify-between border-b border-border pb-4">
-              <h3 className="text-xl font-medium text-foreground">Edición Masiva ({bulkEditItems.length} elementos)</h3>
+              <h3 className="text-xl font-medium text-foreground">{dict.pages.library.modals.bulk_edit.title.replace('{count}', String(bulkEditItems.length))}</h3>
               <button onClick={() => setShowBulkEditModal(false)} className="p-1 rounded-lg hover:bg-surface-soft text-muted hover:text-foreground transition-colors">
                 <X className="w-5 h-5" />
               </button>
@@ -957,22 +959,22 @@ export default function LibraryPage() {
                         value={item.name}
                         onChange={(e) => setBulkEditItems(prev => prev.map(p => p.id === item.id ? { ...p, name: e.target.value } : p))}
                         className="w-full px-2 py-1 text-xs bg-surface-soft border border-border rounded focus:outline-none focus:border-foreground/50"
-                        placeholder="Nombre"
+                        placeholder={dict.pages.library.modals.upload.name_placeholder}
                       />
                       <select 
                         value={item.type}
                         onChange={(e) => setBulkEditItems(prev => prev.map(p => p.id === item.id ? { ...p, type: e.target.value as 'clothes'|'model' } : p))}
                         className="w-full px-2 py-1 text-xs bg-surface-soft border border-border rounded focus:outline-none focus:border-foreground/50"
                       >
-                        <option value="clothes">Prenda</option>
-                        <option value="model">Modelo</option>
+                        <option value="clothes">{dict.pages.library.badges.clothes}</option>
+                        <option value="model">{dict.pages.library.badges.model}</option>
                       </select>
                       <select 
                         value={item.folderId || ''}
                         onChange={(e) => setBulkEditItems(prev => prev.map(p => p.id === item.id ? { ...p, folderId: e.target.value || undefined } : p))}
                         className="w-full px-2 py-1 text-xs bg-surface-soft border border-border rounded focus:outline-none focus:border-foreground/50 mt-1"
                       >
-                        <option value="">Sin carpeta</option>
+                        <option value="">{dict.pages.library.modals.bulk_edit.no_folder}</option>
                         {folders.map(f => (
                           <option key={f.id} value={f.id}>{f.name}</option>
                         ))}
@@ -984,10 +986,10 @@ export default function LibraryPage() {
             </div>
             <div className="flex justify-end gap-2 pt-4 border-t border-border mt-auto">
               <button onClick={() => setShowBulkEditModal(false)} className="px-6 py-2.5 rounded-xl border border-border text-foreground hover:bg-surface-soft transition-colors font-medium">
-                Cancelar
+                {dict.pages.library.modals.bulk_edit.cancel}
               </button>
               <button onClick={submitBulkEdit} className="px-6 py-2.5 rounded-xl bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium">
-                Guardar Cambios
+                {dict.pages.library.modals.bulk_edit.save}
               </button>
             </div>
           </div>
