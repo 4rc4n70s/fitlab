@@ -1,7 +1,7 @@
 'use client'
 
 import { dbClient } from '@/services/collectionsClient'
-import { uploadImageToSupabase, uploadFileToSupabase } from '@/services/storage'
+import { uploadFileToSupabase } from '@/services/storage'
 
 import React, { useState, useEffect } from 'react'
 import { Search, Grid, List, Folder, Upload, Edit2, Download, Trash2, ChevronRight, FolderPlus, X, Eye } from 'lucide-react'
