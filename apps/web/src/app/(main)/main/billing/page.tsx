@@ -236,7 +236,7 @@ export default function BillingPage() {
               name: language === 'es' ? 'Paquete Básico' : 'Basic Pack',
               credits: 10,
               originalPrice: 9900,
-              price: 7920,
+              price: 99,
               popular: false
             },
             {
@@ -244,7 +244,7 @@ export default function BillingPage() {
               name: language === 'es' ? 'Paquete Estándar' : 'Standard Pack',
               credits: 30,
               originalPrice: 23900,
-              price: 19120,
+              price: 239,
               popular: true
             },
             {
@@ -252,7 +252,7 @@ export default function BillingPage() {
               name: language === 'es' ? 'Paquete Pro' : 'Pro Pack',
               credits: 100,
               originalPrice: 59900,
-              price: 47920,
+              price: 599,
               popular: false
             }
           ].map((plan) => (
@@ -270,7 +270,7 @@ export default function BillingPage() {
                 </div>
                 <div className="flex items-center gap-2 text-xs font-semibold">
                   <span className="line-through text-muted-foreground">${plan.originalPrice.toLocaleString('es-AR')}</span>
-                  <span className="text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">20% OFF</span>
+                  <span className="text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">99% OFF (Test)</span>
                 </div>
               </div>
 

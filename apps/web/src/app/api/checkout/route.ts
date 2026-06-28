@@ -22,17 +22,17 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => ({}));
     const planId = body.planId || 'standard';
 
-    let amount = 19120; // Default standard plan price (20% off from 23900)
+    let amount = 239; // Default standard plan price (99% off from 23900)
     let creditsToAssign = 30;
 
     if (planId === 'basic') {
-      amount = 7920; // 20% off from 9900
+      amount = 99; // 99% off from 9900
       creditsToAssign = 10;
     } else if (planId === 'standard') {
-      amount = 19120; // 20% off from 23900
+      amount = 239; // 99% off from 23900
       creditsToAssign = 30;
     } else if (planId === 'pro') {
-      amount = 47920; // 20% off from 59900
+      amount = 599; // 99% off from 59900
       creditsToAssign = 100;
     }
 
