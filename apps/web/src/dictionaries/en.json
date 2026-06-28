@@ -1,0 +1,47 @@
+{
+  "main": {
+    "title": "Welcome to Fit Lab",
+    "description": "The AI image generation platform for your clothing brand. Explore the sections below to get started.",
+    "generator": {
+      "title": "Generator",
+      "description": "Generate new model images using your garments. Adjust prompts, select models, and dimensions."
+    },
+    "collections": {
+      "title": "Collections",
+      "description": "View and manage the images you have generated. Grouped by generation batch. Remember to download them within 7 days."
+    },
+    "library": {
+      "title": "Library",
+      "description": "Your personal gallery. Upload, organize, and classify your garment and reference model images to use them in the generator."
+    },
+    "descriptions": {
+      "title": "Descriptions",
+      "description": "Select your images and generate persuasive descriptions automatically using AI (Coming soon)."
+    },
+    "retention_warning": {
+      "title": "Image retention notice",
+      "description": "Remember that all generated images will be automatically deleted from our servers one week (7 days) after their creation. Make sure to download the ones you want to keep."
+    }
+  },
+  "pages": {
+    "generator": {
+      "title": "Generator",
+      "description": "Configure your prompt and select garments and models to generate new images."
+    },
+    "collections": {
+      "title": "Collections",
+      "description": "History of generations grouped by batch. Click on an image to open the viewer."
+    },
+    "library": {
+      "title": "Library",
+      "description": "Manage your garments and reference models."
+    },
+    "descriptions": {
+      "title": "Descriptions",
+      "description": "Select your images and automatically generate persuasive descriptions using AI (Coming soon)."
+    },
+    "settings": {
+      "title": "Settings"
+    }
+  }
+}

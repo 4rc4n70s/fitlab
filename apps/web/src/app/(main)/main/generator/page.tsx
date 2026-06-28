@@ -7,6 +7,9 @@ import { useRouter } from 'next/navigation'
 import { Save, RefreshCw, Upload, Image as ImageIcon, X, Sparkles, Trash2, Folder, ChevronRight, ChevronLeft, Check } from 'lucide-react'
 import { processVirtualTryOn } from '@/actions/gemini'
 import { getSavedPrompts, savePrompt, deletePrompt } from '@/actions/prompts'
+import { useUI } from '@/hooks/use-ui'
+import esDict from '@/dictionaries/es.json'
+import enDict from '@/dictionaries/en.json'
 
 const ASPECT_RATIOS = [
   { label: '1:1', icon: 'Square' },
@@ -20,6 +23,9 @@ export default function GeneratorPage() {
   const [masterPrompt, setMasterPrompt] = useState('')
   const [selectedRatio, setSelectedRatio] = useState('3:4')
   const router = useRouter()
+  const { language } = useUI()
+  const dict = language === 'es' ? esDict : enDict
+
   
   const [showGenerateModal, setShowGenerateModal] = useState(false)
   const [showPromptsModal, setShowPromptsModal] = useState(false)
@@ -237,8 +243,8 @@ export default function GeneratorPage() {
       <div className="flex flex-col gap-10 p-6 md:p-10 max-w-6xl mx-auto w-full flex-1">
         
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-heading font-semibold text-foreground">Generator</h1>
-          <p className="text-muted text-base">Configura tu prompt y selecciona las prendas y modelos para generar nuevas imágenes.</p>
+          <h1 className="text-3xl font-heading font-semibold text-foreground">{dict.pages.generator.title}</h1>
+          <p className="text-muted text-base">{dict.pages.generator.description}</p>
         </div>
 
         {/* 1. Prompt Engineering */}

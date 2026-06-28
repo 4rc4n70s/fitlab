@@ -9,6 +9,9 @@ import Link from 'next/link'
 import JSZip from 'jszip'
 import { saveAs } from 'file-saver'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useUI } from '@/hooks/use-ui'
+import esDict from '@/dictionaries/es.json'
+import enDict from '@/dictionaries/en.json'
 
 interface Generation {
   id: string
@@ -37,6 +40,8 @@ export default function CollectionsPage() {
   const [viewerImages, setViewerImages] = useState<{url: string, originalUrl?: string}[]>([])
   const [viewerIndex, setViewerIndex] = useState<number>(0)
   const [showViewer, setShowViewer] = useState(false)
+  const { language } = useUI()
+  const dict = language === 'es' ? esDict : enDict
   
   // Regenerate Modal state
   const [regenModal, setRegenModal] = useState<{ collectionId: string, genId: string, generation: Generation, prompt: string } | null>(null)
@@ -224,8 +229,8 @@ export default function CollectionsPage() {
     <div className="relative min-h-[calc(100vh-4rem)] flex flex-col pb-24">
       <div className="flex flex-col gap-8 p-6 md:p-10 max-w-6xl mx-auto w-full flex-1">
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-heading font-semibold text-foreground">Collections</h1>
-          <p className="text-muted text-base">Historial de generaciones agrupadas por lote. Haz click en una imagen para abrir el visualizador.</p>
+          <h1 className="text-3xl font-heading font-semibold text-foreground">{dict.pages.collections.title}</h1>
+          <p className="text-muted text-base">{dict.pages.collections.description}</p>
         </div>
 
       {collections.length === 0 ? (

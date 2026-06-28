@@ -6,6 +6,9 @@ import { uploadFileToSupabase } from '@/services/storage'
 import React, { useState, useEffect } from 'react'
 import { Search, Grid, List, Folder, Upload, Edit2, Download, Trash2, ChevronRight, ChevronLeft, FolderPlus, X, Eye } from 'lucide-react'
 import { ImageViewer } from '@/components/shared/image-viewer'
+import { useUI } from '@/hooks/use-ui'
+import esDict from '@/dictionaries/es.json'
+import enDict from '@/dictionaries/en.json'
 
 interface FolderType {
   id: string
@@ -27,6 +30,8 @@ export default function LibraryPage() {
   const [filterType, setFilterType] = useState<'all' | 'clothes' | 'model'>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [currentFolder, setCurrentFolder] = useState<string | null>(null)
+  const { language } = useUI()
+  const dict = language === 'es' ? esDict : enDict
   
   const [folders, setFolders] = useState<FolderType[]>([])
   const [items, setItems] = useState<ItemType[]>([])
@@ -406,8 +411,8 @@ export default function LibraryPage() {
         <div className="flex flex-col gap-6 p-6 md:px-10 md:py-8 max-w-6xl mx-auto w-full">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex flex-col gap-1">
-            <h1 className="text-3xl font-heading font-semibold text-foreground">Library</h1>
-            <p className="text-muted text-sm">Gestiona tus prendas y modelos de referencia.</p>
+            <h1 className="text-3xl font-heading font-semibold text-foreground">{dict.pages.library.title}</h1>
+            <p className="text-muted text-sm">{dict.pages.library.description}</p>
           </div>
           <div className="flex items-center gap-2">
             <button 

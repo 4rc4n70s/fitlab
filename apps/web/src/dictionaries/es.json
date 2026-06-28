@@ -1,0 +1,47 @@
+{
+  "main": {
+    "title": "Bienvenido a Fit Lab",
+    "description": "La plataforma de generación de imágenes con IA para tu marca de ropa. Explora las secciones a continuación para comenzar.",
+    "generator": {
+      "title": "Generator",
+      "description": "Genera nuevas imágenes de modelos utilizando tus prendas. Ajusta los prompts, selecciona modelos y dimensiones."
+    },
+    "collections": {
+      "title": "Collections",
+      "description": "Visualiza y gestiona las imágenes que has generado. Agrupadas por lote de generación. Recuerda descargarlas antes de 7 días."
+    },
+    "library": {
+      "title": "Library",
+      "description": "Tu galería personal. Sube, organiza y clasifica tus imágenes de prendas y modelos de referencia para usarlas en el generador."
+    },
+    "descriptions": {
+      "title": "Descriptions",
+      "description": "Selecciona tus imágenes y genera descripciones persuasivas automáticamente usando IA (Próximamente)."
+    },
+    "retention_warning": {
+      "title": "Aviso sobre retención de imágenes",
+      "description": "Recuerda que todas las imágenes generadas se eliminarán automáticamente de nuestros servidores una semana (7 días) después de su creación. Asegúrate de descargar las que desees conservar."
+    }
+  },
+  "pages": {
+    "generator": {
+      "title": "Generator",
+      "description": "Configura tu prompt y selecciona las prendas y modelos para generar nuevas imágenes."
+    },
+    "collections": {
+      "title": "Collections",
+      "description": "Historial de generaciones agrupadas por lote. Haz click en una imagen para abrir el visualizador."
+    },
+    "library": {
+      "title": "Library",
+      "description": "Gestiona tus prendas y modelos de referencia."
+    },
+    "descriptions": {
+      "title": "Descriptions",
+      "description": "Selecciona tus imágenes y genera descripciones persuasivas automáticamente usando IA (Próximamente)."
+    },
+    "settings": {
+      "title": "Configuración"
+    }
+  }
+}

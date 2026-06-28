@@ -1,6 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 type Theme = 'light' | 'dark'
 type Language = 'es' | 'en'
@@ -19,6 +20,7 @@ interface UIContextType {
 const UIContext = createContext<UIContextType | undefined>(undefined)
 
 export function UIProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
   const [theme, setTheme] = useState<Theme>('light')
@@ -57,6 +59,7 @@ export function UIProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('language', lang)
     document.cookie = `NEXT_LOCALE=${lang}; path=/; max-age=31536000`
     setLanguage(lang)
+    router.refresh()
   }
 
   return (
