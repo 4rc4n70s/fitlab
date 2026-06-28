@@ -11,14 +11,25 @@ import { createClient } from '@/lib/supabase/server'
 import { db } from '@/services/db'
 
 
+import { headers, cookies } from 'next/headers'
+
 async function fetchImageAsBase64(url: string): Promise<{ mimeType: string, base64: string }> {
-  // En Vercel, fs.readFile para la carpeta public a veces falla dependiendo del build.
-  // Es más seguro fetchear la URL directamente.
+  let fetchOptions: RequestInit = {}
+
   if (url.startsWith('/')) {
-    const origin = process.env.NEXT_PUBLIC_SITE_URL || 'https://fitlab-beta.vercel.app' // Asegúrate de tener el dominio correcto o config
-    // Fallback a Vercel URL
-    const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : origin
-    url = `${baseUrl}${url}`
+    const hostList = headers()
+    const host = hostList.get('x-forwarded-host') || hostList.get('host') || 'localhost:3000'
+    const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https'
+    url = `${protocol}://${host}${url}`
+    
+    // Forward cookies to bypass Vercel deployment protection if active
+    const cookieStore = cookies()
+    const cookieString = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ')
+    fetchOptions = {
+      headers: {
+        'Cookie': cookieString
+      }
+    }
   }
 
   if (url.startsWith('data:')) {
@@ -28,11 +39,17 @@ async function fetchImageAsBase64(url: string): Promise<{ mimeType: string, base
   }
   
   if (url.startsWith('http://') || url.startsWith('https://')) {
-    const response = await fetch(url)
-    if (!response.ok) throw new Error(`Failed to fetch image from URL: ${url}`)
+    const response = await fetch(url, fetchOptions)
+    if (!response.ok) throw new Error(`Failed to fetch image from URL: ${url} - Status: ${response.status}`)
     const arrayBuffer = await response.arrayBuffer()
-    const base64 = Buffer.from(arrayBuffer).toString('base64')
     const mimeType = response.headers.get('content-type') || 'image/jpeg'
+    
+    // Check if we accidentally fetched an HTML page (like Vercel Protection or 404)
+    if (mimeType.includes('text/html')) {
+      throw new Error(`Unsupported MIME type: ${mimeType}. Vercel protection or 404 page returned instead of image at ${url}.`)
+    }
+    
+    const base64 = Buffer.from(arrayBuffer).toString('base64')
     return { mimeType, base64 }
   }
 
