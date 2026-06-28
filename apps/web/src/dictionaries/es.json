@@ -23,6 +23,19 @@
       "description": "Recuerda que todas las imágenes generadas se eliminarán automáticamente de nuestros servidores una semana (7 días) después de su creación. Asegúrate de descargar las que desees conservar."
     }
   },
+  "components": {
+    "image_viewer": {
+      "original": "Original",
+      "result": "Resultado",
+      "compare_title": "Comparar lado a lado",
+      "compare": "Comparar",
+      "original_badge": "Original",
+      "result_badge": "Resultado",
+      "image_count": "Imagen",
+      "of": "de",
+      "download": "Descargar"
+    }
+  },
   "pages": {
     "generator": {
       "title": "Generator",
@@ -91,7 +104,57 @@
     },
     "collections": {
       "title": "Collections",
-      "description": "Historial de generaciones agrupadas por lote. Haz click en una imagen para abrir el visualizador."
+      "description": "Historial de generaciones agrupadas por lote. Haz click en una imagen para abrir el visualizador.",
+      "empty": {
+        "title": "No hay colecciones",
+        "subtitle": "Aún no has generado ninguna imagen. Ve a la sección del Generador para comenzar.",
+        "action": "Generar Imágenes"
+      },
+      "item": {
+        "collection_prefix": "Colección",
+        "download_zip": "Descargar ZIP",
+        "delete_collection_title": "Eliminar Colección",
+        "delete_collection": "Eliminar",
+        "master_prompt": "Master Prompt",
+        "clothes_used": "Prendas Usadas",
+        "clothing_alt": "Prenda",
+        "error_reason": "Motivo",
+        "download": "Descargar",
+        "regenerate": "Volver a Generar",
+        "delete_photo": "Eliminar Foto",
+        "view_image": "Ver Imagen",
+        "generating_image": "Generando imagen...",
+        "image_unavailable": "Imagen no disponible"
+      },
+      "status": {
+        "success": "Completado",
+        "processing": "Procesando...",
+        "error": "Error"
+      },
+      "pagination": {
+        "page": "Página",
+        "of": "de"
+      },
+      "modals": {
+        "regenerate": {
+          "title": "Regenerar Variante",
+          "close": "Cerrar",
+          "prompt_label": "Ajustar Master Prompt",
+          "base_label": "Usar como imagen base:",
+          "original_photo": "Foto Original",
+          "generated_photo": "Foto Generada",
+          "no_image": "No hay imagen generada",
+          "generating": "Generando...",
+          "submit": "Generar Variante"
+        },
+        "delete": {
+          "title": "Confirmar eliminación",
+          "desc_collection": "¿Estás seguro de que deseas eliminar esta colección por completo?",
+          "desc_photo": "¿Estás seguro de que deseas eliminar esta foto?",
+          "cancel": "Cancelar",
+          "confirm": "Eliminar"
+        }
+      }
     },
     "library": {
       "title": "Library",

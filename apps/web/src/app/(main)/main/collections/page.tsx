@@ -237,11 +237,11 @@ export default function CollectionsPage() {
         <div className="flex-1 flex flex-col items-center justify-center gap-4 border-2 border-dashed border-border bg-surface-card p-12 text-center my-8">
           <Images className="w-12 h-12 text-muted" />
           <div className="flex flex-col gap-1 max-w-sm">
-            <h3 className="text-lg font-medium text-foreground font-heading">No hay colecciones</h3>
-            <p className="text-sm text-muted">Aún no has generado ninguna imagen. Ve a la sección del Generador para comenzar.</p>
+            <h3 className="text-lg font-medium text-foreground font-heading">{dict.pages.collections.empty.title}</h3>
+            <p className="text-sm text-muted">{dict.pages.collections.empty.subtitle}</p>
           </div>
           <Link href="/main/generator" className="mt-2 px-6 py-2.5 rounded-xl bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium">
-            Generar Imágenes
+            {dict.pages.collections.empty.action}
           </Link>
         </div>
       ) : (
@@ -251,7 +251,7 @@ export default function CollectionsPage() {
               <div key={collection.id} className="flex flex-col gap-4">
                 {/* Collection Header */}
                 <div className="flex items-center gap-4 border-b border-border pb-2">
-                  <h2 className="text-lg font-medium text-foreground">Colección: {collection.id.split('-')[0].toUpperCase()}</h2>
+                  <h2 className="text-lg font-medium text-foreground">{dict.pages.collections.item.collection_prefix}: {collection.id.split('-')[0].toUpperCase()}</h2>
                   <span className="text-sm text-muted flex items-center gap-1">
                     <Calendar className="w-4 h-4" />
                     {new Date(collection.date).toLocaleString()}
@@ -259,14 +259,14 @@ export default function CollectionsPage() {
                   
                   <div className="ml-auto flex items-center gap-2">
                     <button onClick={() => handleDownloadZip(collection)} className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg bg-surface-soft hover:bg-border transition-colors text-foreground font-medium">
-                      <Download className="w-4 h-4" /> Descargar ZIP
+                      <Download className="w-4 h-4" /> {dict.pages.collections.item.download_zip}
                     </button>
                     <button 
                       onClick={() => setDeleteModal({ type: 'collection', collectionId: collection.id })}
                       className="p-1.5 rounded-lg text-muted hover:text-red-500 hover:bg-red-500/10 transition-colors flex items-center gap-1.5 text-xs font-semibold"
-                      title="Eliminar Colección"
+                      title={dict.pages.collections.item.delete_collection_title}
                     >
-                      <Trash className="w-4 h-4" /> Eliminar
+                      <Trash className="w-4 h-4" /> {dict.pages.collections.item.delete_collection}
                     </button>
                   </div>
                 </div>
@@ -283,15 +283,15 @@ export default function CollectionsPage() {
                             <span className="text-sm font-medium text-foreground">ID: {gen.id}</span>
                             {gen.status === 'success' ? (
                               <span className="flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                                <CheckCircle2 className="w-3 h-3" /> Completado
+                                <CheckCircle2 className="w-3 h-3" /> {dict.pages.collections.status.success}
                               </span>
                             ) : (gen.status === 'processing' || gen.status === 'pending') ? (
                               <span className="flex items-center gap-1 text-xs font-medium text-blue-600 bg-blue-500/10 px-2 py-0.5 rounded-full animate-pulse">
-                                <RefreshCw className="w-3 h-3 animate-spin" /> Procesando...
+                                <RefreshCw className="w-3 h-3 animate-spin" /> {dict.pages.collections.status.processing}
                               </span>
                             ) : (
                               <span className="flex items-center gap-1 text-xs font-medium text-red-600 bg-red-500/10 px-2 py-0.5 rounded-full">
-                                <AlertCircle className="w-3 h-3" /> Error
+                                <AlertCircle className="w-3 h-3" /> {dict.pages.collections.status.error}
                               </span>
                             )}
                           </div>
@@ -302,15 +302,15 @@ export default function CollectionsPage() {
 
                         <div className="grid grid-cols-2 gap-4">
                           <div className="flex flex-col gap-1">
-                            <span className="text-xs font-medium text-muted uppercase tracking-wider">Master Prompt</span>
+                            <span className="text-xs font-medium text-muted uppercase tracking-wider">{dict.pages.collections.item.master_prompt}</span>
                             <p className="text-sm text-foreground line-clamp-2">{collection.prompt}</p>
                           </div>
                           <div className="flex flex-col gap-1">
-                            <span className="text-xs font-medium text-muted uppercase tracking-wider">Prendas Usadas</span>
+                            <span className="text-xs font-medium text-muted uppercase tracking-wider">{dict.pages.collections.item.clothes_used}</span>
                             <div className="flex gap-2">
                               {collection.clothes.map((cUrl, i) => (
                                 <div key={i} className="w-10 h-10 bg-surface-soft border border-border overflow-hidden">
-                                  <img src={cUrl} alt={`Prenda ${i}`} className="w-full h-full object-cover" />
+                                  <img src={cUrl} alt={`${dict.pages.collections.item.clothing_alt} ${i}`} className="w-full h-full object-cover" />
                                 </div>
                               ))}
                             </div>
@@ -318,27 +318,27 @@ export default function CollectionsPage() {
                         </div>
 
                         {gen.status === 'error' && (
-                          <p className="text-sm text-red-500 mt-2">Motivo: {gen.errorMsg}</p>
+                          <p className="text-sm text-red-500 mt-2">{dict.pages.collections.item.error_reason}: {gen.errorMsg}</p>
                         )}
 
                         <div className="mt-auto pt-4 flex gap-3">
                           {gen.status === 'success' && gen.image && (
                             <button onClick={() => handleDownloadImage(gen.image!, `foto_${gen.id}.jpg`)} className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg bg-surface-soft text-foreground hover:bg-border transition-colors font-medium">
-                              <Download className="w-4 h-4" /> Descargar
+                              <Download className="w-4 h-4" /> {dict.pages.collections.item.download}
                             </button>
                           )}
                           <button 
                             onClick={() => setRegenModal({ collectionId: collection.id, genId: gen.id, generation: gen, prompt: collection.prompt })}
                             className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium"
                           >
-                            <RefreshCw className="w-4 h-4" /> Volver a Generar
+                            <RefreshCw className="w-4 h-4" /> {dict.pages.collections.item.regenerate}
                           </button>
                           
                           <button 
                             onClick={() => setDeleteModal({ type: 'photo', collectionId: collection.id, genId: gen.id })}
                             className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg border border-border text-red-500/80 hover:text-red-500 hover:bg-red-500/10 transition-colors font-medium"
                           >
-                            <Trash2 className="w-4 h-4" /> Eliminar Foto
+                            <Trash2 className="w-4 h-4" /> {dict.pages.collections.item.delete_photo}
                           </button>
                         </div>
                       </div>
@@ -361,19 +361,19 @@ export default function CollectionsPage() {
                             />
                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                               <span className="text-white text-sm font-medium bg-black/50 px-3 py-1.5 rounded-full backdrop-blur-sm">
-                                Ver Imagen
+                                {dict.pages.collections.item.view_image}
                               </span>
                             </div>
                           </div>
                         ) : gen.status === 'processing' ? (
                           <div className="w-full h-full flex flex-col items-center justify-center gap-3 text-muted p-4 text-center">
                             <RefreshCw className="w-8 h-8 opacity-50 animate-spin" />
-                            <span className="text-xs font-medium">Generando imagen...</span>
+                            <span className="text-xs font-medium">{dict.pages.collections.item.generating_image}</span>
                           </div>
                         ) : (
                           <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-muted p-4 text-center">
                             <AlertCircle className="w-8 h-8 opacity-50" />
-                            <span className="text-xs">Imagen no disponible</span>
+                            <span className="text-xs">{dict.pages.collections.item.image_unavailable}</span>
                           </div>
                         )}
                       </div>
@@ -396,7 +396,7 @@ export default function CollectionsPage() {
                 <ChevronLeft className="w-5 h-5" />
               </button>
               <span className="text-sm font-medium">
-                Página {page} de {Math.ceil(collections.length / ITEMS_PER_PAGE)}
+                {dict.pages.collections.pagination.page} {page} {dict.pages.collections.pagination.of} {Math.ceil(collections.length / ITEMS_PER_PAGE)}
               </span>
               <button 
                 onClick={() => setCurrentPage(prev => Math.min(Math.ceil(collections.length / ITEMS_PER_PAGE), prev + 1))}
@@ -423,16 +423,16 @@ export default function CollectionsPage() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
           <div className="bg-surface-card border border-border rounded-2xl w-full max-w-lg p-6 flex flex-col gap-6 shadow-xl animate-in zoom-in-95">
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-medium text-foreground">Regenerar Variante</h3>
+              <h3 className="text-xl font-medium text-foreground">{dict.pages.collections.modals.regenerate.title}</h3>
               <button onClick={() => setRegenModal(null)} className="p-1 rounded-lg hover:bg-surface-soft text-muted hover:text-foreground transition-colors">
                 <Trash2 className="w-5 h-5 hidden" /> {/* spacer */}
-                Cerrar
+                {dict.pages.collections.modals.regenerate.close}
               </button>
             </div>
             
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-foreground">Ajustar Master Prompt</label>
+                <label className="text-sm font-medium text-foreground">{dict.pages.collections.modals.regenerate.prompt_label}</label>
                 <textarea 
                   className="w-full min-h-[100px] p-3 rounded-xl border border-border bg-surface-card text-foreground placeholder:text-muted focus:outline-none focus:border-foreground/50 resize-y"
                   value={regenModal.prompt}
@@ -441,7 +441,7 @@ export default function CollectionsPage() {
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-foreground">Usar como imagen base:</label>
+                <label className="text-sm font-medium text-foreground">{dict.pages.collections.modals.regenerate.base_label}</label>
                 <div className="flex gap-4">
                   <label className={`flex-1 flex flex-col items-center gap-2 p-3 border rounded-xl cursor-pointer transition-colors ${regenBase === 'original' ? 'border-foreground bg-surface-soft' : 'border-border'}`}>
                     <input type="radio" className="hidden" checked={regenBase === 'original'} onChange={() => setRegenBase('original')} />
@@ -450,7 +450,7 @@ export default function CollectionsPage() {
                         <img src={(regenModal.generation.originalModelUrl || regenModal.generation.modelUrl || currentCollection?.modelImage)!} className="w-full h-full object-cover" alt="Original" />
                       </div>
                     )}
-                    <span className="text-sm font-medium">Foto Original</span>
+                    <span className="text-sm font-medium">{dict.pages.collections.modals.regenerate.original_photo}</span>
                   </label>
                   
                   <label className={`flex-1 flex flex-col items-center gap-2 p-3 border rounded-xl cursor-pointer transition-colors ${regenBase === 'result' ? 'border-foreground bg-surface-soft' : 'border-border'} ${!regenModal.generation.image ? 'opacity-50 cursor-not-allowed' : ''}`}>
@@ -461,10 +461,10 @@ export default function CollectionsPage() {
                       </div>
                     ) : (
                       <div className="w-full aspect-square bg-surface-card border border-dashed flex items-center justify-center text-xs text-muted text-center p-2">
-                        No hay imagen generada
+                        {dict.pages.collections.modals.regenerate.no_image}
                       </div>
                     )}
-                    <span className="text-sm font-medium">Foto Generada</span>
+                    <span className="text-sm font-medium">{dict.pages.collections.modals.regenerate.generated_photo}</span>
                   </label>
                 </div>
               </div>
@@ -477,7 +477,7 @@ export default function CollectionsPage() {
                 className="w-full px-6 py-2.5 rounded-xl bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 <RefreshCw className={`w-4 h-4 ${isRegenerating ? 'animate-spin' : ''}`} /> 
-                {isRegenerating ? 'Generando...' : 'Generar Variante'}
+                {isRegenerating ? dict.pages.collections.modals.regenerate.generating : dict.pages.collections.modals.regenerate.submit}
               </button>
             </div>
           </div>
@@ -490,11 +490,11 @@ export default function CollectionsPage() {
           <div className="bg-surface-card border border-border rounded-2xl w-full max-w-sm p-6 flex flex-col gap-6 shadow-xl animate-in zoom-in-95 text-center">
             <Trash2 className="w-12 h-12 text-red-500 mx-auto" />
             <div className="flex flex-col gap-2">
-              <h3 className="text-xl font-medium text-foreground">Confirmar eliminación</h3>
+              <h3 className="text-xl font-medium text-foreground">{dict.pages.collections.modals.delete.title}</h3>
               <p className="text-sm text-muted">
                 {deleteModal.type === 'collection' 
-                  ? '¿Estás seguro de que deseas eliminar esta colección por completo?' 
-                  : '¿Estás seguro de que deseas eliminar esta foto?'}
+                  ? dict.pages.collections.modals.delete.desc_collection
+                  : dict.pages.collections.modals.delete.desc_photo}
               </p>
             </div>
             <div className="flex justify-center gap-3 pt-2">
@@ -502,13 +502,13 @@ export default function CollectionsPage() {
                 onClick={() => setDeleteModal(null)}
                 className="px-6 py-2 rounded-xl border border-border text-foreground hover:bg-surface-soft transition-colors font-medium"
               >
-                Cancelar
+                {dict.pages.collections.modals.delete.cancel}
               </button>
               <button 
                 onClick={handleDeleteConfirm}
                 className="px-6 py-2 rounded-xl bg-red-500 text-white hover:bg-red-600 transition-colors font-medium"
               >
-                Eliminar
+                {dict.pages.collections.modals.delete.confirm}
               </button>
             </div>
           </div>

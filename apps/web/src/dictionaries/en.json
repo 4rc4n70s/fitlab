@@ -23,6 +23,19 @@
       "description": "Remember that all generated images will be automatically deleted from our servers one week (7 days) after their creation. Make sure to download the ones you want to keep."
     }
   },
+  "components": {
+    "image_viewer": {
+      "original": "Original",
+      "result": "Result",
+      "compare_title": "Compare side by side",
+      "compare": "Compare",
+      "original_badge": "Original",
+      "result_badge": "Result",
+      "image_count": "Image",
+      "of": "of",
+      "download": "Download"
+    }
+  },
   "pages": {
     "generator": {
       "title": "Generator",
@@ -91,7 +104,57 @@
     },
     "collections": {
       "title": "Collections",
-      "description": "History of generations grouped by batch. Click on an image to open the viewer."
+      "description": "History of generations grouped by batch. Click on an image to open the viewer.",
+      "empty": {
+        "title": "No collections yet",
+        "subtitle": "You haven't generated any images. Go to the Generator section to get started.",
+        "action": "Generate Images"
+      },
+      "item": {
+        "collection_prefix": "Collection",
+        "download_zip": "Download ZIP",
+        "delete_collection_title": "Delete Collection",
+        "delete_collection": "Delete",
+        "master_prompt": "Master Prompt",
+        "clothes_used": "Clothes Used",
+        "clothing_alt": "Garment",
+        "error_reason": "Reason",
+        "download": "Download",
+        "regenerate": "Regenerate",
+        "delete_photo": "Delete Photo",
+        "view_image": "View Image",
+        "generating_image": "Generating image...",
+        "image_unavailable": "Image unavailable"
+      },
+      "status": {
+        "success": "Completed",
+        "processing": "Processing...",
+        "error": "Error"
+      },
+      "pagination": {
+        "page": "Page",
+        "of": "of"
+      },
+      "modals": {
+        "regenerate": {
+          "title": "Regenerate Variant",
+          "close": "Close",
+          "prompt_label": "Adjust Master Prompt",
+          "base_label": "Use as base image:",
+          "original_photo": "Original Photo",
+          "generated_photo": "Generated Photo",
+          "no_image": "No image generated",
+          "generating": "Generating...",
+          "submit": "Generate Variant"
+        },
+        "delete": {
+          "title": "Confirm deletion",
+          "desc_collection": "Are you sure you want to completely delete this collection?",
+          "desc_photo": "Are you sure you want to delete this photo?",
+          "cancel": "Cancel",
+          "confirm": "Delete"
+        }
+      }
     },
     "library": {
       "title": "Library",

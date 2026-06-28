@@ -2,6 +2,9 @@
 
 import React, { useState } from 'react'
 import { X, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, Download, SplitSquareHorizontal, Image as ImageIcon, Sparkles } from 'lucide-react'
+import { useUI } from '@/hooks/use-ui'
+import esDict from '@/dictionaries/es.json'
+import enDict from '@/dictionaries/en.json'
 
 export interface ViewerImage {
   url: string
@@ -18,6 +21,8 @@ export function ImageViewer({ images, initialIndex = 0, onClose }: ImageViewerPr
   const [currentIndex, setCurrentIndex] = useState(initialIndex)
   const [zoom, setZoom] = useState(1)
   const [viewMode, setViewMode] = useState<'result' | 'original' | 'split'>('result')
+  const { language } = useUI()
+  const dict = language === 'es' ? esDict : enDict
   
   const [isDragging, setIsDragging] = useState(false)
   const [position, setPosition] = useState({ x: 0, y: 0 })
@@ -102,20 +107,20 @@ export function ImageViewer({ images, initialIndex = 0, onClose }: ImageViewerPr
                 onClick={() => setViewMode('original')} 
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${viewMode === 'original' ? 'bg-white text-black' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}
               >
-                <ImageIcon className="w-4 h-4" /> Original
+                <ImageIcon className="w-4 h-4" /> {dict.components.image_viewer.original}
               </button>
               <button 
                 onClick={() => setViewMode('result')} 
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${viewMode === 'result' ? 'bg-white text-black' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}
               >
-                <Sparkles className="w-4 h-4" /> Resultado
+                <Sparkles className="w-4 h-4" /> {dict.components.image_viewer.result}
               </button>
               <button 
                 onClick={() => setViewMode('split')} 
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${viewMode === 'split' ? 'bg-white text-black' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}
-                title="Comparar lado a lado"
+                title={dict.components.image_viewer.compare_title}
               >
-                <SplitSquareHorizontal className="w-4 h-4" /> Comparar
+                <SplitSquareHorizontal className="w-4 h-4" /> {dict.components.image_viewer.compare}
               </button>
             </div>
           </>
@@ -165,11 +170,11 @@ export function ImageViewer({ images, initialIndex = 0, onClose }: ImageViewerPr
           {viewMode === 'split' ? (
             <div className="flex w-full h-full justify-center items-center gap-4 max-w-[90vw]">
               <div className="flex-1 flex flex-col items-center gap-2 max-h-full">
-                <span className="text-white/70 text-xs font-medium uppercase tracking-wider bg-black/50 px-3 py-1 rounded-full backdrop-blur-md absolute top-4">Original</span>
+                <span className="text-white/70 text-xs font-medium uppercase tracking-wider bg-black/50 px-3 py-1 rounded-full backdrop-blur-md absolute top-4">{dict.components.image_viewer.original_badge}</span>
                 <img src={currentImage.originalUrl} alt="Original" className="max-w-full max-h-[85vh] object-contain rounded-sm shadow-2xl" />
               </div>
               <div className="flex-1 flex flex-col items-center gap-2 max-h-full">
-                <span className="text-emerald-400 text-xs font-medium uppercase tracking-wider bg-black/50 px-3 py-1 rounded-full backdrop-blur-md absolute top-4">Resultado</span>
+                <span className="text-emerald-400 text-xs font-medium uppercase tracking-wider bg-black/50 px-3 py-1 rounded-full backdrop-blur-md absolute top-4">{dict.components.image_viewer.result_badge}</span>
                 <img src={currentImage.url} alt="Result" className="max-w-full max-h-[85vh] object-contain rounded-sm shadow-2xl" />
               </div>
             </div>
@@ -186,9 +191,9 @@ export function ImageViewer({ images, initialIndex = 0, onClose }: ImageViewerPr
 
       {/* Image Info / Footer */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/50 text-sm flex items-center gap-4">
-        <span>Imagen {currentIndex + 1} de {images.length}</span>
+        <span>{dict.components.image_viewer.image_count} {currentIndex + 1} {dict.components.image_viewer.of} {images.length}</span>
         <button className="flex items-center gap-2 hover:text-white transition-colors">
-          <Download className="w-4 h-4" /> Descargar
+          <Download className="w-4 h-4" /> {dict.components.image_viewer.download}
         </button>
       </div>
     </div>
