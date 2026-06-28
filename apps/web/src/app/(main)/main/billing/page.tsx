@@ -159,6 +159,7 @@ export default function BillingPage() {
   const creditsToShow = localCredits !== null ? localCredits : ((profile as unknown as UserProfile)?.boilerplate_credits ?? 5)
 
   return (
+    <>
     <div className="relative min-h-[calc(100vh-4rem)] flex flex-col pb-24">
       <div className="flex flex-col gap-8 p-6 md:p-10 max-w-6xl mx-auto w-full text-foreground flex-1">
       
@@ -340,7 +341,6 @@ export default function BillingPage() {
         </div>
         </div>
       </div>
-    </div>
 
       <Script src="https://sdk.mercadopago.com/js/v2" strategy="lazyOnload" />
       
@@ -361,5 +361,6 @@ export default function BillingPage() {
         }
       `}} />
     </div>
+    </>
   )
 }

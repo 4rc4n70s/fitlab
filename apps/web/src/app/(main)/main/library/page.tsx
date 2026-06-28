@@ -352,6 +352,7 @@ export default function LibraryPage() {
             <span className="text-foreground">{folders.find(f => f.id === currentFolder)?.name}</span>
           </div>
         )}
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto">
