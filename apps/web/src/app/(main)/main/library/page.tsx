@@ -1,5 +1,6 @@
 'use client'
-import { dbClient as db } from '@/services/collectionsClient'
+import { db } from '@/services/db'
+import { dbClient } from '@/services/collectionsClient'
 import { uploadImageToSupabase } from '@/services/storage'
 
 import React, { useState, useEffect } from 'react'
@@ -46,8 +47,8 @@ export default function LibraryPage() {
   useEffect(() => {
     const init = async () => {
       try {
-        const dbFolders = await db.library.getFolders()
-        const dbItems = await db.library.getItems()
+        const dbFolders = await dbClient.library.getFolders()
+        const dbItems = await dbClient.library.getItems()
         
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         setFolders(dbFolders.map((f: any) => ({...f, itemCount: 0})))
@@ -119,7 +120,7 @@ export default function LibraryPage() {
       
       try {
         const publicUrl = await uploadImageToSupabase(base64, uf.type)
-        const newItem = await db.library.createItem({
+        const newItem = await dbClient.library.createItem({
           name: uf.name,
           type: uf.type,
           url: publicUrl,
@@ -156,9 +157,9 @@ export default function LibraryPage() {
 
   const handleSaveEdit = async () => {
     if (!editItem) return
-    // Although db.library.updateItem is missing, we will implement it or skip for now
+    // Although dbClient.library.updateItem is missing, we will implement it or skip for now
     // Actually wait, we just skip it for now and update state if there is no db method, but wait we need db update
-    // Let's assume we don't have db.library.updateItem yet, we'll just not update db for now
+    // Let's assume we don't have dbClient.library.updateItem yet, we'll just not update db for now
     const updated = items.map(i => i.id === editItem.id ? editItem : i)
     setItems(updated)
     updateFolderCounts(updated)
@@ -173,7 +174,7 @@ export default function LibraryPage() {
   const submitCreateFolder = async () => {
     if (!newFolderName.trim()) return
     try {
-      const newFolder = await db.library.createFolder({
+      const newFolder = await dbClient.library.createFolder({
         name: newFolderName,
         type: 'models' // defaults
       })
@@ -211,12 +212,12 @@ export default function LibraryPage() {
 
     try {
       if (deleteModal.type === 'item') {
-        await db.library.deleteItem(deleteModal.id)
+        await dbClient.library.deleteItem(deleteModal.id)
         const updated = items.filter(i => i.id !== deleteModal.id)
         setItems(updated)
         updateFolderCounts(updated)
       } else if (deleteModal.type === 'folder') {
-        await db.library.deleteFolder(deleteModal.id)
+        await dbClient.library.deleteFolder(deleteModal.id)
         const updatedFolders = folders.filter(f => f.id !== deleteModal.id)
         setFolders(updatedFolders)
 
