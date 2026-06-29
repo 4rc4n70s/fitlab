@@ -70,10 +70,11 @@ export default function GeneratorPage() {
           const dbFolders = await db.library.getFolders()
           const dbItems = await db.library.getItems()
           
+          const hiddenStock = JSON.parse(localStorage.getItem('fitlab_hidden_stock_v2') || '[]')
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           setLibraryFolders(dbFolders.map((f: any) => ({ id: f.id, name: f.name })))
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          setLibraryItems(dbItems.map((i: any) => ({
+          setLibraryItems(dbItems.filter((i: any) => !hiddenStock.includes(i.id)).map((i: any) => ({
             id: i.id,
             name: i.name,
             type: i.type as 'clothes' | 'model',

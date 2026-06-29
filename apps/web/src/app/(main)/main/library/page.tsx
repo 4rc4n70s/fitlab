@@ -85,17 +85,19 @@ export default function LibraryPage() {
           const newDbFolders = await dbClient.library.getFolders()
           const newDbItems = await dbClient.library.getItems()
           
+          const hiddenStock = JSON.parse(localStorage.getItem('fitlab_hidden_stock_v2') || '[]')
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          setFolders(newDbFolders.map((f: any) => ({...f, itemCount: newDbItems.filter((i: any) => i.folder_id === f.id).length})))
+          setFolders(newDbFolders.map((f: any) => ({...f, itemCount: newDbItems.filter((i: any) => i.folder_id === f.id && !hiddenStock.includes(i.id)).length})))
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          setItems(newDbItems.map((i: any) => ({
+          setItems(newDbItems.filter((i: any) => !hiddenStock.includes(i.id)).map((i: any) => ({
             id: i.id, name: i.name, type: i.type, url: i.url, date: i.created_at, folderId: i.folder_id
           })))
         } else {
+          const hiddenStock = JSON.parse(localStorage.getItem('fitlab_hidden_stock_v2') || '[]')
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          setFolders(dbFolders.map((f: any) => ({...f, itemCount: dbItems.filter((i: any) => i.folder_id === f.id).length})))
+          setFolders(dbFolders.map((f: any) => ({...f, itemCount: dbItems.filter((i: any) => i.folder_id === f.id && !hiddenStock.includes(i.id)).length})))
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          setItems(dbItems.map((i: any) => ({
+          setItems(dbItems.filter((i: any) => !hiddenStock.includes(i.id)).map((i: any) => ({
             id: i.id, name: i.name, type: i.type, url: i.url, date: i.created_at, folderId: i.folder_id
           })))
         }
@@ -381,7 +383,17 @@ export default function LibraryPage() {
 
     try {
       if (deleteModal.type === 'item') {
-        await dbClient.library.deleteItem(deleteModal.id)
+        const itemToDelete = items.find(i => i.id === deleteModal.id)
+        if (itemToDelete && itemToDelete.url.startsWith('/')) {
+          const hiddenStock = JSON.parse(localStorage.getItem('fitlab_hidden_stock_v2') || '[]')
+          if (!hiddenStock.includes(deleteModal.id)) {
+            hiddenStock.push(deleteModal.id)
+            localStorage.setItem('fitlab_hidden_stock_v2', JSON.stringify(hiddenStock))
+          }
+        } else {
+          await dbClient.library.deleteItem(deleteModal.id)
+        }
+        
         const updated = items.filter(i => i.id !== deleteModal.id)
         setItems(updated)
         updateFolderCounts(updated)
