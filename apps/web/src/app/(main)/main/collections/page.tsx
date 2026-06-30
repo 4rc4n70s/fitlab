@@ -50,7 +50,7 @@ export default function CollectionsPage() {
   
   const [isRegenerating, setIsRegenerating] = useState(false)
 
-  // Load from localStorage on mount and listen to updates
+  // Load from database on mount and listen to custom update events
   useEffect(() => {
     const loadCols = async () => {
       try {
@@ -70,15 +70,38 @@ export default function CollectionsPage() {
     }
     
     loadCols()
-    
     window.addEventListener('fitlab_collections_updated', loadCols)
-    const interval = setInterval(loadCols, 2000)
     
     return () => {
       window.removeEventListener('fitlab_collections_updated', loadCols)
-      clearInterval(interval)
     }
   }, [])
+
+  // Conditional polling: only runs if at least one generation is pending or processing
+  useEffect(() => {
+    const hasPending = collections.some(c => c.generations?.some(g => g.status === 'pending' || g.status === 'processing'))
+    if (!hasPending) return
+
+    const loadCols = async () => {
+      try {
+        const dbCols = await db.collections.getCollections()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setCollections(dbCols.map((c: any) => ({
+          id: c.id,
+          prompt: c.prompt,
+          date: c.created_at,
+          clothes: c.clothes,
+          modelImage: c.model_image,
+          generations: c.generations
+        })))
+      } catch (err) {
+        console.error('Error polling collections:', err)
+      }
+    }
+
+    const interval = setInterval(loadCols, 3000)
+    return () => clearInterval(interval)
+  }, [collections])
 
   const openViewer = (generations: Generation[], index: number) => {
     const formatted = generations.map(g => ({
