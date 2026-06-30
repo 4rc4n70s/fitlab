@@ -219,6 +219,7 @@ export default function GeneratorPage() {
       return
     }
     if (savedPrompts.includes(masterPrompt)) {
+      setShowPromptsModal(true)
       return
     }
     const previous = [...savedPrompts]
@@ -226,6 +227,9 @@ export default function GeneratorPage() {
     const res = await savePrompt(masterPrompt)
     if (!res.success) {
       setSavedPrompts(previous)
+      alert(res.error === 'Unauthorized' ? 'Debes iniciar sesión para guardar prompts' : `Error al guardar el prompt: ${res.error}`)
+    } else {
+      setShowPromptsModal(true)
     }
   }
 
@@ -236,6 +240,7 @@ export default function GeneratorPage() {
     const res = await deletePrompt(promptToDelete)
     if (!res.success) {
       setSavedPrompts(previous)
+      alert(`Error al eliminar el prompt: ${res.error}`)
     }
   }
 
