@@ -416,6 +416,30 @@ export default function LibraryPage() {
     setDeleteModal(null)
   }
 
+  const handleDeleteFromBulkEdit = async (itemId: string) => {
+    if (confirm('¿Estás seguro de que deseas eliminar este archivo de tu librería?')) {
+      try {
+        const itemToDelete = items.find(i => i.id === itemId)
+        if (itemToDelete && itemToDelete.url.startsWith('/')) {
+          const hiddenStock = JSON.parse(localStorage.getItem('fitlab_hidden_stock_v2') || '[]')
+          if (!hiddenStock.includes(itemId)) {
+            hiddenStock.push(itemId)
+            localStorage.setItem('fitlab_hidden_stock_v2', JSON.stringify(hiddenStock))
+          }
+        } else {
+          await dbClient.library.deleteItem(itemId)
+        }
+        
+        setBulkEditItems(prev => prev.filter(i => i.id !== itemId))
+        const updated = items.filter(i => i.id !== itemId)
+        setItems(updated)
+        updateFolderCounts(updated)
+      } catch (err) {
+        console.error("Error deleting item from bulk edit:", err)
+      }
+    }
+  }
+
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
       {/* Header & Toolbar */}
@@ -963,9 +987,9 @@ export default function LibraryPage() {
             <div className="flex-1 overflow-y-auto pr-2">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {bulkEditItems.map(item => (
-                  <div key={item.id} className="flex gap-3 p-3 border border-border rounded-xl bg-surface-card">
+                  <div key={item.id} className="flex gap-3 p-3 border border-border rounded-xl bg-surface-card relative group">
                     <img src={item.url} alt={item.name} className="w-16 h-24 object-cover rounded-md bg-surface-soft shrink-0" />
-                    <div className="flex flex-col gap-2 flex-1">
+                    <div className="flex flex-col gap-2 flex-1 pb-6">
                       <input 
                         type="text" 
                         value={item.name}
@@ -992,6 +1016,13 @@ export default function LibraryPage() {
                         ))}
                       </select>
                     </div>
+                    <button
+                      onClick={() => handleDeleteFromBulkEdit(item.id)}
+                      className="absolute bottom-2 right-2 p-1.5 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                      title="Eliminar de la librería"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 ))}
               </div>
