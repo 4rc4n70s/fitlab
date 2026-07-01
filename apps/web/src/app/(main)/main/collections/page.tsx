@@ -272,11 +272,11 @@ export default function CollectionsPage() {
                 {/* Generations List */}
                 <div className="flex flex-col gap-4">
                   {collection.generations.map((gen) => (
-                    <div key={gen.id} className="flex bg-surface-card border border-border overflow-hidden shadow-sm hover:border-foreground/30 transition-colors">
+                    <div key={gen.id} className="flex flex-col-reverse md:flex-row bg-surface-card border border-border overflow-hidden shadow-sm hover:border-foreground/30 transition-colors">
                       
                       {/* Info Section */}
-                      <div className="flex-1 p-6 flex flex-col gap-4">
-                        <div className="flex items-center justify-between">
+                      <div className="flex-1 p-4 md:p-6 flex flex-col gap-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium text-foreground">ID: {gen.id}</span>
                             {gen.status === 'success' ? (
@@ -293,12 +293,12 @@ export default function CollectionsPage() {
                               </span>
                             )}
                           </div>
-                          <span className="text-[10px] text-muted">
+                          <span className="text-[10px] text-muted shrink-0">
                             {gen.date ? new Date(gen.date).toLocaleTimeString() : new Date(collection.date).toLocaleTimeString()}
                           </span>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="flex flex-col gap-1">
                             <span className="text-xs font-medium text-muted uppercase tracking-wider">{dict.pages.collections.item.master_prompt}</span>
                             <p className="text-sm text-foreground line-clamp-2">{collection.prompt}</p>
@@ -319,30 +319,30 @@ export default function CollectionsPage() {
                           <p className="text-sm text-red-500 mt-2">{dict.pages.collections.item.error_reason}: {gen.errorMsg}</p>
                         )}
 
-                        <div className="mt-auto pt-4 flex gap-3">
+                        <div className="mt-auto pt-4 flex flex-wrap gap-2 md:gap-3">
                           {gen.status === 'success' && gen.image && (
-                            <button onClick={() => handleDownloadImage(gen.image!, `foto_${gen.id}.jpg`)} className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg bg-surface-soft text-foreground hover:bg-border transition-colors font-medium">
-                              <Download className="w-4 h-4" /> {dict.pages.collections.item.download}
+                            <button onClick={() => handleDownloadImage(gen.image!, `foto_${gen.id}.jpg`)} className="flex items-center justify-center gap-2 text-sm px-4 py-2 rounded-lg bg-surface-soft text-foreground hover:bg-border transition-colors font-medium flex-1 sm:flex-none">
+                              <Download className="w-4 h-4" /> <span className="hidden sm:inline">{dict.pages.collections.item.download}</span>
                             </button>
                           )}
                           <button 
                             onClick={() => setRegenModal({ collectionId: collection.id, genId: gen.id, generation: gen, prompt: collection.prompt })}
-                            className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium"
+                            className="flex items-center justify-center gap-2 text-sm px-4 py-2 rounded-lg bg-foreground text-background hover:bg-foreground/90 transition-colors font-medium flex-1 sm:flex-none"
                           >
-                            <RefreshCw className="w-4 h-4" /> {dict.pages.collections.item.regenerate}
+                            <RefreshCw className="w-4 h-4" /> <span className="hidden sm:inline">{dict.pages.collections.item.regenerate}</span>
                           </button>
                           
                           <button 
                             onClick={() => setDeleteModal({ type: 'photo', collectionId: collection.id, genId: gen.id })}
-                            className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg border border-border text-red-500/80 hover:text-red-500 hover:bg-red-500/10 transition-colors font-medium"
+                            className="flex items-center justify-center gap-2 text-sm px-4 py-2 rounded-lg border border-border text-red-500/80 hover:text-red-500 hover:bg-red-500/10 transition-colors font-medium flex-1 sm:flex-none"
                           >
-                            <Trash2 className="w-4 h-4" /> {dict.pages.collections.item.delete_photo}
+                            <Trash2 className="w-4 h-4" /> <span className="hidden sm:inline">{dict.pages.collections.item.delete_photo}</span>
                           </button>
                         </div>
                       </div>
 
                       {/* Preview Section */}
-                      <div className="w-48 md:w-64 border-l border-border bg-surface-soft shrink-0">
+                      <div className="w-full aspect-[3/4] md:w-64 md:aspect-auto border-b md:border-b-0 md:border-l border-border bg-surface-soft shrink-0">
                         {gen.status === 'success' && gen.image ? (
                           <div 
                             className="w-full h-full cursor-pointer relative group"
