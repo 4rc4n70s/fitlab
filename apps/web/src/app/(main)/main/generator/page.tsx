@@ -276,7 +276,7 @@ export default function GeneratorPage() {
               </button>
             </div>
             <textarea 
-              className="w-full min-h-[120px] p-4 rounded-xl border border-border bg-surface-card text-foreground placeholder:text-muted focus:outline-none focus:border-foreground/50 resize-y"
+              className="w-full min-h-[120px] p-4 rounded-none border border-border bg-surface-card text-foreground placeholder:text-muted focus:outline-none focus:border-foreground/50 resize-y"
               placeholder={dict.pages.generator.sections.prompt.placeholder}
               value={masterPrompt}
               onChange={(e) => setMasterPrompt(e.target.value)}
@@ -336,12 +336,12 @@ export default function GeneratorPage() {
           <p className="text-sm text-muted">{dict.pages.generator.sections.clothes.subtitle}</p>
           
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            <label className="col-span-full h-48 border-2 border-dashed border-border bg-surface-card flex flex-col items-center justify-center gap-3 text-muted hover:border-foreground/30 hover:text-foreground cursor-pointer transition-colors relative">
+            <label className="col-span-full h-28 border-2 border-dashed border-border bg-surface-card flex flex-col items-center justify-center gap-2 text-muted hover:border-foreground/30 hover:text-foreground cursor-pointer transition-colors relative rounded-none">
               <input type="file" accept="image/png, image/jpeg, image/webp" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleFileUpload(e, 'clothes')} />
-              <Upload className="w-8 h-8 text-muted-foreground" />
-              <div className="flex flex-col items-center gap-1">
-                <span className="text-sm font-medium text-center px-4">{dict.pages.generator.sections.clothes.upload_title}</span>
-                <span className="text-xs text-muted-foreground">{dict.pages.generator.sections.clothes.upload_subtitle}</span>
+              <Upload className="w-6 h-6 text-muted-foreground" />
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="text-xs font-medium text-center px-4">{dict.pages.generator.sections.clothes.upload_title}</span>
+                <span className="text-[10px] text-muted-foreground">{dict.pages.generator.sections.clothes.upload_subtitle}</span>
               </div>
             </label>
             {selectedClothes.map(item => (
@@ -369,12 +369,12 @@ export default function GeneratorPage() {
           <p className="text-sm text-muted">{dict.pages.generator.sections.models.subtitle}</p>
           
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            <label className="col-span-full h-48 border-2 border-dashed border-border bg-surface-card flex flex-col items-center justify-center gap-3 text-muted hover:border-foreground/30 hover:text-foreground cursor-pointer transition-colors relative">
+            <label className="col-span-full h-28 border-2 border-dashed border-border bg-surface-card flex flex-col items-center justify-center gap-2 text-muted hover:border-foreground/30 hover:text-foreground cursor-pointer transition-colors relative rounded-none">
               <input type="file" accept="image/png, image/jpeg, image/webp" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleFileUpload(e, 'model')} />
-              <Upload className="w-8 h-8 text-muted-foreground" />
-              <div className="flex flex-col items-center gap-1">
-                <span className="text-sm font-medium text-center px-4">{dict.pages.generator.sections.models.upload_title}</span>
-                <span className="text-xs text-muted-foreground">{dict.pages.generator.sections.models.upload_subtitle}</span>
+              <Upload className="w-6 h-6 text-muted-foreground" />
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="text-xs font-medium text-center px-4">{dict.pages.generator.sections.models.upload_title}</span>
+                <span className="text-[10px] text-muted-foreground">{dict.pages.generator.sections.models.upload_subtitle}</span>
               </div>
             </label>
             {selectedModels.map(item => (
