@@ -88,25 +88,18 @@ export default function LibraryPage() {
       try {
         const { dbFolders, dbItems } = data
         const hasSeeded = localStorage.getItem('fitlab_seeded_stock_v2')
-        if (!hasSeeded) {
-          // Cleanup old stock photos that were inserted in the root (legacy)
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const oldStock = dbItems.filter((i: any) => !i.folder_id && i.url.startsWith('/'))
-          if (oldStock.length > 0) {
-            await Promise.all(oldStock.map((i: { id: string }) => dbClient.library.deleteItem(i.id).catch(() => {})))
-          }
-          
+        if (!hasSeeded && dbFolders.length === 0 && dbItems.length === 0) {
           await loadStockPhotosData()
           localStorage.setItem('fitlab_seeded_stock_v2', 'true')
           setIsLoadingLibrary(false)
         } else {
-          const hiddenStock = JSON.parse(localStorage.getItem('fitlab_hidden_stock_v2') || '[]')
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          setFolders(dbFolders.map((f: any) => ({...f, itemCount: dbItems.filter((i: any) => i.folder_id === f.id && !hiddenStock.includes(i.id)).length})))
+          setFolders(dbFolders.map((f: any) => ({...f, itemCount: dbItems.filter((i: any) => i.folder_id === f.id).length})))
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          setItems(dbItems.filter((i: any) => !hiddenStock.includes(i.id)).map((i: any) => ({
+          setItems(dbItems.map((i: any) => ({
             id: i.id, name: i.name, type: i.type, url: i.url, date: i.created_at, folderId: i.folder_id
           })))
+          localStorage.setItem('fitlab_seeded_stock_v2', 'true')
           setIsLoadingLibrary(false)
         }
       } catch (err) {
@@ -391,16 +384,7 @@ export default function LibraryPage() {
 
     try {
       if (deleteModal.type === 'item') {
-        const itemToDelete = items.find(i => i.id === deleteModal.id)
-        if (itemToDelete && itemToDelete.url.startsWith('/')) {
-          const hiddenStock = JSON.parse(localStorage.getItem('fitlab_hidden_stock_v2') || '[]')
-          if (!hiddenStock.includes(deleteModal.id)) {
-            hiddenStock.push(deleteModal.id)
-            localStorage.setItem('fitlab_hidden_stock_v2', JSON.stringify(hiddenStock))
-          }
-        } else {
-          await dbClient.library.deleteItem(deleteModal.id)
-        }
+        await dbClient.library.deleteItem(deleteModal.id)
         
         const updated = items.filter(i => i.id !== deleteModal.id)
         setItems(updated)
@@ -427,16 +411,7 @@ export default function LibraryPage() {
   const handleDeleteFromBulkEdit = async (itemId: string) => {
     if (confirm('¿Estás seguro de que deseas eliminar este archivo de tu librería?')) {
       try {
-        const itemToDelete = items.find(i => i.id === itemId)
-        if (itemToDelete && itemToDelete.url.startsWith('/')) {
-          const hiddenStock = JSON.parse(localStorage.getItem('fitlab_hidden_stock_v2') || '[]')
-          if (!hiddenStock.includes(itemId)) {
-            hiddenStock.push(itemId)
-            localStorage.setItem('fitlab_hidden_stock_v2', JSON.stringify(hiddenStock))
-          }
-        } else {
-          await dbClient.library.deleteItem(itemId)
-        }
+        await dbClient.library.deleteItem(itemId)
         
         setBulkEditItems(prev => prev.filter(i => i.id !== itemId))
         const updated = items.filter(i => i.id !== itemId)
