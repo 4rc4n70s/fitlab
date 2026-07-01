@@ -4,6 +4,7 @@ import { dbClient } from '@/services/collectionsClient'
 import { uploadFileToSupabase } from '@/services/storage'
 
 import React, { useState, useEffect } from 'react'
+import useSWR from 'swr'
 import { Search, Grid, List, Folder, Upload, Edit2, Download, Trash2, ChevronRight, ChevronLeft, FolderPlus, X, Eye } from 'lucide-react'
 import { ImageViewer } from '@/components/shared/image-viewer'
 import { useUI } from '@/hooks/use-ui'
@@ -61,37 +62,43 @@ export default function LibraryPage() {
     setCurrentPage(1)
   }, [searchQuery, filterType, currentFolder])
 
-  // Load from Supabase on mount
+  const fetchLibrary = async () => {
+    const [dbFolders, dbItems] = await Promise.all([
+      dbClient.library.getFolders(),
+      dbClient.library.getItems()
+    ])
+    return { dbFolders, dbItems }
+  }
+
+  const { data, error: swrError, mutate } = useSWR('libraryInit', fetchLibrary, {
+    revalidateOnFocus: false,
+    revalidateIfStale: false
+  })
+
   useEffect(() => {
-    const init = async () => {
+    if (swrError) {
+      setLibraryError(swrError.message || 'Error desconocido al cargar la librería.')
+      setIsLoadingLibrary(false)
+    }
+  }, [swrError])
+
+  useEffect(() => {
+    if (!data) return
+    const initData = async () => {
       try {
-        setIsLoadingLibrary(true)
-        setLibraryError(null)
-        const dbFolders = await dbClient.library.getFolders()
-        const dbItems = await dbClient.library.getItems()
+        const { dbFolders, dbItems } = data
         const hasSeeded = localStorage.getItem('fitlab_seeded_stock_v2')
         if (!hasSeeded) {
           // Cleanup old stock photos that were inserted in the root (legacy)
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const oldStock = dbItems.filter((i: any) => !i.folder_id && i.url.startsWith('/'))
           if (oldStock.length > 0) {
-            await Promise.all(oldStock.map(i => dbClient.library.deleteItem(i.id).catch(() => {})))
+            await Promise.all(oldStock.map((i: any) => dbClient.library.deleteItem(i.id).catch(() => {})))
           }
           
           await loadStockPhotosData()
           localStorage.setItem('fitlab_seeded_stock_v2', 'true')
-          
-          // Re-fetch after seeding
-          const newDbFolders = await dbClient.library.getFolders()
-          const newDbItems = await dbClient.library.getItems()
-          
-          const hiddenStock = JSON.parse(localStorage.getItem('fitlab_hidden_stock_v2') || '[]')
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          setFolders(newDbFolders.map((f: any) => ({...f, itemCount: newDbItems.filter((i: any) => i.folder_id === f.id && !hiddenStock.includes(i.id)).length})))
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          setItems(newDbItems.filter((i: any) => !hiddenStock.includes(i.id)).map((i: any) => ({
-            id: i.id, name: i.name, type: i.type, url: i.url, date: i.created_at, folderId: i.folder_id
-          })))
+          setIsLoadingLibrary(false)
         } else {
           const hiddenStock = JSON.parse(localStorage.getItem('fitlab_hidden_stock_v2') || '[]')
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -100,16 +107,17 @@ export default function LibraryPage() {
           setItems(dbItems.filter((i: any) => !hiddenStock.includes(i.id)).map((i: any) => ({
             id: i.id, name: i.name, type: i.type, url: i.url, date: i.created_at, folderId: i.folder_id
           })))
+          setIsLoadingLibrary(false)
         }
       } catch (err) {
-        console.error('Error fetching library from Supabase:', err)
-        setLibraryError(err instanceof Error ? err.message : 'Error desconocido al cargar la librería.')
-      } finally {
+        console.error('Error in library init:', err)
+        setLibraryError(err instanceof Error ? err.message : 'Error desconocido al procesar la librería.')
         setIsLoadingLibrary(false)
       }
     }
-    init()
-  }, [])
+    initData()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data])
 
   const loadStockPhotosData = async () => {
     try {
@@ -574,7 +582,7 @@ export default function LibraryPage() {
             <div className="p-12 text-center flex flex-col items-center justify-center gap-3 bg-red-500/10 border border-red-500/20 rounded-xl">
               <p className="text-red-500 font-medium">{dict.pages.library.items.error_prefix}: {libraryError}</p>
               <button 
-                onClick={() => window.location.reload()}
+                onClick={() => { setLibraryError(null); setIsLoadingLibrary(true); mutate(); }}
                 className="px-4 py-2 mt-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors"
               >
                 {dict.pages.library.items.retry}

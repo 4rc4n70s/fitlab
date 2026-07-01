@@ -3,6 +3,7 @@ import { dbClient as db } from '@/services/collectionsClient'
 import { uploadImageToSupabase } from '@/services/storage'
 
 import React, { useState, useEffect } from 'react'
+import useSWR from 'swr'
 import { Calendar, RefreshCw, AlertCircle, CheckCircle2, Images, Trash, Trash2, Download } from 'lucide-react'
 import { ImageViewer } from '@/components/shared/image-viewer'
 import Link from 'next/link'
@@ -33,9 +34,7 @@ interface Collection {
 }
 
 export default function CollectionsPage() {
-  const [collections, setCollections] = useState<Collection[]>([])
-  const [currentCollection, setCurrentCollection] = useState<Collection | null>(null)
-  const [page, setCurrentPage] = useState(1)
+      const [page, setCurrentPage] = useState(1)
   const ITEMS_PER_PAGE = 10
   const [viewerImages, setViewerImages] = useState<{url: string, originalUrl?: string}[]>([])
   const [viewerIndex, setViewerIndex] = useState<number>(0)
@@ -50,58 +49,31 @@ export default function CollectionsPage() {
   
   const [isRegenerating, setIsRegenerating] = useState(false)
 
-  // Load from database on mount and listen to custom update events
+  const fetcher = async () => {
+    const dbCols = await db.collections.getCollections()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return dbCols.map((c: any) => ({
+      id: c.id,
+      prompt: c.prompt,
+      date: c.created_at,
+      clothes: c.clothes,
+      modelImage: c.model_image,
+      generations: c.generations
+    })) as Collection[]
+  }
+
+  const { data: collections = [], error, isLoading, mutate } = useSWR('collections', fetcher, {
+    refreshInterval: (data) => {
+      const hasPending = data?.some(c => c.generations?.some(g => g.status === 'pending' || g.status === 'processing'))
+      return hasPending ? 3000 : 0
+    }
+  })
+
   useEffect(() => {
-    const loadCols = async () => {
-      try {
-        const dbCols = await db.collections.getCollections()
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        setCollections(dbCols.map((c: any) => ({
-          id: c.id,
-          prompt: c.prompt,
-          date: c.created_at,
-          clothes: c.clothes,
-          modelImage: c.model_image,
-          generations: c.generations
-        })))
-      } catch (err) {
-        console.error('Error fetching collections:', err)
-      }
-    }
-    
-    loadCols()
-    window.addEventListener('fitlab_collections_updated', loadCols)
-    
-    return () => {
-      window.removeEventListener('fitlab_collections_updated', loadCols)
-    }
-  }, [])
-
-  // Conditional polling: only runs if at least one generation is pending or processing
-  useEffect(() => {
-    const hasPending = collections.some(c => c.generations?.some(g => g.status === 'pending' || g.status === 'processing'))
-    if (!hasPending) return
-
-    const loadCols = async () => {
-      try {
-        const dbCols = await db.collections.getCollections()
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        setCollections(dbCols.map((c: any) => ({
-          id: c.id,
-          prompt: c.prompt,
-          date: c.created_at,
-          clothes: c.clothes,
-          modelImage: c.model_image,
-          generations: c.generations
-        })))
-      } catch (err) {
-        console.error('Error polling collections:', err)
-      }
-    }
-
-    const interval = setInterval(loadCols, 3000)
-    return () => clearInterval(interval)
-  }, [collections])
+    const handleUpdate = () => mutate()
+    window.addEventListener('fitlab_collections_updated', handleUpdate)
+    return () => window.removeEventListener('fitlab_collections_updated', handleUpdate)
+  }, [mutate])
 
   const openViewer = (generations: Generation[], index: number) => {
     const formatted = generations.map(g => ({
@@ -114,23 +86,25 @@ export default function CollectionsPage() {
   }
 
   const handleRegenerateSubmit = async () => {
-    if (!regenModal || !currentCollection) return
+    if (!regenModal) return
+    const targetCollection = collections.find(c => c.id === regenModal.collectionId)
+    if (!targetCollection) return
+    
     setIsRegenerating(true)
     
     const gen = regenModal.generation
     
     // Set to processing first
-    const processingGens = currentCollection.generations.map(g => 
+    const processingGens = targetCollection.generations.map(g => 
       g.id === gen.id ? { ...g, status: 'processing' as const, errorMsg: undefined } : g
     )
-    setCurrentCollection({ ...currentCollection, generations: processingGens })
-    setCollections(prev => prev.map(c => c.id === currentCollection.id ? { ...c, generations: processingGens } : c))
+    mutate(collections.map(c => c.id === targetCollection.id ? { ...c, generations: processingGens } : c), false)
 
     try {
       const { processVirtualTryOn } = await import('@/actions/gemini')
       
-      const targetModelImage = gen.originalModelUrl || gen.modelUrl || currentCollection.modelImage!
-      const response = await processVirtualTryOn(currentCollection.prompt, targetModelImage, currentCollection.clothes, '3:4')
+      const targetModelImage = gen.originalModelUrl || gen.modelUrl || targetCollection.modelImage!
+      const response = await processVirtualTryOn(targetCollection.prompt, targetModelImage, targetCollection.clothes, '3:4')
       
       let finalGens: Generation[] = []
       if (response.success && response.base64) {
@@ -150,9 +124,8 @@ export default function CollectionsPage() {
         )
       }
       
-      await db.collections.updateCollection(currentCollection.id, { generations: finalGens })
-      setCurrentCollection(prev => prev ? { ...prev, generations: finalGens } : null)
-      setCollections(prev => prev.map(c => c.id === currentCollection.id ? { ...c, generations: finalGens } : c))
+      await db.collections.updateCollection(targetCollection.id, { generations: finalGens })
+      mutate() // revalidate
       
     } catch (err: unknown) {
       console.error('Error during regeneration', err)
@@ -160,9 +133,8 @@ export default function CollectionsPage() {
       const finalGens = processingGens.map(g => 
         g.id === gen.id ? { ...g, status: 'error' as const, errorMsg } : g
       )
-      await db.collections.updateCollection(currentCollection.id, { generations: finalGens })
-      setCurrentCollection(prev => prev ? { ...prev, generations: finalGens } : null)
-      setCollections(prev => prev.map(c => c.id === currentCollection.id ? { ...c, generations: finalGens } : c))
+      await db.collections.updateCollection(targetCollection.id, { generations: finalGens })
+      mutate() // revalidate
     } finally {
       setIsRegenerating(false)
       setRegenModal(null)
@@ -225,23 +197,7 @@ export default function CollectionsPage() {
           }
         }
       }
-      
-      const dbCols = await db.collections.getCollections()
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      setCollections(dbCols.map((c: any) => ({
-        id: c.id,
-        prompt: c.prompt,
-        date: c.created_at,
-        clothes: c.clothes,
-        modelImage: c.model_image,
-        generations: c.generations
-      })))
-      
-      if (deleteModal.type === 'collection' && currentCollection?.id === deleteModal.collectionId) {
-        setCurrentCollection(null)
-      } else if (currentCollection?.id === deleteModal.collectionId) {
-        setCurrentCollection(prev => prev ? {...prev, generations: prev.generations.filter(g => g.id !== deleteModal.genId)} : null)
-      }
+      mutate() // revalidate after delete
     } catch(err) {
       console.error(err)
     }
@@ -256,7 +212,26 @@ export default function CollectionsPage() {
           <p className="text-muted text-base">{dict.pages.collections.description}</p>
         </div>
 
-      {collections.length === 0 ? (
+      {isLoading ? (
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 border-2 border-dashed border-border bg-surface-card p-12 text-center my-8">
+          <RefreshCw className="w-12 h-12 text-muted animate-spin" />
+          <div className="flex flex-col gap-1 max-w-sm">
+            <h3 className="text-lg font-medium text-foreground font-heading">Cargando colecciones...</h3>
+            <p className="text-sm text-muted">Por favor espera un momento.</p>
+          </div>
+        </div>
+      ) : error ? (
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 border-2 border-dashed border-red-500/20 bg-red-500/10 p-12 text-center my-8">
+          <AlertCircle className="w-12 h-12 text-red-500" />
+          <div className="flex flex-col gap-1 max-w-sm">
+            <h3 className="text-lg font-medium text-red-500 font-heading">Error al cargar</h3>
+            <p className="text-sm text-red-500/80">{error.message || 'Hubo un error al conectar con el servidor.'}</p>
+          </div>
+          <button onClick={() => mutate()} className="mt-2 px-6 py-2.5 rounded-xl bg-red-500 text-white hover:bg-red-600 transition-colors font-medium">
+            Reintentar
+          </button>
+        </div>
+      ) : collections.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center gap-4 border-2 border-dashed border-border bg-surface-card p-12 text-center my-8">
           <Images className="w-12 h-12 text-muted" />
           <div className="flex flex-col gap-1 max-w-sm">
@@ -468,9 +443,9 @@ export default function CollectionsPage() {
                 <div className="flex gap-4">
                   <label className={`flex-1 flex flex-col items-center gap-2 p-3 border rounded-xl cursor-pointer transition-colors ${regenBase === 'original' ? 'border-foreground bg-surface-soft' : 'border-border'}`}>
                     <input type="radio" className="hidden" checked={regenBase === 'original'} onChange={() => setRegenBase('original')} />
-                    {(regenModal.generation.originalModelUrl || regenModal.generation.modelUrl || currentCollection?.modelImage) && (
+                    {(regenModal.generation.originalModelUrl || regenModal.generation.modelUrl || collections.find(c => c.id === regenModal.collectionId)?.modelImage) && (
                       <div className="w-full aspect-square bg-surface-card overflow-hidden">
-                        <img src={(regenModal.generation.originalModelUrl || regenModal.generation.modelUrl || currentCollection?.modelImage)!} className="w-full h-full object-cover" alt="Original" />
+                        <img src={(regenModal.generation.originalModelUrl || regenModal.generation.modelUrl || collections.find(c => c.id === regenModal.collectionId)?.modelImage)!} className="w-full h-full object-cover" alt="Original" />
                       </div>
                     )}
                     <span className="text-sm font-medium">{dict.pages.collections.modals.regenerate.original_photo}</span>
