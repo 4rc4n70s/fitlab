@@ -346,7 +346,7 @@ export default function GeneratorPage() {
             </label>
             {selectedClothes.map(item => (
               <div key={item.id} className="relative aspect-square overflow-hidden border border-border">
-                <img src={item.url} alt={item.name} className="w-full h-full object-cover" />
+                <img loading="lazy" decoding="async" src={item.url} alt={item.name} className="w-full h-full object-cover" />
                 <button onClick={() => setSelectedClothes(prev => prev.filter(i => i.id !== item.id))} className="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded-md hover:bg-red-500/80 backdrop-blur-md">
                   <X className="w-4 h-4" />
                 </button>
@@ -379,7 +379,7 @@ export default function GeneratorPage() {
             </label>
             {selectedModels.map(item => (
               <div key={item.id} className="relative aspect-square overflow-hidden border border-border">
-                <img src={item.url} alt={item.name} className="w-full h-full object-cover" />
+                <img loading="lazy" decoding="async" src={item.url} alt={item.name} className="w-full h-full object-cover" />
                 <button onClick={() => setSelectedModels(prev => prev.filter(i => i.id !== item.id))} className="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded-md hover:bg-red-500/80 backdrop-blur-md">
                   <X className="w-4 h-4" />
                 </button>
@@ -559,7 +559,7 @@ export default function GeneratorPage() {
                               }}
                             >
                               <div className={`relative aspect-square overflow-hidden border-2 transition-all ${isSelected ? 'border-foreground shadow-sm' : 'border-border group-hover:border-foreground/50'}`}>
-                                <img src={item.url} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                <img loading="lazy" decoding="async" src={item.url} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                                 {isSelected && (
                                   <div className="absolute top-2 right-2 bg-foreground text-background p-1.5 rounded-full shadow-md animate-in zoom-in">
                                     <Check className="w-3 h-3 stroke-[3]" />

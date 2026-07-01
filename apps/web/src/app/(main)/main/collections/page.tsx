@@ -308,7 +308,7 @@ export default function CollectionsPage() {
                             <div className="flex gap-2">
                               {collection.clothes.map((cUrl, i) => (
                                 <div key={i} className="w-10 h-10 bg-surface-soft border border-border overflow-hidden">
-                                  <img src={cUrl} alt={`${dict.pages.collections.item.clothing_alt} ${i}`} className="w-full h-full object-cover" />
+                                  <img loading="lazy" decoding="async" src={cUrl} alt={`${dict.pages.collections.item.clothing_alt} ${i}`} className="w-full h-full object-cover" />
                                 </div>
                               ))}
                             </div>
@@ -352,7 +352,7 @@ export default function CollectionsPage() {
                               openViewer(successGens, Math.max(0, imageIndex))
                             }}
                           >
-                            <img 
+                            <img loading="lazy" decoding="async" 
                               src={gen.image} 
                               alt={`Generation ${gen.id}`} 
                               className="w-full h-full object-cover"
@@ -445,7 +445,7 @@ export default function CollectionsPage() {
                     <input type="radio" className="hidden" checked={regenBase === 'original'} onChange={() => setRegenBase('original')} />
                     {(regenModal.generation.originalModelUrl || regenModal.generation.modelUrl || collections.find(c => c.id === regenModal.collectionId)?.modelImage) && (
                       <div className="w-full aspect-square bg-surface-card overflow-hidden">
-                        <img src={(regenModal.generation.originalModelUrl || regenModal.generation.modelUrl || collections.find(c => c.id === regenModal.collectionId)?.modelImage)!} className="w-full h-full object-cover" alt="Original" />
+                        <img loading="lazy" decoding="async" src={(regenModal.generation.originalModelUrl || regenModal.generation.modelUrl || collections.find(c => c.id === regenModal.collectionId)?.modelImage)!} className="w-full h-full object-cover" alt="Original" />
                       </div>
                     )}
                     <span className="text-sm font-medium">{dict.pages.collections.modals.regenerate.original_photo}</span>
@@ -455,7 +455,7 @@ export default function CollectionsPage() {
                     <input type="radio" className="hidden" disabled={!regenModal.generation.image} checked={regenBase === 'result'} onChange={() => setRegenBase('result')} />
                     {regenModal.generation.image ? (
                       <div className="w-full aspect-square bg-surface-card overflow-hidden">
-                        <img src={regenModal.generation.image} className="w-full h-full object-cover" alt="Generada" />
+                        <img loading="lazy" decoding="async" src={regenModal.generation.image} className="w-full h-full object-cover" alt="Generada" />
                       </div>
                     ) : (
                       <div className="w-full aspect-square bg-surface-card border border-dashed flex items-center justify-center text-xs text-muted text-center p-2">

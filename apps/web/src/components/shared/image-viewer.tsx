@@ -171,15 +171,15 @@ export function ImageViewer({ images, initialIndex = 0, onClose }: ImageViewerPr
             <div className="flex w-full h-full justify-center items-center gap-4 max-w-[90vw]">
               <div className="flex-1 flex flex-col items-center gap-2 max-h-full">
                 <span className="text-white/70 text-xs font-medium uppercase tracking-wider bg-black/50 px-3 py-1 rounded-full backdrop-blur-md absolute top-4">{dict.components.image_viewer.original_badge}</span>
-                <img src={currentImage.originalUrl} alt="Original" className="max-w-full max-h-[85vh] object-contain rounded-sm shadow-2xl" />
+                <img loading="lazy" decoding="async" src={currentImage.originalUrl} alt="Original" className="max-w-full max-h-[85vh] object-contain rounded-sm shadow-2xl" />
               </div>
               <div className="flex-1 flex flex-col items-center gap-2 max-h-full">
                 <span className="text-emerald-400 text-xs font-medium uppercase tracking-wider bg-black/50 px-3 py-1 rounded-full backdrop-blur-md absolute top-4">{dict.components.image_viewer.result_badge}</span>
-                <img src={currentImage.url} alt="Result" className="max-w-full max-h-[85vh] object-contain rounded-sm shadow-2xl" />
+                <img loading="lazy" decoding="async" src={currentImage.url} alt="Result" className="max-w-full max-h-[85vh] object-contain rounded-sm shadow-2xl" />
               </div>
             </div>
           ) : (
-            <img 
+            <img loading="lazy" decoding="async" 
               src={viewMode === 'original' && currentImage.originalUrl ? currentImage.originalUrl : currentImage.url} 
               alt="View"
               className="max-w-full max-h-[90vh] object-contain rounded-sm shadow-2xl"

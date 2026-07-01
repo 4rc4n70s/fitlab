@@ -617,7 +617,7 @@ export default function LibraryPage() {
                 {paginatedItems.map((item, index) => (
                   <div key={item.id} className="group flex flex-col gap-2 relative">
                   <div className="relative aspect-square overflow-hidden border border-border bg-surface-card">
-                    <img src={item.url} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    <img loading="lazy" decoding="async" src={item.url} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                     
                     {/* Badge */}
                     <div className="absolute top-2 left-2 px-2 py-1 bg-black/60 backdrop-blur-md rounded-md">
@@ -692,7 +692,7 @@ export default function LibraryPage() {
                   <div key={item.id} className="flex items-center justify-between p-3 rounded-xl border border-border bg-surface-card hover:bg-surface-soft transition-colors group">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-lg overflow-hidden border border-border shrink-0">
-                      <img src={item.url} alt={item.name} className="w-full h-full object-cover" />
+                      <img loading="lazy" decoding="async" src={item.url} alt={item.name} className="w-full h-full object-cover" />
                     </div>
                     <div className="flex flex-col">
                       <span className="text-sm font-medium text-foreground">{item.name}</span>
@@ -777,7 +777,7 @@ export default function LibraryPage() {
             </div>
             <div className="flex flex-col gap-4">
               <div className="aspect-square w-32 mx-auto overflow-hidden border border-border">
-                <img src={editItem.url} alt={editItem.name} className="w-full h-full object-cover" />
+                <img loading="lazy" decoding="async" src={editItem.url} alt={editItem.name} className="w-full h-full object-cover" />
               </div>
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-medium text-foreground">{dict.pages.library.modals.edit.name}</label>
@@ -856,7 +856,7 @@ export default function LibraryPage() {
                           <X className="w-3 h-3" />
                         </button>
                         <div className="flex gap-3">
-                          <img src={uf.url} alt="Vista previa de subida" className="w-16 h-24 object-cover rounded-md bg-surface-soft shrink-0" />
+                          <img loading="lazy" decoding="async" src={uf.url} alt="Vista previa de subida" className="w-16 h-24 object-cover rounded-md bg-surface-soft shrink-0" />
                           <div className="flex flex-col gap-2 flex-1">
                             <input 
                               type="text" 
@@ -996,7 +996,7 @@ export default function LibraryPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {bulkEditItems.map(item => (
                   <div key={item.id} className="flex gap-3 p-3 border border-border rounded-xl bg-surface-card relative group">
-                    <img src={item.url} alt={item.name} className="w-16 h-24 object-cover rounded-md bg-surface-soft shrink-0" />
+                    <img loading="lazy" decoding="async" src={item.url} alt={item.name} className="w-16 h-24 object-cover rounded-md bg-surface-soft shrink-0" />
                     <div className="flex flex-col gap-2 flex-1 pb-6">
                       <input 
                         type="text" 
