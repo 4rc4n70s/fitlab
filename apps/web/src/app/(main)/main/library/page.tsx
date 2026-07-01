@@ -356,24 +356,23 @@ export default function LibraryPage() {
   }
 
   const submitBulkEdit = async () => {
+    // Optimistic update
+    const updated = items.map(item => {
+      const edited = bulkEditItems.find(b => b.id === item.id)
+      return edited || item
+    })
+    setItems(updated)
+    updateFolderCounts(updated)
+    setShowBulkEditModal(false)
+
     try {
-      // First update in DB
-      for (const item of bulkEditItems) {
-        await dbClient.library.updateItem(item.id, {
+      await Promise.all(bulkEditItems.map(item => 
+        dbClient.library.updateItem(item.id, {
           name: item.name,
           type: item.type,
           folder_id: item.folderId || null
-        })
-      }
-      
-      // Then update local state
-      const updated = items.map(item => {
-        const edited = bulkEditItems.find(b => b.id === item.id)
-        return edited || item
-      })
-      setItems(updated)
-      updateFolderCounts(updated)
-      setShowBulkEditModal(false)
+        }).catch(err => console.error(err))
+      ))
     } catch (err) {
       console.error("Error updating items in DB:", err)
     }
@@ -388,6 +387,7 @@ export default function LibraryPage() {
         
         const updated = items.filter(i => i.id !== deleteModal.id)
         setItems(updated)
+        setBulkEditItems(prev => prev.filter(i => i.id !== deleteModal.id))
         updateFolderCounts(updated)
       } else if (deleteModal.type === 'folder') {
         await dbClient.library.deleteFolder(deleteModal.id)
@@ -406,21 +406,6 @@ export default function LibraryPage() {
       console.error(err)
     }
     setDeleteModal(null)
-  }
-
-  const handleDeleteFromBulkEdit = async (itemId: string) => {
-    if (confirm('¿Estás seguro de que deseas eliminar este archivo de tu librería?')) {
-      try {
-        await dbClient.library.deleteItem(itemId)
-        
-        setBulkEditItems(prev => prev.filter(i => i.id !== itemId))
-        const updated = items.filter(i => i.id !== itemId)
-        setItems(updated)
-        updateFolderCounts(updated)
-      } catch (err) {
-        console.error("Error deleting item from bulk edit:", err)
-      }
-    }
   }
 
   return (
@@ -896,7 +881,7 @@ export default function LibraryPage() {
 
       {/* Delete Confirmation Modal */}
       {deleteModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-in fade-in">
           <div className="bg-surface-card border border-border rounded-2xl w-full max-w-sm p-6 flex flex-col gap-6 shadow-xl animate-in zoom-in-95 text-center">
             <Trash2 className="w-12 h-12 text-red-500 mx-auto" />
             <div className="flex flex-col gap-2">
@@ -1000,7 +985,7 @@ export default function LibraryPage() {
                       </select>
                     </div>
                     <button
-                      onClick={() => handleDeleteFromBulkEdit(item.id)}
+                      onClick={() => setDeleteModal({ type: 'item', id: item.id })}
                       className="absolute bottom-2 right-2 p-1.5 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
                       title="Eliminar de la librería"
                     >
