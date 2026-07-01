@@ -93,7 +93,7 @@ export default function LibraryPage() {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const oldStock = dbItems.filter((i: any) => !i.folder_id && i.url.startsWith('/'))
           if (oldStock.length > 0) {
-            await Promise.all(oldStock.map((i: any) => dbClient.library.deleteItem(i.id).catch(() => {})))
+            await Promise.all(oldStock.map((i: { id: string }) => dbClient.library.deleteItem(i.id).catch(() => {})))
           }
           
           await loadStockPhotosData()
